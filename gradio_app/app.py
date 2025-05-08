@@ -70,16 +70,18 @@ def submit_input(session_id, text_input, file_input):
 
 def check_result(session_id):
     if not session_id:
-        return "❌ No session ID"
+        return "❌ No session ID", 10.0
 
     result = input_col.find_one({"session_id": session_id})
 
     if result is None:
-        return "❌ Session ID not found."
+        return "❌ Input for this session ID not found.", 10.0
     elif result["status"] == "pending":
-        return "⏳ Result not ready yet. (Still pending)"
+        return "⏳ Result not ready yet. (Still pending ... would update if finished)", 3.0
+    elif result["status"] == "processing":
+        return "⏳ Result not ready yet. (Still processing ... would update if finished)", 3.0
     
-    return result if result else "⏳ Result not ready yet."
+    return result, None if result else "⏳ Result not ready yet."
 
 # --- FRONTEND UI ---
 
@@ -114,9 +116,19 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
         check_btn = gr.Button("Check Result")
         result_output = gr.Textbox(label="Result Output", interactive=False)
 
+        # Timer to check result every 3 seconds
+        timer = gr.Timer(value=3.0, active=True)
+        timer.tick(
+            fn=check_result,
+            inputs=[session_id_box],
+            outputs=[result_output, timer]
+        )
+
+        timer_control = gr.State()  # dummy variable to catch the second output
+
         check_btn.click(fn=check_result,
                         inputs=session_id_state,
-                        outputs=result_output)
+                        outputs=[result_output, timer_control])
 
     # --- Event hooks ---
 
