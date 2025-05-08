@@ -6,7 +6,9 @@ from pymongo import MongoClient
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 input_col = db["input_queue"]
-result_col = db["results"]
+
+# Check database
+print("✅ Connected. Collections:", db.list_collection_names())
 
 
 # --- BACKEND LOGIC ---
@@ -59,18 +61,24 @@ def submit_input(session_id, text_input, file_input):
         "session_id": session_id,
         "text": text_input,
         "file": file_content_b64,
-        "status": "pending"
+        "status": "pending",
+        "result": None
     }
-    # input_col.insert_one(payload)
+    input_col.insert_one(payload)
+
     return f"✅ Submitted with payload: {payload}"
 
 def check_result(session_id):
     if not session_id:
         return "❌ No session ID"
 
-    # result = result_col.find_one({"session_id": session_id})
-    result = {"session_id": "temp", "output": {"place": "holder"}, "status": "pending"}  # Placeholder for actual DB query
+    result = input_col.find_one({"session_id": session_id})
 
+    if result is None:
+        return "❌ Session ID not found."
+    elif result["status"] == "pending":
+        return "⏳ Result not ready yet. (Still pending)"
+    
     return result if result else "⏳ Result not ready yet."
 
 # --- FRONTEND UI ---
@@ -141,4 +149,5 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
         ]
     )
 
-demo.launch(server_name="0.0.0.0")
+# debug=True for auto-reload
+demo.launch(server_name="0.0.0.0", debug=True)
