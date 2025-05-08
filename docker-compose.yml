@@ -3,7 +3,7 @@ version: '3.8'
 services:
   gradio_app:
     build: ./gradio_app
-    container_name: gradio-app
+    container_name: gradio_app
     ports:
       - "7860:7860"
     volumes:
@@ -11,12 +11,22 @@ services:
     depends_on:
       - mongodb
 
-  # worker:
-  #   build: ./worker
-  #   volumes:
-  #     - ./worker:/app
-  #   depends_on:
-  #     - mongodb
+  inference:
+    build: ./inference
+    container_name: inference_service
+    expose:
+      - "5000"   # internal only; not mapped to host
+    depends_on:
+      - mongodb
+
+  worker:
+    build: ./worker
+    container_name: worker
+    depends_on:
+      - mongodb
+      - inference
+    volumes:
+      - ./worker:/app
 
   mongodb:
     image: mongo:5
