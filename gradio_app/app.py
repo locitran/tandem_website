@@ -133,28 +133,36 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                     submit_btn = gr.Button("Submit")
                     submit_status = gr.Textbox(label="Submission Status", interactive=False)
 
-                    submit_btn.click(fn=submit_input,
-                                    inputs=[session_id_state, text_input, file_input],
-                                    outputs=submit_status)
-
-            # --- CONDITIONAL RESULT SECTION ---
+            # --- Conditional Visibility Wrappers ---
             with gr.Column(visible=False) as result_section:
                 result_output = gr.Textbox(label="Result Output", lines=6)
                 check_btn = gr.Button("Check Result")
 
-                # Timer to check result every 3 seconds
-                timer = gr.Timer(value=3.0, active=True)
-                timer.tick(
-                    fn=check_result,
-                    inputs=[session_id_box],
-                    outputs=[result_output, timer]
-                )
+    # Timer to check result every 3 seconds
+    timer = gr.Timer(value=3.0, active=True)
+    timer.tick(
+        fn=check_result,
+        inputs=[session_id_box],
+        outputs=[result_output, timer]
+    )
 
-                timer_control = gr.State()  # dummy variable to catch the second output
+    timer_control = gr.State()  # dummy variable to catch the second output
 
-                check_btn.click(fn=check_result,
-                                inputs=session_id_state,
-                                outputs=[result_output, timer_control])
+    # 1. First run submit_input()
+    submit_btn.click(
+        fn=submit_input,
+        inputs=[session_id_state, text_input, file_input],
+        outputs=submit_status
+    ).then(
+        # 2. Immediately call check_result()
+        fn=check_result,
+        inputs=[session_id_state],
+        outputs=[result_output, timer_control]
+    )
+
+    check_btn.click(fn=check_result,
+                    inputs=session_id_state,
+                    outputs=[result_output, timer_control])
 
     # --- Event hooks ---
 
