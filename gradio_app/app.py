@@ -86,49 +86,75 @@ def check_result(session_id):
 # --- FRONTEND UI ---
 
 with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !important; }") as demo:
-    gr.Markdown("## 🧪 Tandem-Dimple App with Session Control")
+    gr.Markdown("## TANDEM-DIMPLE: Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation")
 
     session_id_state = gr.State("")
-    session_locked_state = gr.State(False)
+    session_locked_state = gr.State("")
 
     with gr.Row():
-        session_id_box = gr.Textbox(label="Enter your Session ID", placeholder="Paste or generate one", interactive=True, elem_id="session-box")
-        session_status = gr.Markdown("")  # Inline status message
+        # --- LEFT COLUMN ---
+        with gr.Column(scale=1):
+            # gr.Markdown("#### 🏷 Home tag")
 
-    with gr.Row():
-        new_session_btn = gr.Button("🔄 New Session ID", interactive=True)
-        confirm_session_btn = gr.Button("✅ Confirm Session ID", interactive=True)
+            gr.Markdown("""
+            🔗 **Links**  
+            - [Yang's Lab](https://yanglab.example.edu)  
+            - [GitHub Repository](https://github.com/YangLab/TANDEM-DIMPLE)
+            """)
 
-    # --- Conditional Visibility Wrappers ---
-    with gr.Column(visible=False) as input_section:
-        gr.Markdown("### Step 1: Submit Your Input")
-        text_input = gr.Textbox(label="Text Input")
-        file_input = gr.File(label="Optional File Upload", type="binary")
-        submit_btn = gr.Button("Submit")
-        submit_status = gr.Textbox(label="Submission Status", interactive=False)
+            gr.Markdown("""
+            ### What is TANDEM-DIMPLE?
+            A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants...
+            """)
+            gr.Markdown("""
+            **Reference:** Looi Tian, Lee-Wei Yang ... (To be peer-reviewed)  
+            **Contact:** Maintained by Yang Lab at Institute of Bioinformatics, NTHU
+            """)
 
-        submit_btn.click(fn=submit_input,
-                         inputs=[session_id_state, text_input, file_input],
-                         outputs=submit_status)
+        # --- RIGHT COLUMN ---
+        with gr.Column(scale=2):
+            with gr.Group():
+                gr.Markdown("### User input")
 
-    with gr.Column(visible=False) as result_section:
-        gr.Markdown("### Step 2: Check Your Result")
-        check_btn = gr.Button("Check Result")
-        result_output = gr.Textbox(label="Result Output", interactive=False)
+                session_id_box = gr.Textbox(label="Session ID", placeholder="Paste or generate one", interactive=True)
+                with gr.Row():
+                    new_session_btn = gr.Button("🔄 New Session ID")
+                    confirm_session_btn = gr.Button("✅ Confirm Session ID")
+                session_status = gr.Markdown("")
 
-        # Timer to check result every 3 seconds
-        timer = gr.Timer(value=3.0, active=True)
-        timer.tick(
-            fn=check_result,
-            inputs=[session_id_box],
-            outputs=[result_output, timer]
-        )
 
-        timer_control = gr.State()  # dummy variable to catch the second output
+            # --- Conditional Visibility Wrappers ---
+            with gr.Column(visible=False) as input_section:
+                with gr.Group():
+                    # gr.Markdown("### Step 1: Submit Your Input")
+                    text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV)")
+                    file_input = gr.File(label="Upload text file or .pdb file", type="binary") #, file_types=[".txt", ".pdb"]
 
-        check_btn.click(fn=check_result,
-                        inputs=session_id_state,
-                        outputs=[result_output, timer_control])
+                    submit_btn = gr.Button("Submit")
+                    submit_status = gr.Textbox(label="Submission Status", interactive=False)
+
+                    submit_btn.click(fn=submit_input,
+                                    inputs=[session_id_state, text_input, file_input],
+                                    outputs=submit_status)
+
+            # --- CONDITIONAL RESULT SECTION ---
+            with gr.Column(visible=False) as result_section:
+                result_output = gr.Textbox(label="Result Output", lines=6)
+                check_btn = gr.Button("Check Result")
+
+                # Timer to check result every 3 seconds
+                timer = gr.Timer(value=3.0, active=True)
+                timer.tick(
+                    fn=check_result,
+                    inputs=[session_id_box],
+                    outputs=[result_output, timer]
+                )
+
+                timer_control = gr.State()  # dummy variable to catch the second output
+
+                check_btn.click(fn=check_result,
+                                inputs=session_id_state,
+                                outputs=[result_output, timer_control])
 
     # --- Event hooks ---
 
