@@ -22,8 +22,6 @@ while True:
         try:
             print(f"Processing session: {task['session_id']}")
 
-            time.sleep(5)  # Simulate processing time
-
              # Remove _id field (or deep copy + pop)
             task_to_send = copy.deepcopy(task)
             task_to_send.pop("_id", None)
