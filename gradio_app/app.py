@@ -98,21 +98,24 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
             gr.Markdown("""
             🔗 **Links**  
-            - [Yang's Lab](https://yanglab.example.edu)  
-            - [GitHub Repository](https://github.com/YangLab/TANDEM-DIMPLE)
+            - [Yang's Lab](https://dyn.life.nthu.edu.tw/info.html)  
+            - [GitHub Repository](https://github.com/locitran/tandem-dimple)
             """)
 
             gr.Markdown("""
             ### What is TANDEM-DIMPLE?
-            A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants...
+            A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants. It integrates protein dynamics with sequence, chemical, and structural features and uses transfer learning to refine models for specific diseases. Trained on ~20,000 variants, it achieves high accuracy in general predictions (83.4%) and excels in disease-specific contexts, reaching 100% accuracy for GJB2 and 97.5% for RYR1, surpassing tools like Rhapsody and AlphaMissense. TANDEM-DIMPLE supports clinicians and geneticists in classifying new variants and improving diagnostic tools for genetic disorders.
             """)
+
+            gr.Image(value="comparison_figure.png", label="", show_label=False, width=None)
+
             gr.Markdown("""
-            **Reference:** Looi Tian, Lee-Wei Yang ... (To be peer-reviewed)  
-            **Contact:** Maintained by Yang Lab at Institute of Bioinformatics, NTHU
+            **Reference:** Loci Tran, Lee-Wei Yang, Predicting the pathogenicity of SAVs Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation. doi: (To be peer-reviewed)  
+            **Contact:** The server is maintained by the Yang Lab at the Institute of Bioinformatics and Structural Biology at National Tsing Hua University, Taiwan.
             """)
 
         # --- RIGHT COLUMN ---
-        with gr.Column(scale=2):
+        with gr.Column(scale=1):
             with gr.Group():
                 gr.Markdown("### User input")
 
