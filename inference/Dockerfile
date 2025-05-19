@@ -32,7 +32,6 @@ ENV CONDA_DEFAULT_ENV tandem
 
 # --- Step 5: Now copy in app source code (changes often) ---
 COPY api.py adapter.py ./
-COPY external_infer/ ./external_infer/
 
 # --- Step 6: Run Flask server ---
 EXPOSE 5000

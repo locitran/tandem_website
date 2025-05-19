@@ -20,6 +20,9 @@ services:
       - "5000"   # internal only; not mapped to host
     depends_on:
       - mongodb
+    volumes:
+      # Mount the external git repo into expected paths
+      - ./inference/external_infer:/app/external_infer/
 
   worker:
     # platform: linux/amd64
@@ -27,7 +30,7 @@ services:
     container_name: worker
     depends_on:
       - mongodb
-      # - inference
+      - inference
     volumes:
       - ./worker:/app
 
