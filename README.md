@@ -2,6 +2,39 @@
 
 Webapp for Tandem-dimple project
 
+## Installation
+
+We need to first have the environment to download the database. This is used by Loci's downloading script.
+
+```bash
+conda env create -f environment_for_downloading_database.yml
+```
+
+Then, we can download the required database for Loci's inference code
+
+```bash
+conda activate tandem
+
+# In ./inference/external_infer/
+bash scripts/download_pfam.sh data/pfamdb # 1.5G, ~1.5m
+bash scripts/download_consurf_db.sh data/consurf/db # 2.5G, ~2m
+# Please skip this database for now
+# We will download this database later
+bash scripts/download_uniref90.sh data/consurf # 90G, ~127m
+```
+
+Then, we can build and run the docker containers.
+
+```bash
+# Build and run all the containers
+docker-compose up -d --build
+
+# Stop all containers
+docker-compose down
+```
+
+We can check the frontend at http://0.0.0.0:7860/
+
 ## Database
 
 * ```user_input```
@@ -12,7 +45,7 @@ Webapp for Tandem-dimple project
 
 * ```gradio_app```
 
-    Frontend for the website.
+    Frontend for the website, exposed on port 7860.
 
     Would check for and update the result from the database automatically, for every 3 seconds.
 
@@ -20,7 +53,7 @@ Webapp for Tandem-dimple project
 
     Database
 
-    container platform: ```linux/amd64``` or ```linux/arm64``` both are OK, very stable. But don't use ```linux/amd64``` on Apple Silicon, since Rosetta does not have CPU AVX support/
+    container platform: ```linux/amd64``` or ```linux/arm64``` both are OK, very stable. But don't use ```linux/amd64``` on Apple Silicon, since Rosetta does not have CPU AVX support.
 
 * ```worker```
 
