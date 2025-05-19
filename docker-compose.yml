@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   gradio_app:
+    # platform: linux/amd64
     build: ./gradio_app
     container_name: gradio_app
     ports:
@@ -12,23 +13,26 @@ services:
       - mongodb
 
   inference:
+    platform: linux/amd64
     build: ./inference
-    container_name: inference_service
+    container_name: inference
     expose:
       - "5000"   # internal only; not mapped to host
     depends_on:
       - mongodb
 
   worker:
+    # platform: linux/amd64
     build: ./worker
     container_name: worker
     depends_on:
       - mongodb
-      - inference
+      # - inference
     volumes:
       - ./worker:/app
 
   mongodb:
+    # platform: linux/amd64
     image: mongo:5
     container_name: mongodb
     ports:
