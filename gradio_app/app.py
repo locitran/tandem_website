@@ -85,7 +85,7 @@ def check_result(session_id):
 
 # --- FRONTEND UI ---
 
-with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !important; }") as demo:
+with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !important; } .boxed-markdown { padding: 5px;}") as demo:
     gr.Markdown("## TANDEM-DIMPLE: Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation")
 
     session_id_state = gr.State("")
@@ -117,20 +117,20 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
         # --- RIGHT COLUMN ---
         with gr.Column(scale=1):
             with gr.Group():
-                gr.Markdown("### User input")
+                gr.Markdown("### User input", elem_classes="boxed-markdown")
 
                 session_id_box = gr.Textbox(label="Session ID", placeholder="Paste or generate one", interactive=True)
                 with gr.Row():
                     new_session_btn = gr.Button("🔄 New Session ID")
                     confirm_session_btn = gr.Button("✅ Confirm Session ID")
-                session_status = gr.Markdown("")
+                session_status = gr.Markdown("", elem_classes="boxed-markdown")
 
 
             # --- Conditional Visibility Wrappers ---
             with gr.Column(visible=False) as input_section:
                 with gr.Group():
                     # gr.Markdown("### Step 1: Submit Your Input")
-                    text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV)")
+                    text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV), separated by comma", placeholder="O14508 52 S N, O14508 52 S N")
                     file_input = gr.File(label="Upload text file or .pdb file", type="binary") #, file_types=[".txt", ".pdb"]
 
                     submit_btn = gr.Button("Submit")
