@@ -4,6 +4,13 @@ Webapp for Tandem-dimple project
 
 ## Installation
 
+First, clone the repo and the submodule (Tandem-Dimple)
+
+```bash
+git clone <path_to_git>
+git submodule update --init
+```
+
 We need to first have the environment to download the database. This is used by Loci's downloading script.
 
 ```bash
@@ -27,10 +34,10 @@ Then, we can build and run the docker containers.
 
 ```bash
 # Build and run all the containers
-docker-compose up -d --build
+docker compose up -d --build
 
 # Stop all containers
-docker-compose down
+docker compose down
 ```
 
 We can check the frontend at http://0.0.0.0:7860/
