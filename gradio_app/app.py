@@ -1,5 +1,5 @@
 import gradio as gr
-import uuid
+import secrets
 import base64
 from pymongo import MongoClient
 
@@ -13,15 +13,23 @@ print("✅ Connected. Collections:", db.list_collection_names())
 
 # --- BACKEND LOGIC ---
 
+def generate_session_id(length=10):
+    return secrets.token_urlsafe(length)[:length]  # e.g., 'Xyz82Gk4vB'
+
 def generate_new_session():
-    new_id = str(uuid.uuid4())
+    # loop until you find an unused ID (garanteed to be unique)
+    while True:
+        new_id = generate_session_id()
+        if input_col.find_one({"session_id": new_id}) is None:
+            break
+
     return (
         gr.update(value=new_id, label="Session ID in use", interactive=False, elem_classes="session-frozen"),
         gr.update(interactive=False),
         gr.update(interactive=False),
         new_id,
         True,
-        "✅ New session ID generated and confirmed.",
+        "✅ New session ID generated and confirmed. <br>ℹ️ Please save the session ID for future reference.",
         gr.update(visible=True),
         gr.update(visible=True)
     )
@@ -38,6 +46,20 @@ def confirm_session(session_id):
             gr.update(visible=False),
             gr.update(visible=False)
         )
+
+    # Check if the session exists in the database
+    if input_col.find_one({"session_id": session_id}) is None:
+        return (
+            gr.update(label="❌ Session ID not found", interactive=True, elem_classes=""),
+            gr.update(interactive=True),
+            gr.update(interactive=True),
+            "",
+            False,
+            "❌ Session ID does not exist. Please generate or paste a valid one.",
+            gr.update(visible=False),
+            gr.update(visible=False)
+        )
+
     return (
         gr.update(label="Session ID in use", interactive=False, elem_classes="session-frozen"),
         gr.update(interactive=False),
