@@ -1,6 +1,7 @@
 import gradio as gr
 import secrets
 import base64
+import logging
 from pymongo import MongoClient
 
 client = MongoClient("mongodb://mongodb:27017/")
@@ -8,7 +9,7 @@ db = client["app_db"]
 input_col = db["input_queue"]
 
 # Check database
-print("✅ Connected. Collections:", db.list_collection_names())
+logging.info("✅ Connected. Collections:", db.list_collection_names())
 
 
 # --- BACKEND LOGIC ---
@@ -88,6 +89,8 @@ def submit_input(session_id, text_input, file_input):
     }
     input_col.insert_one(payload)
 
+    logging.info(f"✅ Submitted input: {payload}")
+
     return f"✅ Submitted with payload: {payload}"
 
 def check_result(session_id):
@@ -120,7 +123,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
             gr.Markdown("""
             🔗 **Links**  
-            - [Yang's Lab](https://dyn.life.nthu.edu.tw/info.html)  
+            - [Yang's Lab](https://khub.nthu.edu.tw/researcherProfile?uuid=959E0BD0-DBBD-478F-90B5-A7583BBFE683)  
             - [GitHub Repository](https://github.com/locitran/tandem-dimple)
             """)
 
