@@ -22,7 +22,7 @@ while True:
     if task:
         logging.info(f"✅ Found task: {task}")
     else:
-        logging.info("No pending tasks found.")
+        logging.debug("No pending tasks found.")
 
     if task:
         try:

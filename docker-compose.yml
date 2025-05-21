@@ -9,8 +9,11 @@ services:
       - "7860:7860"
     volumes:
       - ./gradio_app:/app
+      - ./results:/shared/results  # for result zip files
     depends_on:
       - mongodb
+      - worker
+      - inference
 
   inference:
     platform: linux/amd64
@@ -23,6 +26,7 @@ services:
     volumes:
       # Mount the external git repo into expected paths
       - ./inference/external_infer:/app/external_infer/
+      - ./results:/shared/results  # for result zip files
 
   worker:
     # platform: linux/amd64
@@ -46,3 +50,4 @@ services:
 
 volumes:
   mongo_data:
+  shared_results:

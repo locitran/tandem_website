@@ -4,6 +4,8 @@ import base64
 import logging
 from pymongo import MongoClient
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 input_col = db["input_queue"]
@@ -94,19 +96,35 @@ def submit_input(session_id, text_input, file_input):
     return f"✅ Submitted with payload: {payload}"
 
 def check_result(session_id):
+    """
+    Returns:
+        - result_msg (str): display in frontend textbox
+        - result_table (List[List[Any]]): A list of rows parsed from report.txt, 
+                                          shown in a Gradio Dataframe with columns:
+                                        ["SAVs", "Probability", "Decision", "Voting"]
+        - zip_file_path (str): Path to the zipped folder containing all result files,
+                               returned to a Gradio File component for download.
+        - timer_value (float or None): Time interval to wait before the next polling.
+                                       If None, polling is stopped (i.e., job is complete).
+    """
     if not session_id:
-        return "❌ No session ID", 10.0
+        return "❌ No session ID", [], None, 10.0
 
-    result = input_col.find_one({"session_id": session_id})
+    data = input_col.find_one({"session_id": session_id})
 
-    if result is None:
-        return "❌ Input for this session ID not found.", 10.0
-    elif result["status"] == "pending":
-        return "⏳ Result not ready yet. (Still pending ... would update if finished)", 3.0
-    elif result["status"] == "processing":
-        return "⏳ Result not ready yet. (Still processing ... would update if finished)", 3.0
-    
-    return result, None if result else "⏳ Result not ready yet."
+    if data is None:
+        return "❌ Input for this session ID not found.", [], None, 10.0
+    elif data["status"] == "pending":
+        return "⏳ Result not ready yet. (Still pending ... would update if finished)", [], None, 3.0
+    elif data["status"] == "processing":
+        return "⏳ Result not ready yet. (Still processing ... would update if finished)", [], None, 3.0
+
+    logging.info(f"✅ Result found for session ID {session_id}: {data}")
+
+    table_data = data["result"]
+    zip_path = f"/shared/results/{session_id}_results.zip"
+
+    return "✅ Inference complete. You may download the results below.", table_data, zip_path, None
 
 # --- FRONTEND UI ---
 
@@ -164,6 +182,9 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
             # --- Conditional Visibility Wrappers ---
             with gr.Column(visible=False) as result_section:
                 result_output = gr.Textbox(label="Result Output", lines=6)
+                result_table = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting"])
+                result_zip = gr.File(label="Download Results (.zip)")
+
                 check_btn = gr.Button("Check Result")
 
     # Timer to check result every 3 seconds
@@ -171,7 +192,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
     timer.tick(
         fn=check_result,
         inputs=[session_id_box],
-        outputs=[result_output, timer]
+        outputs=[result_output, result_table, result_zip, timer]
     )
 
     timer_control = gr.State()  # dummy variable to catch the second output
@@ -185,12 +206,12 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
         # 2. Immediately call check_result()
         fn=check_result,
         inputs=[session_id_state],
-        outputs=[result_output, timer_control]
+        outputs=[result_output, result_table, result_zip, timer]
     )
 
     check_btn.click(fn=check_result,
                     inputs=session_id_state,
-                    outputs=[result_output, timer_control])
+                    outputs=[result_output, result_table, result_zip, timer_control])
 
     # --- Event hooks ---
 
@@ -224,4 +245,4 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
     )
 
 # debug=True for auto-reload
-demo.launch(server_name="0.0.0.0", debug=True)
+demo.launch(server_name="0.0.0.0", debug=True, allowed_paths=["/shared/results"])
