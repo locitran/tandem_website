@@ -1,5 +1,5 @@
 # Result zip files
-./results/*.zip
+results/*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
