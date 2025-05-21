@@ -2,6 +2,7 @@ import gradio as gr
 import secrets
 import base64
 import logging
+import time
 from pymongo import MongoClient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -95,7 +96,7 @@ def submit_input(session_id, text_input, file_input):
 
     return f"✅ Submitted with payload: {payload}"
 
-def check_result(session_id):
+def check_result(session_id, processing_start_time):
     """
     Returns:
         - result_msg (str): display in frontend textbox
@@ -106,25 +107,36 @@ def check_result(session_id):
                                returned to a Gradio File component for download.
         - timer_value (float or None): Time interval to wait before the next polling.
                                        If None, polling is stopped (i.e., job is complete).
+        - processing_start_time (float): for tracking elapsed time
     """
     if not session_id:
-        return "❌ No session ID", [], None, 10.0
+        return "❌ No session ID", [], None, 10.0, None
 
     data = input_col.find_one({"session_id": session_id})
 
     if data is None:
-        return "❌ Input for this session ID not found.", [], None, 10.0
+        return "❌ Input for this session ID not found.", [], None, 10.0, None
     elif data["status"] == "pending":
-        return "⏳ Result not ready yet. (Still pending ... would update if finished)", [], None, 3.0
+        return "⏳ Waiting in queue...", [], None, 3.0, None
     elif data["status"] == "processing":
-        return "⏳ Result not ready yet. (Still processing ... would update if finished)", [], None, 3.0
+        # Start timer
+        if processing_start_time is None:
+            processing_start_time = time.time()
 
+        elapsed = int(time.time() - processing_start_time)
+        emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
+        icon = emoji_frames[elapsed % len(emoji_frames)]
+
+        animated_msg = f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed."
+
+        return animated_msg, [], None, 1.0, processing_start_time
+
+    # Status == finished
     logging.info(f"✅ Result found for session ID {session_id}: {data}")
-
     table_data = data["result"]
     zip_path = f"/shared/results/{session_id}_results.zip"
 
-    return "✅ Inference complete. You may download the results below.", table_data, zip_path, None
+    return "✅ Inference complete. You may download the results below.", table_data, zip_path, None, None
 
 # --- FRONTEND UI ---
 
@@ -184,6 +196,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                 result_output = gr.Textbox(label="Result Output", lines=6)
                 result_table = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting"])
                 result_zip = gr.File(label="Download Results (.zip)")
+                processing_start_time = gr.State(None)
 
                 check_btn = gr.Button("Check Result")
 
@@ -191,8 +204,8 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
     timer = gr.Timer(value=3.0, active=True)
     timer.tick(
         fn=check_result,
-        inputs=[session_id_box],
-        outputs=[result_output, result_table, result_zip, timer]
+        inputs=[session_id_state, processing_start_time],
+        outputs=[result_output, result_table, result_zip, timer, processing_start_time]
     )
 
     timer_control = gr.State()  # dummy variable to catch the second output
@@ -203,15 +216,20 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
         inputs=[session_id_state, text_input, file_input],
         outputs=submit_status
     ).then(
-        # 2. Immediately call check_result()
+        # 2. Reset processing timer after submission
+        fn=lambda: None,
+        inputs=[],
+        outputs=processing_start_time
+    ).then(
+        # 3. Call check_result()
         fn=check_result,
-        inputs=[session_id_state],
-        outputs=[result_output, result_table, result_zip, timer]
+        inputs=[session_id_state, processing_start_time],
+        outputs=[result_output, result_table, result_zip, timer, processing_start_time]
     )
 
     check_btn.click(fn=check_result,
-                    inputs=session_id_state,
-                    outputs=[result_output, result_table, result_zip, timer_control])
+                    inputs=[session_id_state, processing_start_time],
+                    outputs=[result_output, result_table, result_zip, timer_control, processing_start_time])
 
     # --- Event hooks ---
 
