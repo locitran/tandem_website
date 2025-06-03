@@ -159,14 +159,15 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
             gr.Markdown("""
             ### What is TANDEM-DIMPLE?
-            A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants. It integrates protein dynamics with sequence, chemical, and structural features and uses transfer learning to refine models for specific diseases. Trained on ~20,000 variants, it achieves high accuracy in general predictions (83.4%) and excels in disease-specific contexts, reaching 100% accuracy for GJB2 and 97.5% for RYR1, surpassing tools like Rhapsody and AlphaMissense. TANDEM-DIMPLE supports clinicians and geneticists in classifying new variants and improving diagnostic tools for genetic disorders.
+            A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants. It integrates protein dynamics with sequence, chemical, and structural features and uses transfer learning to refine models for specific diseases. Trained on ~20,000 variants, it achieves high accuracy in general predictions (83.6%) and excels in disease-specific contexts, reaching 98.7% accuracy for GJB2 and 97.0% for RYR1, surpassing tools like Rhapsody and AlphaMissense. TANDEM-DIMPLE supports clinicians and geneticists in classifying new variants and improving diagnostic tools for genetic disorders.
             """)
 
-            gr.Image(value="comparison_figure.png", label="", show_label=False, width=None)
+            gr.Image(value="3.1.png", label="", show_label=False, width=None)
 
             gr.Markdown("""
-            **Reference:** Loci Tran, Lee-Wei Yang, Predicting the pathogenicity of SAVs Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation. doi: (To be peer-reviewed)  
+            **Reference:** Loci Tran, Lee-Wei Yang, Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation. (In preparation)  
             **Contact:** The server is maintained by the Yang Lab at the Institute of Bioinformatics and Structural Biology at National Tsing Hua University, Taiwan.
+            **Email:** locitran0521@gmail.com
             """)
 
         # --- RIGHT COLUMN ---
@@ -185,7 +186,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
             with gr.Column(visible=False) as input_section:
                 with gr.Group():
                     # gr.Markdown("### Step 1: Submit Your Input")
-                    text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV), separated by comma", placeholder="O14508 52 S N, O14508 52 S N")
+                    text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV), separated by comma", placeholder="O14508 52 S N, P29033 217 Y D")
                     file_input = gr.File(label="Upload text file or .pdb file", type="binary") #, file_types=[".txt", ".pdb"]
 
                     submit_btn = gr.Button("Submit")
