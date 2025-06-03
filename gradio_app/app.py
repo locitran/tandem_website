@@ -20,57 +20,46 @@ logging.info("✅ Connected. Collections:", db.list_collection_names())
 def generate_session_id(length=10):
     return secrets.token_urlsafe(length)[:length]  # e.g., 'Xyz82Gk4vB'
 
-def generate_new_session():
-    # loop until you find an unused ID (garanteed to be unique)
-    while True:
-        new_id = generate_session_id()
-        if input_col.find_one({"session_id": new_id}) is None:
-            break
+def start_session(session_id_input):
+    session_id_input = session_id_input.strip()
 
-    return (
-        gr.update(value=new_id, label="Session ID in use", interactive=False, elem_classes="session-frozen"),
-        gr.update(interactive=False),
-        gr.update(interactive=False),
-        new_id,
-        True,
-        "✅ New session ID generated and confirmed. <br>ℹ️ Please save the session ID for future reference.",
-        gr.update(visible=True),
-        gr.update(visible=True)
-    )
-
-def confirm_session(session_id):
-    if not session_id:
+    # Case 1: Empty input → Generate a new unique session ID
+    if not session_id_input:
+        # loop until finding an unused ID (guaranteed uniqueness)
+        while True:
+            new_id = generate_session_id()
+            if input_col.find_one({"session_id": new_id}) is None:
+                break
         return (
-            gr.update(label="❌ Invalid Session ID", interactive=True, elem_classes=""),
-            gr.update(interactive=True),
-            gr.update(interactive=True),
-            "",
-            False,
-            "❌ Please enter a valid session ID.",
-            gr.update(visible=False),
-            gr.update(visible=False)
+            gr.update(value=new_id, label="Session ID in use", interactive=False, elem_classes="session-frozen"),
+            gr.update(interactive=False),
+            new_id,
+            True,
+            f"🔄 New session ID ({new_id}) has been generated. <br>ℹ️ Please save the session ID for future reference.",
+            gr.update(visible=True),
+            gr.update(visible=True)
         )
 
-    # Check if the session exists in the database
-    if input_col.find_one({"session_id": session_id}) is None:
+    # Case 2: User-provided input, check validity
+    existing = input_col.find_one({"session_id": session_id_input})
+    if existing is None:
         return (
             gr.update(label="❌ Session ID not found", interactive=True, elem_classes=""),
             gr.update(interactive=True),
-            gr.update(interactive=True),
             "",
             False,
-            "❌ Session ID does not exist. Please generate or paste a valid one.",
+            f"❌ Session ID ({session_id_input}) does not exist. Please generate or paste a valid one.",
             gr.update(visible=False),
             gr.update(visible=False)
         )
 
+    # Case 3: Valid existing session
     return (
         gr.update(label="Session ID in use", interactive=False, elem_classes="session-frozen"),
         gr.update(interactive=False),
-        gr.update(interactive=False),
-        session_id,
+        session_id_input,
         True,
-        "✅ Session ID confirmed.",
+        f"✅ Session ({session_id_input}) resumed.",
         gr.update(visible=True),
         gr.update(visible=True)
     )
@@ -140,7 +129,7 @@ def check_result(session_id, processing_start_time):
 
 # --- FRONTEND UI ---
 
-with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !important; } .boxed-markdown { padding: 5px;}") as demo:
+with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !important; } .boxed-markdown { padding: 5px;} .large-info .gr-info {font-size: 22px !important; color: #666;}") as demo:
     gr.Markdown("## TANDEM-DIMPLE: Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation")
 
     session_id_state = gr.State("")
@@ -166,27 +155,30 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
             gr.Markdown("""
             **Reference:** Loci Tran, Lee-Wei Yang, Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation. (In preparation)  
-            **Contact:** The server is maintained by the Yang Lab at the Institute of Bioinformatics and Structural Biology at National Tsing Hua University, Taiwan.
+            **Contact:** The server is maintained by the Yang Lab at the Institute of Bioinformatics and Structural Biology at National Tsing Hua University, Taiwan.  
             **Email:** locitran0521@gmail.com
             """)
 
         # --- RIGHT COLUMN ---
         with gr.Column(scale=1):
             with gr.Group():
-                gr.Markdown("### User input", elem_classes="boxed-markdown")
+                gr.Markdown("### Session", elem_classes="boxed-markdown")
 
-                session_id_box = gr.Textbox(label="Session ID", placeholder="Paste or generate one", interactive=True)
+                session_id_box = gr.Textbox(label="Session ID", placeholder="Start a new session or paste an existing session ID", interactive=True)
                 with gr.Row():
-                    new_session_btn = gr.Button("🔄 New Session ID")
-                    confirm_session_btn = gr.Button("✅ Confirm Session ID")
+                    start_session_btn = gr.Button("▶️ Start / Resume Session")
                 session_status = gr.Markdown("", elem_classes="boxed-markdown")
 
 
             # --- Conditional Visibility Wrappers ---
             with gr.Column(visible=False) as input_section:
                 with gr.Group():
-                    # gr.Markdown("### Step 1: Submit Your Input")
-                    text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV), separated by comma", placeholder="O14508 52 S N, P29033 217 Y D")
+                    gr.Markdown("### User input", elem_classes="boxed-markdown")
+                    text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV), separated by comma", 
+                                            placeholder="O14508 52 S N, P29033 217 Y D", 
+                                            info="[UniProt ID] [Residue ID] [Wild type] [Mutant]", 
+                                            elem_classes=["large-info"]
+                                            )
                     file_input = gr.File(label="Upload text file or .pdb file", type="binary") #, file_types=[".txt", ".pdb"]
 
                     submit_btn = gr.Button("Submit")
@@ -194,12 +186,14 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
             # --- Conditional Visibility Wrappers ---
             with gr.Column(visible=False) as result_section:
-                result_output = gr.Textbox(label="Result Output", lines=6)
-                result_table = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting"])
-                result_zip = gr.File(label="Download Results (.zip)")
-                processing_start_time = gr.State(None)
+                with gr.Group():
+                    gr.Markdown("### Results", elem_classes="boxed-markdown")
+                    result_output = gr.Textbox(label="Result Output", lines=6)
+                    result_table = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting"])
+                    result_zip = gr.File(label="Download Results (.zip)")
+                    processing_start_time = gr.State(None)
 
-                check_btn = gr.Button("Check Result")
+                    check_btn = gr.Button("Check Result")
 
     # Timer to check result every 3 seconds
     timer = gr.Timer(value=3.0, active=True)
@@ -234,34 +228,19 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
     # --- Event hooks ---
 
-    new_session_btn.click(
-        fn=generate_new_session,
-        outputs=[
-            session_id_box,
-            new_session_btn,
-            confirm_session_btn,
-            session_id_state,
-            session_locked_state,
-            session_status,
-            input_section,
-            result_section
-        ]
-    )
-
-    confirm_session_btn.click(
-        fn=confirm_session,
+    start_session_btn.click(
+        fn=start_session,
         inputs=session_id_box,
         outputs=[
-            session_id_box,
-            new_session_btn,
-            confirm_session_btn,
-            session_id_state,
-            session_locked_state,
-            session_status,
+            session_id_box,  # updated textbox (with UUID or frozen)
+            start_session_btn,  # disable button
+            session_id_state,   # store session_id
+            session_locked_state,  # set to True
+            session_status,     # update message
             input_section,
             result_section
         ]
     )
 
 # debug=True for auto-reload
-demo.launch(server_name="0.0.0.0", debug=True, allowed_paths=["/shared/results"])
+demo.launch(server_name="0.0.0.0", allowed_paths=["/shared/results"])
