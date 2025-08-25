@@ -3,14 +3,9 @@ import secrets
 import base64
 import logging
 import time
-import os
-import shutil
-import stat
 from pymongo import MongoClient
 
-from src.tutorial import tutorial
-from src.queryUI import UI_SAVinput, UI_STRinput
-from src.SAV_handler import handle_sav_input
+from tutorial import tutorial
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -18,10 +13,9 @@ client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 input_col = db["input_queue"]
 
-JOB_DIR = '/inference/external_infer/jobs'
-
 # Check database
 logging.info(f"✅ Connected. Collections: {db.list_collection_names()}")
+
 
 # --- BACKEND LOGIC ---
 
@@ -93,52 +87,6 @@ def submit_input(session_id, text_input, file_input):
 
     return f"✅ Submitted with payload: {payload}"
 
-def submit_job(
-        session_id,
-        sav_txt, sav_txt_state, sav_btn, sav_btn_state,
-        str_txt, str_txt_state, str_btn, str_btn_state
-    ):
-    
-    if not session_id:
-        return "❌ No session ID"
-    
-    if sav_btn_state:
-        SAV_input = sav_btn
-    elif sav_txt_state:
-        SAV_input = sav_txt
-    else:
-        SAV_input = None
-    
-    if str_btn_state:
-        folder = os.path.join(JOB_DIR, session_id)
-        os.makedirs(folder, exist_ok=True)
-        shutil.copy(str_btn, folder)
-        
-        filename = os.path.basename(str_btn)
-        filepath = os.path.join(folder, filename)
-        os.chmod(filepath, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
-        
-        STR_input = filename
-    elif str_txt_state:
-        STR_input = str_txt
-    else:
-        STR_input = None
-    
-    SAV_input = handle_sav_input(SAV_input)
-    
-    payload = {
-        "session_id": session_id,
-        "SAV_input": SAV_input,
-        "STR_input": STR_input,
-        "status": "pending",
-        "result": None
-    }
-    input_col.insert_one(payload)
-
-    logging.info(f"✅ Submitted input: {payload}")
-
-    return f"✅ Submitted with payload: {payload}"
-
 def check_result(session_id, processing_start_time):
     """
     Returns:
@@ -198,11 +146,19 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
             with gr.Row():
                 # --- LEFT COLUMN ---
                 with gr.Column(scale=1):
+                    # gr.Markdown("""
+                    # 🔗 **Links**  
+                    # - [Yang's Lab](https://khub.nthu.edu.tw/researcherProfile?uuid=959E0BD0-DBBD-478F-90B5-A7583BBFE683)  
+                    # - [GitHub Repository](https://github.com/locitran/tandem-dimple)
+                    # """)
+
                     gr.Markdown("""
                     ### What is TANDEM-DIMPLE?
                     A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants. It integrates protein dynamics with sequence, chemical, and structural features and uses transfer learning to refine models for specific diseases. Trained on ~20,000 variants, it achieves high accuracy in general predictions (83.6%) and excels in disease-specific contexts, reaching 98.7% accuracy for GJB2 and 97.0% for RYR1, surpassing tools like Rhapsody and AlphaMissense. TANDEM-DIMPLE supports clinicians and geneticists in classifying new variants and improving diagnostic tools for genetic disorders.
                     """)
+
                     gr.Image(value="3.1.png", label="", show_label=False, width=None)
+
                     gr.Markdown("""
                     **Reference:** Loci Tran, Lee-Wei Yang, Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Level Estimation. (In preparation)  
                     **Contact:** The server is maintained by the Yang Lab at the Institute of Bioinformatics and Structural Biology at National Tsing Hua University, Taiwan.  
@@ -219,14 +175,18 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                             start_session_btn = gr.Button("▶️ Start / Resume Session")
                         session_status = gr.Markdown("", elem_classes="boxed-markdown")
 
+
                     # --- Conditional Visibility Wrappers ---
                     with gr.Column(visible=False) as input_section:
                         with gr.Group():
                             gr.Markdown("### User input", elem_classes="boxed-markdown")
-                            
-                            sav_txt, sav_txt_state, sav_btn, sav_btn_state = UI_SAVinput()
-                            str_txt, str_txt_state, str_btn, str_btn_state = UI_STRinput()
-                            
+                            text_input = gr.Textbox(label="UniProt ID with Single Amino Acid Variant (SAV), separated by comma", 
+                                                    placeholder="O14508 52 S N, P29033 217 Y D", 
+                                                    info="[UniProt ID] [Residue ID] [Wild type amino acid] [Mutant amino acid]", 
+                                                    elem_classes=["large-info"]
+                                                    )
+                            file_input = gr.File(label="Upload text file or .pdb file", type="binary") #, file_types=[".txt", ".pdb"]
+
                             submit_btn = gr.Button("Submit")
                             submit_status = gr.Textbox(label="Submission Status", interactive=False)
 
@@ -253,18 +213,16 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
             # 1. First run submit_input()
             submit_btn.click(
-                fn=submit_job,
-                inputs=[
-                    session_id_state,
-                    sav_txt, sav_txt_state, sav_btn, sav_btn_state,
-                    str_txt, str_txt_state, str_btn, str_btn_state,
-                ],
+                fn=submit_input,
+                inputs=[session_id_state, text_input, file_input],
                 outputs=submit_status
-            ).then( # 2. Reset processing timer after submission
+            ).then(
+                # 2. Reset processing timer after submission
                 fn=lambda: None,
                 inputs=[],
                 outputs=processing_start_time
-            ).then( # 3. Call check_result()
+            ).then(
+                # 3. Call check_result()
                 fn=check_result,
                 inputs=[session_id_state, processing_start_time],
                 outputs=[result_output, result_table, result_zip, timer, processing_start_time]
@@ -305,6 +263,8 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
             gr.Markdown("""
             👉 [Click here to open the GitHub repository](https://github.com/locitran/tandem-dimple)
             """)
+            # Click -> link to GitHub repository
+            # How to click to this tag -> link to GitHub repository
         
 # debug=True for auto-reload
 demo.launch(server_name="0.0.0.0", allowed_paths=["/shared/results"], root_path="/TANDEM")

@@ -4,6 +4,7 @@ import importlib.util
 import time
 import logging
 import zipfile
+import base64
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -107,6 +108,76 @@ def inference_result_input_as_list_SAVs(inputs):
     logging.info(f"Total inference time: {time.time() - start_time:.2f} seconds")
 
     return results
+
+
+def tandem(inputs):
+    logging.info(f"✅ Received input: {inputs}")
+    
+    start_time = time.time()
+
+    # Extract info from inputs
+    session_id = inputs.get("session_id", "")
+    SAV_input = inputs.get("SAV_input", "")
+    STR_input = inputs.get("STR_input", "")
+    
+    logging.info(f"STR_input: {STR_input}")
+    job_directory = os.path.join(main_module.ROOT_DIR, 'jobs', session_id)
+    
+    if STR_input:
+        custom_pdb = os.path.join(job_directory, STR_input)
+        logging.info(f"custom_pdb: {custom_pdb}")
+        if not os.path.isfile(custom_pdb):
+            custom_pdb = STR_input
+    else:
+        custom_pdb = None
+    
+    tandem_dimple(
+        query=SAV_input,
+        job_name=session_id,
+        custom_PDB=custom_pdb,
+        refresh=False,
+    )
+
+    logging.info(f"✅ Inference results saved to job name: {session_id}")
+
+    # Zip all the result files
+    result_folder = "./external_infer/jobs"
+
+    zip_path = f"/shared/results/{session_id}_results.zip"
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        for file in os.listdir(os.path.join(result_folder, session_id)):
+            file_path = os.path.join(result_folder, session_id, file)
+            zipf.write(file_path, os.path.basename(file_path))
+
+    # Load result files
+    with open(os.path.join(result_folder, session_id, f"{session_id}-report.txt"), "r") as f:
+        lines = f.readlines()
+
+    header = lines[0].strip().split() # ["SAVs", "Probability", "Decision", "Voting"]
+
+    # Parse the lines into a list of lists
+    lines = [line.strip() for line in lines[1:]]
+
+    results = []
+    for line in lines:
+        # Split the line by whitespace and convert to a list
+        parts = line.split()
+
+        voting = float(parts[-1])
+        decision = parts[-2]
+        probability = float(parts[-3])
+        sav = " ".join(parts[:-3])
+
+        # Create a list of the parts
+        parts = [sav, probability, decision, voting]
+
+        # Append the list to the results
+        results.append(parts)
+
+    logging.info(f"Total inference time: {time.time() - start_time:.2f} seconds")
+    return results
+
+
 
 # Function use for API (should choose which function to use, and parse input?)
 def inference_result(inputs):

@@ -27,8 +27,8 @@ RUN conda create -n tandem python=3.11.11 \
 
 # --- Step 4: Set environment on container boot ---
 SHELL ["/bin/bash", "-c"]
-ENV PATH /opt/conda/envs/tandem/bin:$PATH
-ENV CONDA_DEFAULT_ENV tandem
+ENV PATH=/opt/conda/envs/tandem/bin:$PATH
+ENV CONDA_DEFAULT_ENV=tandem
 
 # --- Step 5: Now copy in app source code (changes often) ---
 COPY api.py adapter.py ./

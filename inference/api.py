@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from adapter import inference_result
+from adapter import inference_result, tandem
 import time
 import logging
 
@@ -19,7 +19,8 @@ def infer():
         return jsonify({"error": "No JSON received"}), 400
 
     try:
-        result = inference_result(input_data)
+        # result = inference_result(input_data)
+        result = tandem(input_data)
         logging.info(f"Inference result: {result}")
 
         return jsonify({"output": result})

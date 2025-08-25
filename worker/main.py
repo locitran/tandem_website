@@ -10,7 +10,7 @@ client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 input_col = db["input_queue"]
 
-logging.info("✅ Connected. Collections:", db.list_collection_names())
+logging.info(f"✅ Connected. Collections: {db.list_collection_names()}")
 
 while True:
     task = input_col.find_one_and_update(
