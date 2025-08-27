@@ -26,7 +26,7 @@ while True:
 
     if task:
         try:
-            logging.info(f"Processing session: {task['session_id']}")
+            logging.info(f"Processing submission: {task['submission_id']}")
 
              # Remove _id field (or deep copy + pop)
             task_to_send = copy.deepcopy(task)

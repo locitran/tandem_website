@@ -52,7 +52,7 @@ def inference_result_input_as_list_SAVs(inputs):
 
     # Extract info from inputs
     text = inputs.get("text", "")
-    session_id = inputs.get("session_id", "")
+    submission_id = inputs.get("submission_id", "")
 
     # Make text into list of SAVs
     # Assuming the input is a string of SAVs separated by commas
@@ -64,24 +64,24 @@ def inference_result_input_as_list_SAVs(inputs):
 
     td = tandem_dimple(
         query = query, # List of SAVs to be analyzed
-        job_name = session_id, # Define where the job will be saved
+        job_name = submission_id, # Define where the job will be saved
         custom_PDB = None, # Path to the custom PDB file (if any)
         refresh = False, # Set to True to refresh the calculation
     )
 
-    logging.info(f"✅ Inference results saved to job name: {session_id}")
+    logging.info(f"✅ Inference results saved to job name: {submission_id}")
 
     # Zip all the result files
     result_folder = "./external_infer/jobs"
 
-    zip_path = f"/shared/results/{session_id}_results.zip"
+    zip_path = f"/shared/results/{submission_id}_results.zip"
     with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for file in os.listdir(os.path.join(result_folder, session_id)):
-            file_path = os.path.join(result_folder, session_id, file)
+        for file in os.listdir(os.path.join(result_folder, submission_id)):
+            file_path = os.path.join(result_folder, submission_id, file)
             zipf.write(file_path, os.path.basename(file_path))
 
     # Load result files
-    with open(os.path.join(result_folder, session_id, f"{session_id}-report.txt"), "r") as f:
+    with open(os.path.join(result_folder, submission_id, f"{submission_id}-report.txt"), "r") as f:
         lines = f.readlines()
 
     header = lines[0].strip().split() # ["SAVs", "Probability", "Decision", "Voting"]
@@ -116,12 +116,12 @@ def tandem(inputs):
     start_time = time.time()
 
     # Extract info from inputs
-    session_id = inputs.get("session_id", "")
+    submission_id = inputs.get("submission_id", "")
     SAV_input = inputs.get("SAV_input", "")
     STR_input = inputs.get("STR_input", "")
     
     logging.info(f"STR_input: {STR_input}")
-    job_directory = os.path.join(main_module.ROOT_DIR, 'jobs', session_id)
+    job_directory = os.path.join(main_module.ROOT_DIR, 'jobs', submission_id)
     
     if STR_input:
         custom_pdb = os.path.join(job_directory, STR_input)
@@ -133,24 +133,24 @@ def tandem(inputs):
     
     tandem_dimple(
         query=SAV_input,
-        job_name=session_id,
+        job_name=submission_id,
         custom_PDB=custom_pdb,
         refresh=False,
     )
 
-    logging.info(f"✅ Inference results saved to job name: {session_id}")
+    logging.info(f"✅ Inference results saved to job name: {submission_id}")
 
     # Zip all the result files
     result_folder = "./external_infer/jobs"
 
-    zip_path = f"/shared/results/{session_id}_results.zip"
+    zip_path = f"/shared/results/{submission_id}_results.zip"
     with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for file in os.listdir(os.path.join(result_folder, session_id)):
-            file_path = os.path.join(result_folder, session_id, file)
+        for file in os.listdir(os.path.join(result_folder, submission_id)):
+            file_path = os.path.join(result_folder, submission_id, file)
             zipf.write(file_path, os.path.basename(file_path))
 
     # Load result files
-    with open(os.path.join(result_folder, session_id, f"{session_id}-report.txt"), "r") as f:
+    with open(os.path.join(result_folder, submission_id, f"{submission_id}-report.txt"), "r") as f:
         lines = f.readlines()
 
     header = lines[0].strip().split() # ["SAVs", "Probability", "Decision", "Voting"]
