@@ -100,22 +100,25 @@ def submit_job(
         sav_txt, sav_txt_state, sav_btn, sav_btn_state,
         str_txt, str_txt_state, str_btn, str_btn_state
     ):
-    
-    if not session_id:
-        return gr.update(visible=True, value="❌ No session ID")
 
-    while True:
-        submission_id = f"{session_id}-{generate_session_id()}"
-        if input_col.find_one({"submission_id": submission_id}) is None:
-            break
-    
+    if not session_id:
+        return gr.update(visible=True, value="❌ No session ID"), gr.State("")
+
     if sav_btn_state:
         SAV_input = sav_btn
     elif sav_txt_state:
         SAV_input = sav_txt
     else:
         SAV_input = None
-    
+
+    if not SAV_input:
+        return gr.update(visible=True, value="❌ No SAV input provided"), gr.State("")
+
+    while True:
+        submission_id = f"{session_id}-{generate_session_id()}"
+        if input_col.find_one({"submission_id": submission_id}) is None:
+            break
+
     if str_btn_state:
         folder = os.path.join(JOB_DIR, submission_id)
         os.makedirs(folder, exist_ok=True)
