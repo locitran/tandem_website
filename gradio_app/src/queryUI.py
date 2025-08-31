@@ -40,7 +40,6 @@ def upload_file(filepath, _type='SAV'):
             f"✅ **{filename}** uploaded!\n{msg}", state]
 
 def UI_SAVinput():
-    gr.Markdown("UniProt ID with Single Amino Acid Variant (SAV)")
     with gr.Row(elem_classes="sav-query"):
         
         sav_txt_state = gr.State(False)
@@ -48,7 +47,7 @@ def UI_SAVinput():
         
         with gr.Column(scale=5, min_width=320):
             sav_txt = gr.Textbox(
-                show_label=False,
+                label="Paste UniProt ID with Single Amino Acid Variant (SAV)",
                 placeholder="O14508 S52N\nP29033 Y217D\n...",
                 max_lines=5,
                 lines=4,
@@ -58,58 +57,46 @@ def UI_SAVinput():
             sav_txt.change(process_sav_txt, sav_txt, [gr.State(False), sav_txt_msg, sav_txt_state])
 
         with gr.Column(scale=3, min_width=200):
+            gr.Markdown("Or")
             sav_btn = gr.UploadButton(
-                label="Upload file",
+                label="Upload a text file",
                 file_count="single",
                 elem_id="sav-btn",
                 file_types=[".txt"],
                 
             )
-            sav_btn_msg = gr.Markdown("Upload a text file (≤150KB)", elem_id="btn-msg")
+            sav_btn_msg = gr.Markdown("File size limit: 150KB", elem_id="btn-msg")
             sav_btn.upload(upload_file, [sav_btn, gr.State('SAV')], [sav_btn, sav_btn_msg, sav_btn_state])
     
     return sav_txt, sav_txt_state, sav_btn, sav_btn_state
 
 def UI_STRinput():
     
-    def _toggle(checked: bool):
-        return [
-            gr.update(visible=checked),
-            gr.update(interactive=True),
-            gr.update(interactive=True),
-        ]
-        
-    checkbox = gr.Checkbox(
-        label="Use customized structure",
-        value=False, # unchecked by default
-    )
-    with gr.Row(visible=False, elem_classes="custom-str") as custom_str:
+    with gr.Row(elem_classes="custom-str") as custom_str:
 
         str_txt_state = gr.State(False)
         str_btn_state = gr.State(False)
         with gr.Column(scale=5, min_width=320):
             str_txt = gr.Textbox(
-                show_label=False,
-                placeholder="PDB ID (e.g., 1G0D) or AF2 ID (e.g., O14508)",
-                lines=1,
+                label="Paste PDB/AF2 ID",
+                placeholder="PDB ID (e.g., 1G0D) or AF2 ID (e.g., O14508)\nLeave blank to let us generate structure for you",
+                lines=4,
                 elem_id="custom-str-txt",
-                interactive=False,
             )
             str_txt_msg = gr.Markdown()
             str_txt.change(process_structure_txt, str_txt, [str_txt_msg, str_txt_state])
             
         with gr.Column(scale=3, min_width=200):
+            gr.Markdown("Or")
             str_btn = gr.UploadButton(
-                label="Choose file",
+                label="Upload a .cif/.pdb file",
                 file_count="single",
                 file_types=[".cif", ".pdb"],
                 elem_id="button",
-                interactive=False,
             )
-            str_btn_msg = gr.Markdown("Upload a .cif/.pdb file (≤10MB)", elem_id="btn-msg")
+            str_btn_msg = gr.Markdown("File size limit: 10MB", elem_id="btn-msg")
             str_btn.upload(upload_file, [str_btn, gr.State('STR')], [str_btn, str_btn_msg, str_btn_state])
     
-    checkbox.change(_toggle, checkbox, [custom_str, str_txt, str_btn])
     return str_txt, str_txt_state, str_btn, str_btn_state
 
 # def submit_job(

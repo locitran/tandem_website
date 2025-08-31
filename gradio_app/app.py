@@ -102,7 +102,7 @@ def submit_job(
     ):
     
     if not session_id:
-        return "❌ No session ID"
+        return gr.update(visible=True, value="❌ No session ID")
 
     while True:
         submission_id = f"{session_id}-{generate_session_id()}"
@@ -146,7 +146,7 @@ def submit_job(
 
     logging.info(f"✅ Submitted input: {payload}")
 
-    return f"✅ Submitted with payload: {payload}", submission_id
+    return gr.update(visible=True, value=f"✅ Submitted with payload: {payload}"), submission_id
 
 
 def refresh_msg(submission_id, processing_start_time):
@@ -273,19 +273,36 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
                     # --- Conditional Visibility Wrappers ---
                     with gr.Column(visible=False) as input_section:
+
                         with gr.Group():
-                            gr.Markdown("### User input", elem_classes="boxed-markdown")
-                            
+                            gr.Markdown("### SAV Queries", elem_classes="boxed-markdown")
                             sav_txt, sav_txt_state, sav_btn, sav_btn_state = UI_SAVinput()
-                            str_txt, str_txt_state, str_btn, str_btn_state = UI_STRinput()
-                            
+
+
+                        with gr.Group():
+                            str_activate = gr.Button("Assign or upload your structure")
+                            # str_select = gr.Radio(
+                            #     ["Let us generate structure for you", "Assign or upload your structure"],
+                            #     value="Let us generate structure for you",
+                            #     interactive=True,
+                            #     show_label=False
+                            # )
+
+                            with gr.Group(visible=False) as str_input_group:
+                                str_txt, str_txt_state, str_btn, str_btn_state = UI_STRinput()
+
+                        with gr.Group():
+                            gr.Markdown("### Prediction Model", elem_classes="boxed-markdown")
                             model_select = gr.Dropdown(
                                 choices = ["Foundation-Model"],
                                 value = "Foundation-Model",
-                                interactive=True
+                                interactive=True,
+                                label="Select Model for Prediction"
                             )
-                            submit_btn = gr.Button("Submit")
-                            submit_status = gr.Textbox(label="Submission Status", interactive=False)
+
+                        with gr.Group():
+                            submit_btn = gr.Button("Submit a prediction task")
+                            submit_status = gr.Textbox(label="Submission Status", interactive=False, visible=False)
 
                     # --- Conditional Visibility Wrappers ---
                     with gr.Column(visible=False) as result_section:
@@ -302,6 +319,12 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                             processing_start_time = gr.State(None)
 
                             check_btn = gr.Button("Check Results")
+
+            str_activate.click(
+                fn=lambda: gr.update(visible=True),
+                inputs=[],
+                outputs=str_input_group
+            )
 
             # Timer to check result every 10 seconds
             timer = gr.Timer(value=10.0, active=True)
