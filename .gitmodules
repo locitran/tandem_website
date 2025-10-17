@@ -1,3 +1,6 @@
 [submodule "inference/external_infer"]
 	path = inference/external_infer
 	url = https://github.com/locitran/tandem-dimple.git
+[submodule "/mnt/nas_1/YangLab/project/tandem_website/inference/tandem"]
+	path = /mnt/nas_1/YangLab/project/tandem_website/inference/tandem
+	url = https://github.com/locitran/tandem.git
