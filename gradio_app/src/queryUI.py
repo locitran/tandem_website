@@ -59,7 +59,7 @@ def UI_SAVinput():
         with gr.Column(scale=3, min_width=200):
             gr.Markdown("Or")
             sav_btn = gr.UploadButton(
-                label="Upload a text file",
+                label="Choose file",
                 file_count="single",
                 elem_id="sav-btn",
                 file_types=[".txt"],
@@ -94,7 +94,7 @@ def UI_STRinput():
                 file_types=[".cif", ".pdb"],
                 elem_id="button",
             )
-            str_btn_msg = gr.Markdown("File size limit: 10MB", elem_id="btn-msg")
+            str_btn_msg = gr.Markdown("Upload a .cif/.pdb file (≤8MB)", elem_id="btn-msg")
             str_btn.upload(upload_file, [str_btn, gr.State('STR')], [str_btn, str_btn_msg, str_btn_state])
     
     return str_txt, str_txt_state, str_btn, str_btn_state

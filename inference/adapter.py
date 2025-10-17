@@ -47,7 +47,7 @@ logging.info("✅ Successfully imported tandem_dimple() from external_infer/src/
 
 def inference_result_input_as_list_SAVs(inputs):
     logging.info(f"✅ Received input: {inputs}")
-    
+
     start_time = time.time()
 
     # Extract info from inputs
@@ -112,17 +112,17 @@ def inference_result_input_as_list_SAVs(inputs):
 
 def tandem(inputs):
     logging.info(f"✅ Received input: {inputs}")
-    
+
     start_time = time.time()
 
     # Extract info from inputs
     submission_id = inputs.get("submission_id", "")
     SAV_input = inputs.get("SAV_input", "")
     STR_input = inputs.get("STR_input", "")
-    
+
     logging.info(f"STR_input: {STR_input}")
     job_directory = os.path.join(main_module.ROOT_DIR, 'jobs', submission_id)
-    
+
     if STR_input:
         custom_pdb = os.path.join(job_directory, STR_input)
         logging.info(f"custom_pdb: {custom_pdb}")
@@ -130,7 +130,7 @@ def tandem(inputs):
             custom_pdb = STR_input
     else:
         custom_pdb = None
-    
+
     tandem_dimple(
         query=SAV_input,
         job_name=submission_id,
@@ -150,10 +150,10 @@ def tandem(inputs):
             zipf.write(file_path, os.path.basename(file_path))
 
     # Load result files
-    with open(os.path.join(result_folder, submission_id, f"{submission_id}-report.txt"), "r") as f:
+    with open(os.path.join(result_folder, submission_id, f"predictions.txt"), "r") as f:
         lines = f.readlines()
 
-    header = lines[0].strip().split() # ["SAVs", "Probability", "Decision", "Voting"]
+    header = lines[0].strip().split() # ["SAVs", "Voting", "Probability", "Decision"]
 
     # Parse the lines into a list of lists
     lines = [line.strip() for line in lines[1:]]
@@ -163,9 +163,10 @@ def tandem(inputs):
         # Split the line by whitespace and convert to a list
         parts = line.split()
 
-        voting = float(parts[-1])
-        decision = parts[-2]
-        probability = float(parts[-3])
+        decision = parts[-1]
+        probability = parts[-2]
+        voting = parts[-3]
+
         sav = " ".join(parts[:-3])
 
         # Create a list of the parts
