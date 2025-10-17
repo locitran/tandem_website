@@ -1,0 +1,3 @@
+[submodule "inference/external_infer"]
+	path = inference/external_infer
+	url = https://github.com/locitran/tandem-dimple.git

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  gradio_app:
+    # platform: linux/amd64
+    build: ./gradio_app
+    container_name: gradio_app
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./gradio_app:/app
+      - ./results:/shared/results  # for result zip files
+    depends_on:
+      - mongodb
+      - worker
+      - inference
+
+  inference:
+    platform: linux/amd64
+    build: ./inference
+    container_name: inference
+    expose:
+      - "5000"   # internal only; not mapped to host
+    depends_on:
+      - mongodb
+    volumes:
+      # Mount the external git repo into expected paths
+      - ./inference/external_infer:/app/external_infer/
+      - ./results:/shared/results  # for result zip files
+
+  worker:
+    # platform: linux/amd64
+    build: ./worker
+    container_name: worker
+    depends_on:
+      - mongodb
+      - inference
+    volumes:
+      - ./worker:/app
+
+  mongodb:
+    # platform: linux/amd64
+    image: mongo:5
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+volumes:
+  mongo_data:
+  shared_results:
