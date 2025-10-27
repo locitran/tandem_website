@@ -283,7 +283,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
 
                         with gr.Group():
-                            str_activate = gr.Button("Assign or upload your structure")
+                            str_activate = gr.Button("✢	Assign or upload your structure")
                             # str_select = gr.Radio(
                             #     ["Let us generate structure for you", "Assign or upload your structure"],
                             #     value="Let us generate structure for you",

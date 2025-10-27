@@ -1,6 +1,8 @@
 # Result zip files
 results/*.zip
 
+*Cache*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

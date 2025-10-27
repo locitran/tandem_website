@@ -59,13 +59,13 @@ def UI_SAVinput():
         with gr.Column(scale=3, min_width=200):
             gr.Markdown("Or")
             sav_btn = gr.UploadButton(
-                label="Choose file",
+                label="Upload a file containing Uniprot IDs and SAVs",
                 file_count="single",
                 elem_id="sav-btn",
                 file_types=[".txt"],
                 
             )
-            sav_btn_msg = gr.Markdown("File size limit: 150KB", elem_id="btn-msg")
+            sav_btn_msg = gr.Markdown("", elem_id="btn-msg")
             sav_btn.upload(upload_file, [sav_btn, gr.State('SAV')], [sav_btn, sav_btn_msg, sav_btn_state])
     
     return sav_txt, sav_txt_state, sav_btn, sav_btn_state
@@ -94,7 +94,7 @@ def UI_STRinput():
                 file_types=[".cif", ".pdb"],
                 elem_id="button",
             )
-            str_btn_msg = gr.Markdown("Upload a .cif/.pdb file (≤8MB)", elem_id="btn-msg")
+            str_btn_msg = gr.Markdown("", elem_id="btn-msg")
             str_btn.upload(upload_file, [str_btn, gr.State('STR')], [str_btn, str_btn_msg, str_btn_state])
     
     return str_txt, str_txt_state, str_btn, str_btn_state
