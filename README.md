@@ -62,7 +62,7 @@ We can check the frontend at http://0.0.0.0:7860/
 
     container platform: ```linux/amd64``` or ```linux/arm64``` both are OK, very stable. But don't use ```linux/amd64``` on Apple Silicon, since Rosetta does not have CPU AVX support.
 
-* ```worker```
+* ```dispatcher```
 
     Automatically fetch user input one-by-one, whose "status" are "pending".
 

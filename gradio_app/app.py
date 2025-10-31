@@ -320,33 +320,45 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 str_txt, str_txt_state, str_btn, str_btn_state = UI_STRinput()
 
                         with gr.Group():
-                            gr.Markdown("### Prediction Model", elem_classes="boxed-markdown")
-                            model_select = gr.Dropdown(
-                                choices = ["Foundation-Model"],
-                                value = "Foundation-Model",
-                                interactive=True,
-                                label="Select Model for Prediction"
-                            )
+                            gr.Markdown("### Task Type Selection", elem_classes="boxed-markdown")
 
-                        with gr.Group():
-                            submit_btn = gr.Button("Submit a prediction task")
-                            submit_status = gr.Textbox(label="Submission Status", interactive=False, visible=False)
+                        with gr.Tabs():
+                            with gr.Tab("Prediction"):
+                                with gr.Group():
+                                    # gr.Markdown("### Prediction Model", elem_classes="boxed-markdown")
+                                    model_select = gr.Dropdown(
+                                        choices = ["Foundation-Model"],
+                                        value = "Foundation-Model",
+                                        interactive=True,
+                                        label="Select a Model for Prediction"
+                                    )
 
-                    # --- Conditional Visibility Wrappers ---
-                    with gr.Column(visible=False) as result_section:
-                        with gr.Group():
-                            gr.Markdown("### Results", elem_classes="boxed-markdown")
-                            result_select = gr.Dropdown(
-                                choices = [],
-                                interactive=True,
-                                label = "Submission Select"
-                            )
-                            result_output = gr.Textbox(label="Result Output", lines=6)
-                            result_table = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting (%)"])
-                            result_zip = gr.File(label="Download Results (.zip)")
-                            processing_start_time = gr.State(None)
+                                with gr.Group():
+                                    submit_btn = gr.Button("Submit a prediction task")
+                                    submit_status = gr.Textbox(label="Submission Status", interactive=False, visible=False)
 
-                            check_btn = gr.Button("Check Results")
+                                # --- Conditional Visibility Wrappers ---
+                                with gr.Column(visible=False) as result_section:
+                                    with gr.Group():
+                                        gr.Markdown("### Results", elem_classes="boxed-markdown")
+                                        result_select = gr.Dropdown(
+                                            choices = [],
+                                            interactive=True,
+                                            label = "Submission Select"
+                                        )
+                                        result_output = gr.Textbox(label="Result Output", lines=6)
+                                        result_table = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting (%)"])
+                                        result_zip = gr.File(label="Download Results (.zip)")
+                                        processing_start_time = gr.State(None)
+
+                                        check_btn = gr.Button("Check Results")
+
+                            with gr.Tab("Transfer Learning"):
+                                gr.Markdown("""
+                                TANDEM-DIMPLE uses transfer learning to adapt a general model to specific diseases.
+                                It refines the model using disease-specific data, improving accuracy for variants associated with those diseases.
+                                """)
+
 
             str_activate.click(
                 fn=lambda: gr.update(visible=True),
@@ -436,14 +448,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                 inputs=[result_select, processing_start_time],
                 outputs=[result_output, timer_msg, processing_start_time]
             )
-            
-        with gr.Tab("Transfer learning"):
-                gr.Markdown("## Transfer learning")
-                gr.Markdown("""
-                TANDEM-DIMPLE uses transfer learning to adapt a general model to specific diseases. 
-                It refines the model using disease-specific data, improving accuracy for variants associated with those diseases.
-                """)
-            
+
         with gr.Tab("Tutorial"):
             gr.Markdown("# Tutorial")
             tutorial()

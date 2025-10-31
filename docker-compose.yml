@@ -11,7 +11,7 @@ services:
       - ./inference:/inference
     depends_on:
       - mongodb
-      - worker
+      - dispatcher
       - inference
     restart: always
 
@@ -29,15 +29,15 @@ services:
       - ./results:/shared/results  # for result zip files
     restart: always
 
-  worker:
+  dispatcher:
     # platform: linux/amd64
-    build: ./worker
-    container_name: worker
+    build: ./dispatcher
+    container_name: dispatcher
     depends_on:
       - mongodb
       - inference
     volumes:
-      - ./worker:/app
+      - ./dispatcher:/app
     restart: always
 
   mongodb:
