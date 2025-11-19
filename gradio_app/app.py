@@ -303,27 +303,26 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                     with gr.Column(visible=False) as input_section:
 
                         with gr.Group():
-                            gr.Markdown("### SAV Queries", elem_classes="boxed-markdown")
-                            sav_txt, sav_txt_state, sav_btn, sav_btn_state = UI_SAVinput()
-
-
-                        with gr.Group():
-                            str_activate = gr.Button("✢	Assign or upload your structure")
-                            # str_select = gr.Radio(
-                            #     ["Let us generate structure for you", "Assign or upload your structure"],
-                            #     value="Let us generate structure for you",
-                            #     interactive=True,
-                            #     show_label=False
-                            # )
-
-                            with gr.Group(visible=False) as str_input_group:
-                                str_txt, str_txt_state, str_btn, str_btn_state = UI_STRinput()
-
-                        with gr.Group():
                             gr.Markdown("### Task Type Selection", elem_classes="boxed-markdown")
 
                         with gr.Tabs():
                             with gr.Tab("Prediction"):
+                                with gr.Group():
+                                    gr.Markdown("### SAV Queries", elem_classes="boxed-markdown")
+                                    sav_txt, sav_txt_state, sav_btn, sav_btn_state = UI_SAVinput()
+
+                                with gr.Group():
+                                    str_activate = gr.Button("✢	Assign or upload your structure")
+                                    # str_select = gr.Radio(
+                                    #     ["Let us generate structure for you", "Assign or upload your structure"],
+                                    #     value="Let us generate structure for you",
+                                    #     interactive=True,
+                                    #     show_label=False
+                                    # )
+
+                                    with gr.Group(visible=False) as str_input_group:
+                                        str_txt, str_txt_state, str_btn, str_btn_state = UI_STRinput()
+
                                 with gr.Group():
                                     # gr.Markdown("### Prediction Model", elem_classes="boxed-markdown")
                                     model_select = gr.Dropdown(
