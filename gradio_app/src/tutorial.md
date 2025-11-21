@@ -1,8 +1,5 @@
-import gradio as gr
+# Tutorial
 
-def tutorial():
-    gr.Markdown(
-        """
 List of Contents
 - [What is single amino acid variant (SAV)?](#what-is-single-amino-acid-variant-sav)
     - [Possible input formats](#possible-input-formats)
@@ -16,7 +13,7 @@ that alters the encoded amino acid.
 
 ## Possible input formats
 
-We can query a SAV, a batch of SAVs, a UniPort ID, or UniProt ID with mutation site. 
+We can query a SAV, a batch of SAVs, a UniPort ID, or UniProt ID with mutation site.
 A SAV should be formatted as `UniPort ID`, `position`, `wt aa`, `mut aa` \
     ("wt" and "mut" refer to wild-type and mutant), where `position` is \
     the place that mutated amino acid (aa) is introduced.
@@ -48,7 +45,7 @@ Custom structure is provided, we will use the custom structure to map the SAV an
     in `.cif` or `.pdb` format, or a PDB ID that can be downloaded from the PDB database.
 
 
-If custom structure is from Alphafold2 database (in `.pdb` format), it should be started with `AF-`. 
+If custom structure is from Alphafold2 database (in `.pdb` format), it should be started with `AF-`.
 If custom structure is a Alphafold3 predicted structure (in `.cif` format), it should contain `alphafoldserver.com/output-terms` in the first line of the file.
 If custom structure is a structure file, ConSurf will compute the conservation score (slower); if it’s a PDB ID, the score is fetched from the ConSurf database (faster).
 
@@ -83,7 +80,7 @@ This file contains the mapping SAVs to PDB structures.
 This file contains the features of the SAVs in the job. The first column is SAV_coords, and the rest are features, 33 features supposedly, which then are the input of model inference.
 
 ## `job_name-report.txt`
-Predicted results are stored in this file. 
+Predicted results are stored in this file.
 
 | SAVs             | Probability | Decision   | Voting |
 |------------------|-------------|------------|--------|
@@ -91,7 +88,7 @@ Predicted results are stored in this file.
 
 *   `SAVs`: SAV coordinates in the input query.
 *   `Probability`: Pathogenicity probability of the SAV.
-*   `Decision`: Pathogenic or Benign. 
+*   `Decision`: Pathogenic or Benign.
 *   `Voting`: Percentage of voting for the decision.
 
 ## `job_name-full_predictions.txt`
@@ -148,15 +145,3 @@ Detailed predictions of each model are stored in this file.
 | Learning rate                          | 5e-5                              |
 | Regularization                         | L2 (1e-4)                         |
 | Number of iterations/epochs            | 300                               |
-
-
-sádasd
-ád
-ád
-á
-d
-        """
-
-
-
-    )
