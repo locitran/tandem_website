@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # Construct the full path to dummy.py
 DUMMY_PATH = os.path.join(
     os.path.dirname(__file__),
-    "external_infer",
+    "tandem",
     "test",
     "dummy.py"
 )
@@ -33,15 +33,15 @@ def inference_result_dummy(inputs):
 
     return result
 
-# --- Locate main.py in external_infer/src ---
-external_root = os.path.join(os.path.dirname(__file__), "external_infer")
+# --- Locate main.py in tandem/src ---
+external_root = os.path.join(os.path.dirname(__file__), "tandem")
 if external_root not in sys.path:
     sys.path.insert(0, external_root)
 
 # --- Step 2: Import src.main (relative imports will work!) ---
 main_module = importlib.import_module("src.main")
 tandem_dimple = main_module.tandem_dimple
-logging.info("✅ Successfully imported tandem_dimple() from external_infer/src/main.py")
+logging.info("✅ Successfully imported tandem_dimple() from tandem/src/main.py")
 
 
 def inference_result_input_as_list_SAVs(inputs):
@@ -71,7 +71,7 @@ def inference_result_input_as_list_SAVs(inputs):
     logging.info(f"✅ Inference results saved to job name: {session_id}")
 
     # Zip all the result files
-    result_folder = "./external_infer/jobs"
+    result_folder = "./tandem/jobs"
 
     zip_path = f"/shared/results/{session_id}_results.zip"
     with zipfile.ZipFile(zip_path, 'w') as zipf:

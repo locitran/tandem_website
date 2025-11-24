@@ -22,7 +22,7 @@ Then, we can download the required database for Loci's inference code
 ```bash
 conda activate tandem
 
-# In ./inference/external_infer/
+# In ./inference/tandem/
 bash scripts/download_pfam.sh data/pfamdb # 1.5G, ~1.5m
 bash scripts/download_consurf_db.sh data/consurf/db # 2.5G, ~2m
 # Please skip this database for now

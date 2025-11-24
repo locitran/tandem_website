@@ -5,10 +5,10 @@ FROM continuumio/miniconda3
 WORKDIR /app
 
 # --- Step 1: Copy only dependency declarations first ---
-COPY external_infer/requirements.txt ./requirements.txt
+COPY tandem/requirements.txt ./requirements.txt
 
 # Optional: copy only environment-relevant parts early
-COPY external_infer/pyRONN ./pyRONN
+COPY tandem/pyRONN ./pyRONN
 
 # --- Step 2: Install system dependencies ---
 RUN apt update --quiet \
