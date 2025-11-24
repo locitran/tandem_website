@@ -40,7 +40,7 @@ services:
 
   mongodb:
     # platform: linux/amd64
-    image: mongo:5
+    image: mongo:4.4
     container_name: mongodb
     ports:
       - "27017:27017"

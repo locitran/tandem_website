@@ -85,3 +85,7 @@ We can check the frontend at http://0.0.0.0:7860/
     Use git submodule to link to Loci's inference git repo.
 
     Use ```adapter.py``` to import Loci's inference functions.
+
+## Reach the website outside, but now Typhoon `140.114.97.194`
+
+http://140.114.97.194:7860

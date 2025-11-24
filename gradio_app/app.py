@@ -12,7 +12,7 @@ db = client["app_db"]
 input_col = db["input_queue"]
 
 # Check database
-logging.info("✅ Connected. Collections:", db.list_collection_names())
+logging.info(f"✅ Connected. Collections: {db.list_collection_names()}")
 
 
 # --- BACKEND LOGIC ---
