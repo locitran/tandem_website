@@ -3,7 +3,7 @@ from pathlib import Path
 import gradio as gr
 
 # from ..main import tandem_dimple
-from .SAV_handler import _read_text_file_safely, process_sav_txt, handle_sav_input
+from .SAV_handler import _read_text_file_safely, process_sav_txt, process_labeled_sav_txt, handle_sav_input
 from .STR_handler import process_structure_txt
 
 MAX_BYTES = 8 * 1e+6 # 8M
@@ -31,6 +31,10 @@ def upload_file(filepath, _type='SAV'):
         # Read & parse
         txt = _read_text_file_safely(filepath)
         _, msg, state = process_sav_txt(txt)
+    elif _type == 'SAVLABEL':
+        # Read & parse
+        txt = _read_text_file_safely(filepath)
+        _, msg, state = process_labeled_sav_txt(txt)
     elif _type == 'STR': # structure file
         msg, state = f"✅ Received 1 file.", True
         pass
@@ -94,7 +98,7 @@ def UI_SAVLABELinput():
                 elem_id="savlabel-txt",
             )
             savlabel_txt_msg = gr.Markdown()
-            savlabel_txt.change(process_sav_txt, savlabel_txt, [gr.State(False), savlabel_txt_msg, savlabel_txt_state])
+            savlabel_txt.change(process_labeled_sav_txt, savlabel_txt, [gr.State(False), savlabel_txt_msg, savlabel_txt_state])
 
         with gr.Column(scale=3, min_width=200):
             gr.Markdown("Or")
@@ -108,7 +112,16 @@ def UI_SAVLABELinput():
             savlabel_btn_msg = gr.Markdown("", elem_id="btn-msg")
             savlabel_btn.upload(upload_file, [savlabel_btn, gr.State('SAVLABEL')], [savlabel_btn, savlabel_btn_msg, savlabel_btn_state])
 
-    return savlabel_txt, savlabel_txt_state, savlabel_btn, savlabel_btn_state
+    return {
+        "text": {
+            "stat": savlabel_txt_state,
+            "data": savlabel_txt
+        },
+        "file": {
+            "stat": savlabel_btn_state,
+            "data": savlabel_btn
+        }
+    }
 
 def UI_STRinfo():
     with gr.Row(elem_classes="custom-str"):

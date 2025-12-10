@@ -108,7 +108,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                         gr.Markdown("## Task Type Selection", elem_classes="boxed-markdown")
 
                         with gr.Tabs():
-                            with gr.Tab("Prediction"):
+                            with gr.Tab("Inference"):
                                 from src.queryUI import UI_SAVinfo, UI_STRinfo
 
                                 page_pred = {}
@@ -131,7 +131,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                     )
 
                                 with gr.Group():
-                                    gr.Markdown("### Select a Model for Prediction", elem_classes="boxed-markdown")
+                                    gr.Markdown("### Select a Model for Inference", elem_classes="boxed-markdown")
                                     page_pred["model_select"] = model_select = gr.Dropdown(
                                         choices = ["Foundation-Model"],
                                         value = "Foundation-Model",
@@ -140,7 +140,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                     )
 
                                 with gr.Group():
-                                    page_pred["submit_btn"] = gr.Button("Submit a prediction task")
+                                    page_pred["submit_btn"] = gr.Button("Submit an inference task")
                                     page_pred["submit_status"] = gr.Textbox(label="Submission Status", interactive=False, visible=False)
 
                                 # --- Conditional Visibility Wrappers ---
@@ -160,7 +160,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                         # processing_start_time = gr.State(None)
                                         # check_btn = gr.Button("Check Results")
 
-                                def submit_job(
+                                def submit_job_pred(
                                         session_id,
                                         sav_txt, sav_txt_state, sav_btn, sav_btn_state,
                                         str_txt, str_txt_state, str_btn, str_btn_state
@@ -217,7 +217,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                     return gr.update(visible=True, value=f"✅ Submitted with payload: {payload}"), submission_id
 
 
-                                def refresh_msg(submission_id):
+                                def refresh_msg_pred(submission_id):
                                     """
                                     Returns:
                                         - result_msg (str): display in frontend textbox
@@ -245,7 +245,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                     return "✅ Inference complete. You may download the results below.", 10.0, None
 
 
-                                def check_result(submission_id):
+                                def check_result_pred(submission_id):
                                     """
                                     Returns:
                                         - result_table (List[List[Any]]): A list of rows parsed from report.txt,
@@ -274,7 +274,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                     return table_data, zip_path, 10.0
 
 
-                                def refresh_results(session_id, result_section):
+                                def refresh_results_pred(session_id, result_section):
                                     if not session_id:
                                         return
 
@@ -292,29 +292,29 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                         "value": result_section if result_section else hist[0].get("submission_id", session_id)
                                     }
 
-                                    return gr.update(visible=True), gr.update(**args), *check_result(args["value"])
+                                    return gr.update(visible=True), gr.update(**args), *check_result_pred(args["value"])
 
 
                                 # Timer to check result every 10 seconds
-                                timer = gr.Timer(value=10.0, active=True)
-                                timer_msg = gr.Timer(value=3.0, active=True)
+                                page_pred["timer"] = gr.Timer(value=10.0, active=True)
+                                page_pred["timer_msg"] = gr.Timer(value=3.0, active=True)
 
-                                timer.tick(
-                                    fn=refresh_results,
+                                page_pred["timer"].tick(
+                                    fn=refresh_results_pred,
                                     inputs=[session_id_state, page_pred["result"]["select"]],
-                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], timer]
+                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
                                 )
-                                timer_msg.tick(
-                                    fn=refresh_msg,
+                                page_pred["timer_msg"].tick(
+                                    fn=refresh_msg_pred,
                                     inputs=[page_pred["result"]["select"]],
-                                    outputs=[page_pred["result"]["output"], timer_msg]
+                                    outputs=[page_pred["result"]["output"], page_pred["timer_msg"]]
                                 )
 
-                                timer_control = gr.State()  # dummy variable to catch the second output
+                                # timer_control = gr.State()  # dummy variable to catch the second output
 
                                 # 1. First run submit_input()
                                 page_pred["submit_btn"].click(
-                                    fn=submit_job,
+                                    fn=submit_job_pred,
                                     inputs=[
                                         session_id_state,
                                         page_pred["sav_info"]["text"]["data"], page_pred["sav_info"]["text"]["stat"], page_pred["sav_info"]["file"]["data"], page_pred["sav_info"]["file"]["stat"],
@@ -326,23 +326,23 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 #     inputs=[],
                                 #     outputs=processing_start_time
                                 ).then(# 3. Call check_result()
-                                    fn=refresh_results,
+                                    fn=refresh_results_pred,
                                     inputs=[session_id_state, submission_id_state],
-                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], timer]
+                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
                                 ).then(
-                                    fn=refresh_msg,
+                                    fn=refresh_msg_pred,
                                     inputs=[page_pred["result"]["select"]],
-                                    outputs=[page_pred["result"]["output"], timer_msg]
+                                    outputs=[page_pred["result"]["output"], page_pred["timer_msg"]]
                                 )
 
                                 page_pred["result"]["select"].change(
-                                    fn=refresh_results,
+                                    fn=refresh_results_pred,
                                     inputs=[session_id_state, page_pred["result"]["select"]],
-                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], timer]
+                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
                                 ).then(
-                                    fn=refresh_msg,
+                                    fn=refresh_msg_pred,
                                     inputs=[page_pred["result"]["select"]],
-                                    outputs=[page_pred["result"]["output"], timer_msg]
+                                    outputs=[page_pred["result"]["output"], page_pred["timer_msg"]]
                                 )
 
                                 # check_btn.click(
@@ -400,6 +400,192 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                         # processing_start_time = gr.State(None)
                                         # check_btn = gr.Button("Check Results")
 
+                                def submit_job_trans(
+                                        session_id,
+                                        sav_txt, sav_txt_state, sav_btn, sav_btn_state,
+                                        str_txt, str_txt_state, str_btn, str_btn_state
+                                    ):
+
+                                    if not session_id:
+                                        return gr.update(visible=True, value="❌ No session ID"), gr.State("")
+
+                                    if sav_btn_state:
+                                        SAV_input = sav_btn
+                                    elif sav_txt_state:
+                                        SAV_input = sav_txt
+                                    else:
+                                        SAV_input = None
+
+                                    if not SAV_input:
+                                        return gr.update(visible=True, value="❌ No SAV input provided"), gr.State("")
+
+                                    while True:
+                                        submission_id = f"{session_id}-{generate_session_id()}"
+                                        if input_col.find_one({"submission_id": submission_id}) is None:
+                                            break
+
+                                    if str_btn_state:
+                                        folder = os.path.join(JOB_DIR, submission_id)
+                                        os.makedirs(folder, exist_ok=True)
+                                        shutil.copy(str_btn, folder)
+
+                                        filename = os.path.basename(str_btn)
+                                        filepath = os.path.join(folder, filename)
+                                        os.chmod(filepath, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
+
+                                        STR_input = filename
+                                    elif str_txt_state:
+                                        STR_input = str_txt
+                                    else:
+                                        STR_input = None
+
+                                    SAV_input = handle_sav_input(SAV_input, with_labels=True)
+
+                                    payload = {
+                                        "session_id": session_id,
+                                        "submission_id": submission_id,
+                                        "ts": time.time_ns(),
+                                        "with_labels": True,
+                                        "SAV_input": SAV_input,
+                                        "STR_input": STR_input,
+                                        "status": "pending",
+                                        "result": None
+                                    }
+                                    input_col.insert_one(payload)
+
+                                    logging.info(f"✅ Submitted input: {payload}")
+
+                                    return gr.update(visible=True, value=f"✅ Submitted with payload: {payload}"), submission_id
+
+
+                                def refresh_msg_trans(submission_id):
+                                    """
+                                    Returns:
+                                        - result_msg (str): display in frontend textbox
+                                        - timer_value (float or None): Time interval to wait before the next polling.
+                                                                    If None, polling is stopped (i.e., job is complete).
+                                    """
+                                    if not submission_id:
+                                        return "❌ No submission ID", 10.0, None
+
+                                    data = input_col.find_one({"submission_id": submission_id}) or input_col.find_one({"session_id": submission_id})
+
+                                    if data is None:
+                                        return "❌ Input for this submission ID not found.",  10.0, None
+                                    elif data["status"] == "pending":
+                                        return "⏳ Waiting in queue...", 3.0, None
+                                    elif data["status"] == "processing":
+                                        elapsed = int(time.time_ns() - data.get("ts", time.time_ns())) // 1_000_000_000
+                                        emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
+                                        icon = emoji_frames[elapsed % len(emoji_frames)]
+
+                                        animated_msg = f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} since queued."
+
+                                        return animated_msg, 1.0
+
+                                    return "✅ Inference complete. You may download the results below.", 10.0, None
+
+
+                                def check_result_trans(submission_id):
+                                    """
+                                    Returns:
+                                        - result_table (List[List[Any]]): A list of rows parsed from report.txt,
+                                                                        shown in a Gradio Dataframe with columns:
+                                                                        ["SAVs", "Probability", "Decision", "Voting"]
+                                        - zip_file_path (str): Path to the zipped folder containing all result files,
+                                                            returned to a Gradio File component for download.
+                                        - timer_value (float or None): Time interval to wait before the next polling.
+                                                                    If None, polling is stopped (i.e., job is complete).
+                                    """
+                                    if not submission_id:
+                                        return [], None, 10.0
+
+                                    data = input_col.find_one({"submission_id": submission_id}) or input_col.find_one({"session_id": submission_id})
+
+                                    if data is None:
+                                        return [], None, 10.0
+                                    elif data["status"] in ("pending", "processing", ):
+                                        return [], None, 10.0
+
+                                    # Status == finished
+                                    logging.info(f"✅ Result found for submission ID {submission_id}: {data}")
+                                    table_data = data["result"]
+                                    zip_path = f"/shared/results/{submission_id}_results.zip"
+
+                                    return table_data, zip_path, 10.0
+
+
+                                def refresh_results_trans(session_id, result_section):
+                                    if not session_id:
+                                        return
+
+                                    history = input_col.find({"session_id": session_id, "with_labels": True})
+                                    if not history:
+                                        return
+
+                                    hist = list(sorted(history, key=lambda x: -x.get("ts",0)))
+                                    if not hist:
+                                        return
+
+                                    args = {
+                                        "visible": True,
+                                        "choices": [s.get("submission_id", session_id) for s in hist],
+                                        "value": result_section if result_section else hist[0].get("submission_id", session_id)
+                                    }
+
+                                    return gr.update(visible=True), gr.update(**args), *check_result_pred(args["value"])
+
+
+                                # Timer to check result every 10 seconds
+                                page_trans["timer"] = gr.Timer(value=10.0, active=True)
+                                page_trans["timer_msg"] = gr.Timer(value=3.0, active=True)
+
+                                page_trans["timer"].tick(
+                                    fn=refresh_results_trans,
+                                    inputs=[session_id_state, page_trans["result"]["select"]],
+                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                )
+                                page_trans["timer_msg"].tick(
+                                    fn=refresh_msg_trans,
+                                    inputs=[page_trans["result"]["select"]],
+                                    outputs=[page_trans["result"]["output"], page_trans["timer_msg"]]
+                                )
+
+                                # timer_control = gr.State()  # dummy variable to catch the second output
+
+                                # 1. First run submit_input()
+                                page_trans["submit_btn"].click(
+                                    fn=submit_job_trans,
+                                    inputs=[
+                                        session_id_state,
+                                        page_trans["sav_info"]["text"]["data"], page_trans["sav_info"]["text"]["stat"], page_trans["sav_info"]["file"]["data"], page_trans["sav_info"]["file"]["stat"],
+                                        page_trans["str_info"]["text"]["data"], page_trans["str_info"]["text"]["stat"], page_trans["str_info"]["file"]["data"], page_trans["str_info"]["file"]["stat"],
+                                    ],
+                                    outputs=[page_trans["submit_status"], submission_id_state]
+                                # ).then( # 2. Reset processing timer after submission
+                                #     fn=lambda: None,
+                                #     inputs=[],
+                                #     outputs=processing_start_time
+                                ).then(# 3. Call check_result()
+                                    fn=refresh_results_trans,
+                                    inputs=[session_id_state, submission_id_state],
+                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                ).then(
+                                    fn=refresh_msg_trans,
+                                    inputs=[page_trans["result"]["select"]],
+                                    outputs=[page_trans["result"]["output"], page_trans["timer_msg"]]
+                                )
+
+                                page_trans["result"]["select"].change(
+                                    fn=refresh_results_trans,
+                                    inputs=[session_id_state, page_trans["result"]["select"]],
+                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                ).then(
+                                    fn=refresh_msg_trans,
+                                    inputs=[page_trans["result"]["select"]],
+                                    outputs=[page_trans["result"]["output"], page_trans["timer_msg"]]
+                                )
+
 
         start_session_btn.click(
             fn=start_session,
@@ -413,13 +599,13 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                 workspace,
             ]
         ).then(
-            fn=refresh_results,
+            fn=refresh_results_pred,
             inputs=[session_id_state, page_pred["result"]["select"]],
-            outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], timer]
+            outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
         ).then(
-            fn=refresh_msg,
+            fn=refresh_msg_pred,
             inputs=[page_pred["result"]["select"]],
-            outputs=[page_pred["result"]["output"], timer_msg]
+            outputs=[page_pred["result"]["output"], page_pred["timer_msg"]]
         )
 
         with gr.Tab("Tutorial"):

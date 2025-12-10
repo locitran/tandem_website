@@ -120,6 +120,8 @@ def tandem(inputs):
     SAV_input = inputs.get("SAV_input", "")
     STR_input = inputs.get("STR_input", "")
 
+    with_labels = inputs.get("with_labels", False)
+
     logging.info(f"STR_input: {STR_input}")
     job_directory = os.path.join(main_module.ROOT_DIR, 'jobs', submission_id)
 
@@ -131,14 +133,26 @@ def tandem(inputs):
     else:
         custom_pdb = None
 
-    tandem_dimple(
-        query=SAV_input,
-        job_name=submission_id,
-        custom_PDB=custom_pdb,
-        refresh=False,
-    )
-
-    logging.info(f"✅ Inference results saved to job name: {submission_id}")
+    if not with_labels:
+        logging.info("Running standard inference...")
+        tandem_dimple(
+            query=SAV_input,
+            job_name=submission_id,
+            custom_PDB=custom_pdb,
+            refresh=False,
+        )
+        logging.info(f"✅ Inference results saved to job name: {submission_id}")
+    else:
+        logging.info("Running transfer learning...")
+        tandem_dimple(
+            # labels=[int(x.split()[-1]) for x in SAV_input],
+            labels=None,
+            query=[" ".join(x.split()[:-1]) for x in SAV_input],
+            job_name=submission_id,
+            custom_PDB=custom_pdb,
+            refresh=False,
+        )
+        logging.info(f"✅ Transfer learning results saved to job name: {submission_id}")
 
     # Zip all the result files
     result_folder = "./external_infer/jobs"
