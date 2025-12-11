@@ -119,6 +119,7 @@ def tandem(inputs):
     submission_id = inputs.get("submission_id", "")
     SAV_input = inputs.get("SAV_input", "")
     STR_input = inputs.get("STR_input", "")
+    models = inputs.get("models", None)
 
     with_labels = inputs.get("with_labels", False)
 

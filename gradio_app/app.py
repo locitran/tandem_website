@@ -132,7 +132,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
                                 with gr.Group():
                                     gr.Markdown("### Select a Model for Inference", elem_classes="boxed-markdown")
-                                    page_pred["model_select"] = model_select = gr.Dropdown(
+                                    page_pred["model_select"] = gr.Dropdown(
                                         choices = ["Foundation-Model"],
                                         value = "Foundation-Model",
                                         interactive=True,
@@ -158,12 +158,13 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                         page_pred["result"]["table"] = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting (%)"])
                                         page_pred["result"]["zip"] = gr.File(label="Download Results (.zip)")
                                         # processing_start_time = gr.State(None)
-                                        # check_btn = gr.Button("Check Results")
+                                        # page_pred["result"]["check_btn"] = gr.Button("Check Results")
 
                                 def submit_job_pred(
                                         session_id,
                                         sav_txt, sav_txt_state, sav_btn, sav_btn_state,
-                                        str_txt, str_txt_state, str_btn, str_btn_state
+                                        str_txt, str_txt_state, str_btn, str_btn_state,
+                                        model_select
                                     ):
 
                                     if not session_id:
@@ -201,12 +202,15 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
                                     SAV_input = handle_sav_input(SAV_input)
 
+                                    models = model_select if model_select else "Foundation-Model"
+
                                     payload = {
                                         "session_id": session_id,
                                         "submission_id": submission_id,
                                         "ts": time.time_ns(),
                                         "SAV_input": SAV_input,
                                         "STR_input": STR_input,
+                                        "models": None if models=="Foundation-Model" else f"{session_id}-{models}",
                                         "status": "pending",
                                         "result": None
                                     }
@@ -278,21 +282,36 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                     if not session_id:
                                         return
 
-                                    history = input_col.find({"session_id": session_id})
-                                    if not history:
-                                        return
+                                    history = list(input_col.find({"session_id": session_id}))
+                                    # if not history:
+                                    #     return
 
-                                    hist = list(sorted(history, key=lambda x: -x.get("ts",0)))
+                                    models = [h["submission_id"].split("-")[-1] for h in history if h.get("with_labels", False)]
+                                    logging.info(f"Detected models from history: {models}")
+
+                                    model_args = {
+                                        "choices": ["Foundation-Model"],
+                                    }
+                                    if models:
+                                        model_args["choices"] += list(set(models))
+
+                                    logging.info(f"History for session {session_id}: {[h['submission_id'] for h in history]}")
+
+                                    runs = [h for h in history if not h.get("with_labels", False)]
+                                    hist = list(sorted(runs, key=lambda x: -x.get("ts",0)))
+                                    # if not hist:
+                                    #     return
+
                                     if not hist:
-                                        return
+                                        return gr.update(visible=False), gr.update(**model_args), gr.update(choices=[], value=None), [], None, 10.0
 
-                                    args = {
+                                    output_args = {
                                         "visible": True,
                                         "choices": [s.get("submission_id", session_id) for s in hist],
                                         "value": result_section if result_section else hist[0].get("submission_id", session_id)
                                     }
 
-                                    return gr.update(visible=True), gr.update(**args), *check_result_pred(args["value"])
+                                    return gr.update(visible=True), gr.update(**model_args), gr.update(**output_args), *check_result_pred(output_args["value"])
 
 
                                 # Timer to check result every 10 seconds
@@ -302,7 +321,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 page_pred["timer"].tick(
                                     fn=refresh_results_pred,
                                     inputs=[session_id_state, page_pred["result"]["select"]],
-                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
+                                    outputs=[page_pred["result"]["section"], page_pred["model_select"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
                                 )
                                 page_pred["timer_msg"].tick(
                                     fn=refresh_msg_pred,
@@ -319,6 +338,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                         session_id_state,
                                         page_pred["sav_info"]["text"]["data"], page_pred["sav_info"]["text"]["stat"], page_pred["sav_info"]["file"]["data"], page_pred["sav_info"]["file"]["stat"],
                                         page_pred["str_info"]["text"]["data"], page_pred["str_info"]["text"]["stat"], page_pred["str_info"]["file"]["data"], page_pred["str_info"]["file"]["stat"],
+                                        page_pred["model_select"],
                                     ],
                                     outputs=[page_pred["submit_status"], submission_id_state]
                                 # ).then( # 2. Reset processing timer after submission
@@ -328,7 +348,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 ).then(# 3. Call check_result()
                                     fn=refresh_results_pred,
                                     inputs=[session_id_state, submission_id_state],
-                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
+                                    outputs=[page_pred["result"]["section"], page_pred["model_select"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
                                 ).then(
                                     fn=refresh_msg_pred,
                                     inputs=[page_pred["result"]["select"]],
@@ -338,21 +358,21 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 page_pred["result"]["select"].change(
                                     fn=refresh_results_pred,
                                     inputs=[session_id_state, page_pred["result"]["select"]],
-                                    outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
+                                    outputs=[page_pred["result"]["section"], page_pred["model_select"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
                                 ).then(
                                     fn=refresh_msg_pred,
                                     inputs=[page_pred["result"]["select"]],
                                     outputs=[page_pred["result"]["output"], page_pred["timer_msg"]]
                                 )
 
-                                # check_btn.click(
-                                #     fn=refresh_results,
+                                # page_pred["result"]["check_btn"].click(
+                                #     fn=refresh_results_pred,
                                 #     inputs=[session_id_state, page_pred["result"]["select"]],
-                                #     outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], timer]
+                                #     outputs=[page_pred["result"]["section"], page_pred["model_select"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
                                 # ).then(
-                                #     fn=refresh_msg,
+                                #     fn=refresh_msg_pred,
                                 #     inputs=[page_pred["result"]["select"]],
-                                #     outputs=[page_pred["result"]["output"], timer_msg]
+                                #     outputs=[page_pred["result"]["output"], page_pred["timer_msg"]]
                                 # )
 
                                 # --- Event hooks ---
@@ -483,7 +503,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
                                         return animated_msg, 1.0
 
-                                    return "✅ Inference complete. You may download the results below.", 10.0, None
+                                    return "✅ Transfer Learning complete. You may download the results below.", 10.0, None
 
 
                                 def check_result_trans(submission_id):
@@ -537,7 +557,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
 
                                 # Timer to check result every 10 seconds
-                                page_trans["timer"] = gr.Timer(value=10.0, active=True)
+                                page_trans["timer"] = gr.Timer(value=2.0, active=True)
                                 page_trans["timer_msg"] = gr.Timer(value=3.0, active=True)
 
                                 page_trans["timer"].tick(
@@ -601,7 +621,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
         ).then(
             fn=refresh_results_pred,
             inputs=[session_id_state, page_pred["result"]["select"]],
-            outputs=[page_pred["result"]["section"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
+            outputs=[page_pred["result"]["section"], page_pred["model_select"], page_pred["result"]["select"], page_pred["result"]["table"], page_pred["result"]["zip"], page_pred["timer"]]
         ).then(
             fn=refresh_msg_pred,
             inputs=[page_pred["result"]["select"]],
