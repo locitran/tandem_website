@@ -121,6 +121,8 @@ def tandem(inputs):
     STR_input = inputs.get("STR_input", "")
     models = inputs.get("models", None)
 
+    result_folder = "./external_infer/jobs"
+
     with_labels = inputs.get("with_labels", False)
 
     logging.info(f"STR_input: {STR_input}")
@@ -143,57 +145,61 @@ def tandem(inputs):
             refresh=False,
         )
         logging.info(f"✅ Inference results saved to job name: {submission_id}")
+
+        # Zip all the result files
+        zip_path = f"/shared/results/{submission_id}_results.zip"
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file in os.listdir(os.path.join(result_folder, submission_id)):
+                file_path = os.path.join(result_folder, submission_id, file)
+                zipf.write(file_path, os.path.basename(file_path))
+
+        # Load result files
+        with open(os.path.join(result_folder, submission_id, f"predictions.txt"), "r") as f:
+            lines = f.readlines()
+
+        header = lines[0].strip().split() # ["SAVs", "Voting", "Probability", "Decision"]
+
+        # Parse the lines into a list of lists
+        lines = [line.strip() for line in lines[1:]]
+
+        results = []
+        for line in lines:
+            # Split the line by whitespace and convert to a list
+            parts = line.split()
+
+            decision = parts[-1]
+            probability = parts[-2]
+            voting = parts[-3]
+
+            sav = " ".join(parts[:-3])
+
+            # Create a list of the parts
+            parts = [sav, probability, decision, voting]
+
+            # Append the list to the results
+            results.append(parts)
+
+        logging.info(f"Total inference time: {time.time() - start_time:.2f} seconds")
+        return results
+
     else:
         logging.info("Running transfer learning...")
+
+        labels = [int(x.split()[-1]) for x in SAV_input]
+        query = [" ".join(x.split()[:-1]) for x in SAV_input]
+
+        logging.info(f"Labels: {labels}, Query: {query}")
+
         tandem_dimple(
-            # labels=[int(x.split()[-1]) for x in SAV_input],
-            labels=None,
-            query=[" ".join(x.split()[:-1]) for x in SAV_input],
+            labels=labels,
+            query=query,
             job_name=submission_id,
             custom_PDB=custom_pdb,
             refresh=False,
         )
         logging.info(f"✅ Transfer learning results saved to job name: {submission_id}")
 
-    # Zip all the result files
-    result_folder = "./external_infer/jobs"
-
-    zip_path = f"/shared/results/{submission_id}_results.zip"
-    with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for file in os.listdir(os.path.join(result_folder, submission_id)):
-            file_path = os.path.join(result_folder, submission_id, file)
-            zipf.write(file_path, os.path.basename(file_path))
-
-    # Load result files
-    with open(os.path.join(result_folder, submission_id, f"predictions.txt"), "r") as f:
-        lines = f.readlines()
-
-    header = lines[0].strip().split() # ["SAVs", "Voting", "Probability", "Decision"]
-
-    # Parse the lines into a list of lists
-    lines = [line.strip() for line in lines[1:]]
-
-    results = []
-    for line in lines:
-        # Split the line by whitespace and convert to a list
-        parts = line.split()
-
-        decision = parts[-1]
-        probability = parts[-2]
-        voting = parts[-3]
-
-        sav = " ".join(parts[:-3])
-
-        # Create a list of the parts
-        parts = [sav, probability, decision, voting]
-
-        # Append the list to the results
-        results.append(parts)
-
-    logging.info(f"Total inference time: {time.time() - start_time:.2f} seconds")
-    return results
-
-
+        return os.listdir(os.path.join(result_folder, submission_id))
 
 # Function use for API (should choose which function to use, and parse input?)
 def inference_result(inputs):

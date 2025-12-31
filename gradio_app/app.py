@@ -415,8 +415,9 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                             label = "Submission Select"
                                         )
                                         page_trans["result"]["output"] = gr.Textbox(label="Result Output", lines=6)
-                                        page_trans["result"]["table"] = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting (%)"])
-                                        page_trans["result"]["zip"] = gr.File(label="Download Results (.zip)")
+                                        page_trans["result"]["sysmsg"] = gr.Textbox(label="System Message", lines=6)
+                                        # page_trans["result"]["table"] = gr.Dataframe(headers=["SAVs", "Probability", "Decision", "Voting (%)"])
+                                        # page_trans["result"]["zip"] = gr.File(label="Download Results (.zip)")
                                         # processing_start_time = gr.State(None)
                                         # check_btn = gr.Button("Check Results")
 
@@ -529,11 +530,16 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
 
                                     # Status == finished
                                     logging.info(f"✅ Result found for submission ID {submission_id}: {data}")
-                                    table_data = data["result"]
-                                    zip_path = f"/shared/results/{submission_id}_results.zip"
+                                    # table_data = data["result"]
+                                    # zip_path = f"/shared/results/{submission_id}_results.zip"
+                                    # table_data = []
+                                    # zip_path = None
 
-                                    return table_data, zip_path, 10.0
+                                    # return table_data, zip_path, 10.0
 
+                                    sysmsg = data["result"]
+
+                                    return sysmsg, 10
 
                                 def refresh_results_trans(session_id, result_section):
                                     if not session_id:
@@ -553,7 +559,7 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                         "value": result_section if result_section else hist[0].get("submission_id", session_id)
                                     }
 
-                                    return gr.update(visible=True), gr.update(**args), *check_result_pred(args["value"])
+                                    return gr.update(visible=True), gr.update(**args), *check_result_trans(args["value"])
 
 
                                 # Timer to check result every 10 seconds
@@ -563,7 +569,8 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 page_trans["timer"].tick(
                                     fn=refresh_results_trans,
                                     inputs=[session_id_state, page_trans["result"]["select"]],
-                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                    # outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["sysmsg"], page_trans["timer"]]
                                 )
                                 page_trans["timer_msg"].tick(
                                     fn=refresh_msg_trans,
@@ -589,7 +596,8 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 ).then(# 3. Call check_result()
                                     fn=refresh_results_trans,
                                     inputs=[session_id_state, submission_id_state],
-                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                    # outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["sysmsg"], page_trans["timer"]]
                                 ).then(
                                     fn=refresh_msg_trans,
                                     inputs=[page_trans["result"]["select"]],
@@ -599,7 +607,8 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
                                 page_trans["result"]["select"].change(
                                     fn=refresh_results_trans,
                                     inputs=[session_id_state, page_trans["result"]["select"]],
-                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                    # outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["table"], page_trans["result"]["zip"], page_trans["timer"]]
+                                    outputs=[page_trans["result"]["section"], page_trans["result"]["select"], page_trans["result"]["sysmsg"], page_trans["timer"]]
                                 ).then(
                                     fn=refresh_msg_trans,
                                     inputs=[page_trans["result"]["select"]],
