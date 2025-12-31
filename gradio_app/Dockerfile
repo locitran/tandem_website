@@ -1,5 +1,5 @@
 FROM python:3.10-slim
-WORKDIR /app
-RUN pip install --no-cache-dir gradio==5.38.0 pymongo requests
+WORKDIR /gradio_app
+RUN pip install --no-cache-dir gradio==6.2 pymongo requests yattag
 COPY . .
-CMD ["python", "app.py"]
+CMD ["python", "main.py"]

@@ -1,0 +1,53 @@
+#submit-status textarea {
+    overflow-y: auto !important;
+    resize: none;
+    font-family: monospace;
+    font-size: 12px;
+    background-color: #111;
+    color: #ddd;
+}
+
+#header {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 10px;
+    z-index: 999;
+}
+
+#footer {
+    position: sticky;
+    bottom: 0;
+    background: black;
+    padding: 10px;
+    z-index: 999;
+}
+
+.site-header {
+    background-color: #003366;
+    padding: 0.8rem 1rem;
+    color: white;
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: bold;
+}
+
+.site-nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 0.5rem;
+    font-size: 1rem;
+}
+
+.site-nav a:hover {
+    text-decoration: underline;
+}
+
+.site-footer {
+    background-color: #f2f2f2;
+    padding: 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+    color: #444;
+    margin-top: 2rem;
+}

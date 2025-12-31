@@ -242,5 +242,5 @@ with gr.Blocks(css=".session-frozen { background-color: #f0f0f0; color: #666 !im
         ]
     )
 
-# debug=True for auto-reload
+# -debug=True for auto-reload
 demo.launch(server_name="0.0.0.0", allowed_paths=["/shared/results"])

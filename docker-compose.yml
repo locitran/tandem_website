@@ -1,32 +1,36 @@
-version: '3.8'
-
 services:
   gradio_app:
     # platform: linux/amd64
     build: ./gradio_app
     container_name: gradio_app
     ports:
-      - "7860:7860"
+      - "7861:7861"
     volumes:
-      - ./gradio_app:/app
-      - ./results:/shared/results  # for result zip files
+      - ./gradio_app:/gradio_app
+      - ./tandem:/tandem
+      # - ./results:/shared/results  # for result zip files
     depends_on:
       - mongodb
       - worker
-      - inference
+      - tandem
+    labels:
+      owner: "yang_loci"
+      project: "tandem_website"
 
-  inference:
+  tandem:
     platform: linux/amd64
-    build: ./inference
-    container_name: inference
+    build: ./tandem
+    container_name: tandem
     expose:
       - "5000"   # internal only; not mapped to host
     depends_on:
       - mongodb
     volumes:
       # Mount the external git repo into expected paths
-      - ./inference/tandem:/app/tandem/
-      - ./results:/shared/results  # for result zip files
+      - ./tandem:/tandem
+    labels:
+      owner: "yang_loci"
+      project: "tandem_website"
 
   worker:
     # platform: linux/amd64
@@ -34,9 +38,12 @@ services:
     container_name: worker
     depends_on:
       - mongodb
-      - inference
+      - tandem
     volumes:
-      - ./worker:/app
+      - ./worker:/worker
+    labels:
+      owner: "yang_loci"
+      project: "tandem_website"
 
   mongodb:
     # platform: linux/amd64
@@ -47,6 +54,9 @@ services:
     volumes:
       - mongo_data:/data/db
     restart: always
+    labels:
+      owner: "yang_loci"
+      project: "tandem_website"
 
 volumes:
   mongo_data:

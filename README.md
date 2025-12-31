@@ -88,4 +88,9 @@ We can check the frontend at http://0.0.0.0:7860/
 
 ## Reach the website outside, but now Typhoon `140.114.97.194`
 
-http://140.114.97.194:7860
+http://140.114.97.192:7860
+
+## Reach the website outside, but now A100 `140.114.97.192`
+
+http://140.114.97.192:7860
+http://140.114.97.207:7860

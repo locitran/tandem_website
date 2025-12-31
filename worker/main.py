@@ -2,51 +2,69 @@ from pymongo import MongoClient
 import requests
 import time
 import copy
-import logging
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from logger import LOGGER
+import traceback
+from datetime import datetime 
+from zoneinfo import ZoneInfo
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
-input_col = db["input_queue"]
+collections = db["input_queue"]
 
-logging.info("✅ Connected. Collections:", db.list_collection_names())
+LOGGER.info(f"✅ Connected. Collections: {db.list_collection_names()}")
+
+time_zone = ZoneInfo("Asia/Taipei")
 
 while True:
-    task = input_col.find_one_and_update(
+    job_start = time.time()
+    job_start_str = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
+    # 🔑 Atomically pick job AND set job_start
+    task = collections.find_one_and_update(
         {"status": "pending"},
-        {"$set": {"status": "processing"}},
-        sort=[("_id", 1)]
+        {
+            "$set": {
+                "status": "processing", "job_start": job_start, "job_start_str": job_start_str
+            }
+        },
+       sort=[("_id", 1)],
+        return_document=False  # return OLD document (before update)
     )
 
     if task:
-        logging.info(f"✅ Found task: {task}")
-    else:
-        logging.debug("No pending tasks found.")
-
-    if task:
+        session_id = task.get("session_id")
+        job_name = task.get("job_name")
+        LOGGER.info(f"🚀 Picked job {session_id}/{job_name} at {job_start_str}")
         try:
-            logging.info(f"Processing session: {task['session_id']}")
-
              # Remove _id field (or deep copy + pop)
             task_to_send = copy.deepcopy(task)
             task_to_send.pop("_id", None)
+            
+            response = requests.post("http://tandem:5000/run_tandem_job", json=task_to_send)
+            # LOGGER.info(f'response {response}')
+            # @> <Response [200]> if ok
 
-            response = requests.post("http://inference:5000/infer", json=task_to_send)
-            logging.info(response)
-
-            output = response.json().get("output", "❌ No output returned")
-
-            input_col.update_one(
+            # ✅ Mark finished + record job_end
+            job_end = time.time()
+            job_end_str = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
+            collections.update_one(
                 {"_id": task["_id"]},
-                {"$set": {"status": "finished", "result": output}}
+                {
+                    "$set": {"status": "finished", "job_end": job_end, "job_end_str": job_end_str}
+                }
             )
+            LOGGER.info(f"✅ Finished job {session_id}/{job_name}")
 
         except Exception as e:
-            logging.error(f"⚠️ Error processing task: {e}")
-            input_col.update_one(
+            msg = traceback.format_exc()
+            LOGGER.error(msg)
+            # Roll back so it can be retried
+            collections.update_one(
                 {"_id": task["_id"]},
-                {"$set": {"status": "pending"}}
+                {
+                    "$set": {"status": "pending"},
+                    "$unset": {"job_start": ""}
+                }
             )
     else:
+        LOGGER.debug("No pending tasks found.")
         time.sleep(2)
