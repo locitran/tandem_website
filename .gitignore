@@ -177,6 +177,7 @@ cython_debug/
 .pypirc
 note.md
 
-tandem
+# tandem
 .gitignore
 ._.DS_Store
+.DS_Store
