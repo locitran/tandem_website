@@ -8,10 +8,13 @@ from src.update_session import then_session, on_session
 from src.update_input import update_input_param
 from src.job import on_submit, on_job, on_reset, send_job, check_status
 from src.update_output import render_output, on_select_image
+from src.job_manager import manager_tab
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
+
+ADMIN_PASSWORD = "yanglab"
 
 TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
 jobs_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'tandem/jobs')
@@ -51,11 +54,10 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
 
         str_txt,
         str_file,
-        str_check,
 
         job_name_txt,
         email_txt,
-        
+
         submit_section,
         submit_status,
         process_status,
@@ -132,8 +134,9 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
 
     ###############---input_section following job selection--------################
     submit_event = submit_btn.click(
-        fn=on_submit, inputs=[inf_sav_file], 
-        outputs=[submit_status, submit_btn]
+        fn=on_submit, 
+        inputs=[mode, inf_sav_txt, inf_sav_file, tf_sav_txt, tf_sav_file, str_file], 
+        outputs=[mode, inf_sav_txt, inf_sav_file, tf_sav_txt, tf_sav_file, str_file, submit_status,  submit_btn]
     ).then( 
         # Start timer after submission
         fn=lambda: gr.update(active=True),
@@ -214,7 +217,7 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
         outputs=image_viewer,
     )
 
-with gr.Blocks() as demo:
+with gr.Blocks(css=custom_css,) as demo:
     # Now we define the list of components to be used as the input (params)
     # This is the return value where the gradio app will use to send to the backend
     param_state = gr.State({})
@@ -231,6 +234,8 @@ with gr.Blocks() as demo:
             with gr.Column(scale=1):
                 right_column(param_state, jobs_folder_state)
     
+    manager_tab()
+    
     footer()
 
 # -debug=True for auto-reload
@@ -240,8 +245,7 @@ demo.launch(
     server_name="0.0.0.0",
     server_port=7861,
     allowed_paths=["/tandem/jobs"],
-    css=custom_css,
-    root_path="/TANDEM-Tsunami"
+    root_path="/TANDEM-Tsunami",
     # share=True
 )
 

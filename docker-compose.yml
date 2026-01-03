@@ -28,6 +28,7 @@ services:
     volumes:
       # Mount the external git repo into expected paths
       - ./tandem:/tandem
+      - ./gradio_app:/gradio_app
     labels:
       owner: "yang_loci"
       project: "tandem_website"
@@ -41,6 +42,7 @@ services:
       - tandem
     volumes:
       - ./worker:/worker
+      - ./tandem:/tandem
     labels:
       owner: "yang_loci"
       project: "tandem_website"

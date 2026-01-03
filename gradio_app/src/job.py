@@ -9,7 +9,9 @@ from pymongo import MongoClient
 
 from .logger import LOGGER
 from .update_output import multindex_DataFrame, zip_folder
+from .web_interface import time_zone
 
+GRADIO_APP_ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -90,11 +92,8 @@ def on_job(_job_dropdown, _param_state, folder):
     image_viewer_udt    = gr.update(visible=False)
 
     process_status_udt = gr.update(visible=False)
-    submit_btn_udt     = gr.update(visible=False)
-    reset_btn_udt      = gr.update(visible=True)
     submit_section_udt = gr.update(visible=True)
-    timer_udt = gr.update(active=True)
-
+    
     if _job_status == 'finished':
         output_section_udt = gr.update(visible=True)
         
@@ -122,16 +121,21 @@ def on_job(_job_dropdown, _param_state, folder):
         runtime = int(job_end - job_start)
         msg = f"📦 Payload collected for job: {_job_name}"
         msg += f"\n{json.dumps(param_udt, indent=2, sort_keys=True)}"
-        msg = f"\n✅ Finished in {runtime}s"
+        msg += f"\n✅ Finished in {runtime}s"
         submit_status_udt = gr.update(value=msg, visible=True)
         process_status_udt = gr.update(visible=False)
         timer_udt = gr.update(active=False)
+        submit_btn_udt     = gr.update(visible=False)
+        reset_btn_udt      = gr.update(visible=True)
 
     elif _job_status == 'pending':
         msg = f"📦 Payload collected for job: {_job_name}"
         msg += f"\n{json.dumps(param_udt, indent=2, sort_keys=True)}"
         submit_status_udt  = gr.update(value=msg, visible=True)
         process_status_udt = gr.update(value="⏳ Waiting in queue...", visible=True)
+        submit_btn_udt     = gr.update(visible=False)
+        reset_btn_udt      = gr.update(visible=True)
+        timer_udt           = gr.update(active=True)
     
     elif _job_status == 'processing' and job_start:
         msg = f"📦 Payload collected for job: {_job_name}"
@@ -142,6 +146,10 @@ def on_job(_job_dropdown, _param_state, folder):
         emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
         icon = emoji_frames[elapsed % len(emoji_frames)]
         process_status_udt = gr.update(value=f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed.", visible=True)
+
+        submit_btn_udt     = gr.update(visible=False)
+        reset_btn_udt      = gr.update(visible=True)
+        timer_udt = gr.update(active=True)
           
     else: # _job_status is None:
         input_section_udt  = gr.update(visible=True)   
@@ -169,16 +177,106 @@ def on_job(_job_dropdown, _param_state, folder):
     )
 
 # Freezing mode when clicking submit button
-def on_submit(_inf_sav_file):
+def on_submit(
+    mode,
+    inf_sav_txt,
+    inf_sav_file,
+    tf_sav_txt,
+    tf_sav_file,
+    str_file,
+):
     """
     Click submit will trigger:
         1. Freeze the submit button
         2. Update submit status
     """
-    LOGGER.info(_inf_sav_file)
-    submit_status_udt = gr.update(value="✅ Your job is just submitted.", visible=True)
+
+    if mode == "Inferencing":
+        if not inf_sav_file or not os.path.isfile(inf_sav_file) or inf_sav_txt:
+            inf_sav_txt = (
+                f"O00189 R271H\n"
+                f"O00194 P138L\n"
+                f"O00194 A92T\n"
+                f"O00204 V240I\n"
+                f"O00204 L51S\n"
+                f"O00206 T175A\n"
+                f"O00206 Q188R\n"
+                f"O00206 C246S\n"
+                f"O00206 E287D\n"
+                f"O00206 E287G\n"
+                f"O00206 C306W\n"
+            )
+            submit_status_msg = "Submit with test case."
+    elif mode == "Transfer Learning":
+        if not tf_sav_file or not os.path.isfile(tf_sav_file) or tf_sav_txt:
+            tf_sav_txt = (
+                f"P29033 Y217D 0\n"
+                f"P29033 I215M 0\n"
+                f"P29033 L214V 0\n"
+                f"P29033 L210V 0\n"
+                f"P29033 I203T 0\n"
+                f"P29033 A197T 0\n"
+                f"P29033 N170K 0\n"
+                f"P29033 N170S 0\n"
+                f"P29033 K168R 0\n"
+                f"P29033 V156I 0\n"
+                f"P29033 V153I 0\n"
+                f"P29033 R127H 0\n"
+                f"P29033 T123N 0\n"
+                f"P29033 I121V 0\n"
+                f"P29033 F115V 0\n"
+                f"P29033 E114G 0\n"
+                f"P29033 I111T 0\n"
+                f"P29033 I107L 0\n"
+                f"P29033 H100Q 0\n"
+                f"P29033 F83L 0\n"
+                f"P29033 V27I 0\n"
+                f"P29033 H16Y 0\n"
+                f"P29033 G4V 0\n"
+                f"P29033 G4D 0\n"
+                f"P29033 R165W 0\n"
+                f"P29033 M34T 1\n"
+                f"P29033 V37I 1\n"
+                f"P29033 W44C 1\n"
+                f"P29033 W44S 1\n"
+                f"P29033 D50N 1\n"
+                f"P29033 G59A 1\n"
+                f"P29033 R75Q 1\n"
+                f"P29033 R75W 1\n"
+                f"P29033 V84L 1\n"
+                f"P29033 L90P 1\n"
+                f"P29033 V95M 1\n"
+                f"P29033 R143W 1\n"
+                f"P29033 R143Q 1\n"
+                f"P29033 F161S 1\n"
+                f"P29033 M163T 1\n"
+                f"P29033 D179N 1\n"
+                f"P29033 R184Q 1\n"
+                f"P29033 M195T 1\n"
+                f"P29033 A197S 1\n"
+                f"P29033 C202F 1\n"
+                f"P29033 L205V 1\n"
+                f"P29033 N206S 1\n"
+            )
+        str_file = os.path.join(GRADIO_APP_ROOT, 'test/8qa2_opm_25Apr03.pdb')
+        submit_status_msg = "Submit with test case."
+    else:
+        submit_status_msg = ""
+        raise KeyError(f"Unknown mode: {mode}")
+
+    submit_status_msg = f"✅{submit_status_msg}\n✅ Your job is just submitted."
+    submit_status_udt = gr.update(value=submit_status_msg, visible=True)
     submit_btn_udt = gr.update(interactive=False)
-    return (submit_status_udt, submit_btn_udt)
+    return (
+        mode,
+        inf_sav_txt,
+        inf_sav_file,
+        tf_sav_txt,
+        tf_sav_file,
+        str_file,
+        submit_status_udt, 
+        submit_btn_udt
+    )
 
 def on_reset(_param_state):
     """
@@ -189,7 +287,7 @@ def on_reset(_param_state):
     then we need to render these jobs.
 
     """
-    job_name_udt = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    job_name_udt = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
 
     _session_id = _param_state['session_id']
 

@@ -1,11 +1,17 @@
-from pymongo import MongoClient
 import requests
 import time
 import copy
-from logger import LOGGER
+import os 
+import json
 import traceback
+
+from logger import LOGGER
 from datetime import datetime 
 from zoneinfo import ZoneInfo
+from pymongo import MongoClient
+
+TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
+jobs_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'tandem/jobs')
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -52,6 +58,12 @@ while True:
                     "$set": {"status": "finished", "job_end": job_end, "job_end_str": job_end_str}
                 }
             )
+            updated_task = collections.find_one(
+                {"_id": task["_id"]},
+                {"_id": 0}  # remove MongoDB ObjectId (JSON cannot serialize it)
+            )
+            with open(f"{jobs_folder}/{session_id}/{job_name}/params.json", "w") as f:
+                json.dump(updated_task, f, indent=4)
             LOGGER.info(f"✅ Finished job {session_id}/{job_name}")
 
         except Exception as e:
