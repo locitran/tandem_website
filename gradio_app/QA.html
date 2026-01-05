@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Typography Test</title>
+
+<style>
+/* ===== Simulated theme variables ===== */
+:root {
+  --body-text-color: #222;
+  --background-fill-secondary: #f5f6f7;
+}
+
+/* ===== Page base ===== */
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--background-fill-secondary);
+  color: var(--body-text-color);
+}
+
+/* ===== Heading styles (compiled from SCSS) ===== */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 700;
+  margin: 0;
+  padding: 10px;
+}
+
+/* h3 override */
+h3 {
+  font-size: 30px;
+  padding-left: 10px;
+  padding-bottom: 1px;
+  margin-bottom: 1px;
+  background: rgba(0, 0, 0, 0.05); /* visual aid */
+}
+
+/* Paragraph style for context */
+p {
+  margin: 6px 10px;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Heading 1</h1>
+<p>This is some paragraph text under h1.</p>
+
+<h2>Heading 2</h2>
+<p>This is some paragraph text under h2.</p>
+
+<h3>Heading 3 (Gradio ###)</h3>
+<p>This paragraph should sit very close to the h3.</p>
+
+<h4>Heading 4</h4>
+<p>This is some paragraph text under h4.</p>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+#text-box textarea {
+    resize: none;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 12px;
+    background-color: var(--background-fill-secondary);
+    color: var(--body-text-color);
+}

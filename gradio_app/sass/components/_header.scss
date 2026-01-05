@@ -1,0 +1,75 @@
+/* =============== Header =============== */
+.header {
+  position: relative;
+  width: 100%;
+  min-height: 10px;
+  border-bottom: 1px solid var(--border-color-primary);
+  overflow: hidden;
+}
+
+/* ===== Background layer ===== */
+.header-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      120deg,
+      rgba(120, 0, 200, 0.15),
+      rgba(0, 160, 200, 0.12)
+    ),
+    radial-gradient(circle at 30% 40%, rgba(120,0,200,0.25), transparent 60%),
+    radial-gradient(circle at 70% 60%, rgba(0,160,200,0.25), transparent 60%);
+  background-size: cover;
+  opacity: 0.15;
+  z-index: 0;
+}
+
+/* ===== Foreground content ===== */
+.header-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+}
+
+/* ===== Text container ===== */
+.header-text {
+  text-align: center;
+  max-width: 2000px;
+  padding: 0 10px;
+}
+
+/* ===== Main title ===== */
+.header-title {
+  font-size: 2.1rem;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--body-text-color);
+  margin: 0 0 1px 0;
+  text-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== Subtitle ===== */
+.header-subtitle {
+  font-size: 1.3rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  color: var(--body-text-color);
+  opacity: 0.85;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 1.9rem;
+    letter-spacing: 0.06em;
+  }
+
+  .header-subtitle {
+    font-size: 0.95rem;
+  }
+}

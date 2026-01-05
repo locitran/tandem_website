@@ -1,0 +1,38 @@
+// ==================
+// Typography variables
+// ==================
+$heading-weight: 700;
+$heading-padding-y: 10px;
+$heading-padding-x: 10px;
+
+// ==================
+// Base text
+// ==================
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--body-text-color);
+}
+
+// ==================
+// Headings (shared)
+// ==================
+h1,
+h2,
+h3,
+h4 {
+  font-weight: $heading-weight;
+  margin: 0;
+  padding: $heading-padding-y $heading-padding-x;
+  line-height: 1.3;   // ⭐ this centers text vertically
+}
+
+// ==================
+// h3 override (Gradio ###)
+// ==================
+h3 {
+  font-size: 20px;
+  padding-bottom: 4px;
+  padding-top: 4px;
+  margin-bottom: 1px;
+}

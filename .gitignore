@@ -176,8 +176,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 note.md
-
-# tandem
 .gitignore
-._.DS_Store
-.DS_Store
+.gitmodules

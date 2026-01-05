@@ -8,8 +8,10 @@ import os
 from pymongo import MongoClient
 
 from .logger import LOGGER
-from .update_output import multindex_DataFrame, zip_folder
+from .update_output import render_finished_job
+from .web_interface import time_zone
 
+GRADIO_APP_ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -80,14 +82,26 @@ def on_job(_job_dropdown, _param_state, folder):
     _job_status = param_udt.get('status', None)
     job_start = param_udt.get("job_start", None)
     job_end   = param_udt.get("job_end", None)
+    _mode = param_udt.get("mode", None)
 
     input_section_udt = gr.update(visible=False)   
-    output_section_udt = gr.update(visible=False)
-    
+
+    output_section_udt  = gr.update(visible=False)
+    inf_output_secion_udt = gr.update(visible=False)
+    tf_output_secion_udt = gr.update(visible=False)
+
     pred_table_udt      = gr.update(visible=False)
     result_zip_udt      = gr.update(visible=False) 
     image_selector_udt  = gr.update(visible=False)
     image_viewer_udt    = gr.update(visible=False)
+
+    folds_state_udt     = gr.update(visible=False)
+    fold_dropdown_udt   = gr.update(visible=False)
+    train_box_udt       = gr.update(visible=False)
+    val_box_udt         = gr.update(visible=False)
+    test_box_udt        = gr.update(visible=False)
+    loss_image_udt      = gr.update(visible=False)
+    test_eval_udt       = gr.update(visible=False)
 
     process_status_udt = gr.update(visible=False)
     submit_btn_udt     = gr.update(visible=False)
@@ -96,46 +110,42 @@ def on_job(_job_dropdown, _param_state, folder):
     timer_udt = gr.update(active=True)
 
     if _job_status == 'finished':
-        output_section_udt = gr.update(visible=True)
-        
         job_folder = os.path.join(folder, _session_id, _job_name) 
-        pred_file  = os.path.join(job_folder, "predictions.csv")
-        df_pred    = pd.read_csv(pred_file)
-        pred_table_udt = gr.update(value=multindex_DataFrame(df_pred), visible=True)
 
-        zip_path = zip_folder(job_folder)
-        result_zip_udt = gr.update(value=zip_path, interactive=True, visible=bool(zip_path))
-
-        tandem_shap = os.path.join(job_folder, 'tandem_shap') 
-        list_images = os.listdir(tandem_shap)
-
-        image_selector_udt = gr.update(choices=list_images,
-            value=list_images[0] if list_images else None,
-            visible=bool(list_images),
-        )
-
-        image_viewer_udt = gr.update(
-            value=os.path.join(tandem_shap, list_images[0]) if list_images else None,
-            visible=bool(list_images),
-        )
+        (
+            output_section_udt,
+            result_zip_udt,
+            inf_output_secion_udt, 
+            pred_table_udt, 
+            image_selector_udt, 
+            image_viewer_udt,
+            tf_output_secion_udt,
+            folds_state_udt,
+            fold_dropdown_udt,
+            train_box_udt,
+            val_box_udt,
+            test_box_udt,
+            loss_image_udt,
+            test_eval_udt,
+        ) = render_finished_job(_mode, job_folder)
 
         runtime = int(job_end - job_start)
         msg = f"📦 Payload collected for job: {_job_name}"
         msg += f"\n{json.dumps(param_udt, indent=2, sort_keys=True)}"
-        msg = f"\n✅ Finished in {runtime}s"
+        msg += f"\n✅ Finished in {runtime}s"
         submit_status_udt = gr.update(value=msg, visible=True)
         process_status_udt = gr.update(visible=False)
         timer_udt = gr.update(active=False)
 
     elif _job_status == 'pending':
         msg = f"📦 Payload collected for job: {_job_name}"
-        msg += f"\n{json.dumps(param_udt, indent=2, sort_keys=True)}"
+        msg += f"\n{json.dumps(_param_state, indent=2, sort_keys=True)}"
         submit_status_udt  = gr.update(value=msg, visible=True)
         process_status_udt = gr.update(value="⏳ Waiting in queue...", visible=True)
     
     elif _job_status == 'processing' and job_start:
         msg = f"📦 Payload collected for job: {_job_name}"
-        msg += f"\n{json.dumps(param_udt, indent=2, sort_keys=True)}"
+        msg += f"\n{json.dumps(_param_state, indent=2, sort_keys=True)}"
         submit_status_udt  = gr.update(value=msg, visible=True)
 
         elapsed = int(time.time() - job_start)
@@ -155,12 +165,21 @@ def on_job(_job_dropdown, _param_state, folder):
         submit_section_udt,
         output_section_udt,
         process_status_udt,
-        
-        pred_table_udt,
-        result_zip_udt,
-        image_selector_udt,
-        image_viewer_udt,
 
+        result_zip_udt,
+        inf_output_secion_udt, 
+        pred_table_udt, 
+        image_selector_udt, 
+        image_viewer_udt,
+        tf_output_secion_udt,
+        folds_state_udt,
+        fold_dropdown_udt,
+        train_box_udt,
+        val_box_udt,
+        test_box_udt,
+        loss_image_udt,
+        test_eval_udt,
+        
         submit_status_udt,
         submit_btn_udt,
         reset_btn_udt,
@@ -169,13 +188,12 @@ def on_job(_job_dropdown, _param_state, folder):
     )
 
 # Freezing mode when clicking submit button
-def on_submit(_inf_sav_file):
+def on_submit():
     """
     Click submit will trigger:
         1. Freeze the submit button
         2. Update submit status
     """
-    LOGGER.info(_inf_sav_file)
     submit_status_udt = gr.update(value="✅ Your job is just submitted.", visible=True)
     submit_btn_udt = gr.update(interactive=False)
     return (submit_status_udt, submit_btn_udt)
@@ -189,7 +207,7 @@ def on_reset(_param_state):
     then we need to render these jobs.
 
     """
-    job_name_udt = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    job_name_udt = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
 
     _session_id = _param_state['session_id']
 

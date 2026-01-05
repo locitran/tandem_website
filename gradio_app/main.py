@@ -1,29 +1,36 @@
 import os 
-
+import sass 
 import gradio as gr
 from pymongo import MongoClient
 
-from src.web_interface import session, tandem_input, tandem_output, header, footer, left_column
+from src.web_interface import session, tandem_input, tandem_output, build_header, left_column, build_footer
 from src.update_session import then_session, on_session
 from src.update_input import update_input_param
 from src.job import on_submit, on_job, on_reset, send_job, check_status
 from src.update_output import render_output, on_select_image
+from src.job_manager import manager_tab
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
 
-TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
-jobs_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'tandem/jobs')
-figure_1 = os.path.join(TANDEM_WEBSITE_ROOT, 'gradio_app/images/figure_1.jpg')
-cssfile = os.path.join(TANDEM_WEBSITE_ROOT, 'gradio_app/css/font.css')
+MOUNT_POINT = '/TANDEM-Tsunami' # https://dyn.life.nthu.edu.tw/TANDEM-Tsunami
 
-css_interface = os.path.join(TANDEM_WEBSITE_ROOT, 'gradio_app/css/interface.css')
-custom_css = ''
-with open(css_interface, "r") as f:
-    custom_css += f.read() + '\n'
-with open(cssfile, "r") as f:
-    custom_css += f.read() + '\n'
+ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
+
+TANDEM_DIR = os.path.join(ROOT, 'tandem')
+GRADIO_DIR = os.path.join(ROOT, 'gradio_app')
+TMP_DIR = os.path.join(GRADIO_DIR, 'tmp')
+JOB_DIR = os.path.join(TANDEM_DIR, 'jobs')
+
+SASS_DIR = os.path.join(GRADIO_DIR, "sass")
+ASSETS_DIR = os.path.join(GRADIO_DIR, "assets")
+
+figure_1 = os.path.join(ASSETS_DIR, 'images/figure_1.jpg')
+
+sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
+with open(os.path.join(ASSETS_DIR, "main.css")) as f:
+    custom_css = f.read()
 
 def right_column(param_state: gr.State, jobs_folder_state: gr.State):
     
@@ -51,11 +58,10 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
 
         str_txt,
         str_file,
-        str_check,
 
         job_name_txt,
         email_txt,
-        
+
         submit_section,
         submit_status,
         process_status,
@@ -69,10 +75,22 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
     # Result UI
     (
         output_section,
+        inf_output_secion,
+        tf_output_secion,
+
         pred_table,
         image_selector,
         image_viewer,
-        result_zip
+
+        folds_state,
+        fold_dropdown,
+        train_box,
+        val_box,
+        test_box,
+        loss_image,
+        test_evaluation,
+
+        result_zip,
 
     ) = tandem_output()
 
@@ -81,12 +99,12 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
     session_click_event = session_btn.click(
         fn=on_session,
         inputs=[session_id, param_state],
-        outputs=[session_id, session_status, job_dropdown, param_state, model_dropdown]
+        outputs=[session_id, session_btn, session_status, job_dropdown, param_state, model_dropdown]
     )
     session_submit_event = session_id.submit(
         fn=on_session,
         inputs=[session_id, param_state],
-        outputs=[session_id, session_status, job_dropdown, param_state, model_dropdown]
+        outputs=[session_id, session_btn, session_status, job_dropdown, param_state, model_dropdown]
     )
 
     # Visualize input section
@@ -99,10 +117,22 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
                 input_section,
                 submit_section,
                 output_section,
+                inf_output_secion,
+                tf_output_secion,
+                
                 pred_table,
                 result_zip,
                 image_selector,
                 image_viewer,
+
+                folds_state,
+                fold_dropdown,
+                train_box,
+                val_box,
+                test_box,
+                loss_image,
+                test_evaluation,
+
                 submit_status,
                 submit_btn,
                 reset_btn
@@ -118,10 +148,21 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
             submit_section,
             output_section,
             process_status,
-            pred_table,
+
             result_zip,
+            inf_output_secion,
+            pred_table,
             image_selector,
             image_viewer,
+            tf_output_secion,
+            folds_state,
+            fold_dropdown,
+            train_box,
+            val_box,
+            test_box,
+            loss_image,
+            test_evaluation,
+            
             submit_status,
             submit_btn,
             reset_btn,
@@ -132,7 +173,8 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
 
     ###############---input_section following job selection--------################
     submit_event = submit_btn.click(
-        fn=on_submit, inputs=[inf_sav_file], 
+        fn=on_submit, 
+        inputs=[], 
         outputs=[submit_status, submit_btn]
     ).then( 
         # Start timer after submission
@@ -205,7 +247,22 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
     # Visualize results based on param_state['status']
         fn=render_output,
         inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, pred_table, result_zip, image_selector, image_viewer]
+        outputs=[
+            output_section,
+            result_zip,
+            inf_output_secion,
+            pred_table,
+            image_selector,
+            image_viewer,
+            tf_output_secion,
+            folds_state,
+            fold_dropdown,
+            train_box,
+            val_box,
+            test_box,
+            loss_image,
+            test_evaluation,
+        ]
     )
     
     image_selector.change(
@@ -214,43 +271,35 @@ def right_column(param_state: gr.State, jobs_folder_state: gr.State):
         outputs=image_viewer,
     )
 
-with gr.Blocks() as demo:
+with gr.Blocks(css=custom_css,) as demo:
     # Now we define the list of components to be used as the input (params)
     # This is the return value where the gradio app will use to send to the backend
     param_state = gr.State({})
-    jobs_folder_state = gr.State(jobs_folder)
+    jobs_folder_state = gr.State(JOB_DIR)
 
     # ---------- HEADER ----------
-    header()
+    header = build_header()
 
     # ---------- MAIN CONTENT (with tabs) ----------
-    with gr.Tab("Home"):
-        with gr.Row():
-            with gr.Column(scale=1):
-                left_column()
-            with gr.Column(scale=1):
-                right_column(param_state, jobs_folder_state)
+    with gr.Column(elem_id="main-content"):
+        with gr.Tab("Home"):
+            with gr.Row():
+                with gr.Column(scale=1):
+                    left_column()
+                with gr.Column(scale=1):
+                    right_column(param_state, jobs_folder_state)
+        
+        manager_tab()
     
-    footer()
+    footer = build_footer(MOUNT_POINT)
 
-# -debug=True for auto-reload
-# demo.launch(server_name="0.0.0.0")
 demo.queue()
 demo.launch(
     server_name="0.0.0.0",
     server_port=7861,
-    allowed_paths=["/tandem/jobs"],
-    css=custom_css,
-    root_path="/TANDEM-Tsunami"
-    # share=True
+    allowed_paths=[
+        "/tandem/jobs", 
+        "assets/images",
+    ],
+    root_path=MOUNT_POINT,
 )
-
-
-# app, local_url, share_url = demo.launch(
-#     server_name="0.0.0.0",
-#     server_port=7861,
-#     share=True,
-#     prevent_thread_lock=True
-# )
-
-# print("Public URL:", share_url)

@@ -1,0 +1,15 @@
+// Layout, containers
+
+.gradio-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Main content grows ===== */
+#main-content {
+  flex: 1;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}

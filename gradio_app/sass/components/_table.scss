@@ -1,0 +1,39 @@
+/* ===== Variables ===== */
+$radius: 8px;
+$text-sm: 12px;
+$text-md: 14px;
+$text-lg: 16px;
+
+
+/* ===== Prediction table ===== */
+.pred-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: $text-md;
+
+  background-color: var(--background-fill-secondary);
+  color: var(--body-text-color);
+
+  th,
+  td {
+    padding: 8px 14px;
+    text-align: center;
+    overflow-wrap: break-word;
+    border-bottom: 1px solid var(--border-color-primary);
+  }
+
+  thead th {
+    background-color: var(--background-fill-primary);
+    color: var(--body-text-color);
+    font-weight: 600;
+  }
+
+  tbody tr:nth-child(even) {
+    background-color: var(--background-fill-secondary);
+  }
+
+  tbody tr:nth-child(odd) {
+    background-color: var(--background-fill-primary);
+  }
+}

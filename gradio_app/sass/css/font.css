@@ -1,3 +1,10 @@
+/* Headings from ### */
+
+
+
+
+/* Headings from ### */
+
 .session-frozen {
   background-color: #f0f0f0; 
   color: #666 !important; 
@@ -17,6 +24,11 @@
   padding-left: 10px;
   padding-bottom: 1px;
   margin-bottom: 1px;
+}
+
+.note-markdown {
+    margin-top: 4px;       
+    font-size: 12px;
 }
 
 .checkbox {

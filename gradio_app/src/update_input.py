@@ -98,7 +98,7 @@ def handle_SAV(mode: str, SAV_input: str):
     lines = clean_text.splitlines()
 
     if not lines or all(not l.strip() for l in lines):
-        message = "SAV input is empty."
+        message = "You provide no input, please provide uniprot ID and SAV."
         return message, data
 
     # ---------- validation ----------
@@ -270,13 +270,12 @@ def update_input_param(
         SAV_input = _tf_sav_file if (_tf_sav_file and os.path.isfile(_tf_sav_file)) else (_tf_sav_txt or "")
     else:
         raise KeyError(f"Unknown mode: {_mode}")
-    LOGGER.info(SAV_input)
-    LOGGER.info(_inf_sav_file)
+
     # 2) Validate SAVs
     SAV_message, SAV_data = handle_SAV(_mode, SAV_input)
     if (SAV_data is not None):
         SAV = [f"{ele['acc']} {ele['wt_resid_mt']}" for ele in SAV_data]
-        label = None if _mode == 'Inferencing' else SAV_data['label']
+        label = None if _mode == 'Inferencing' else SAV_data['label'].tolist()
         
         params_udt['status'] = 'pending'
         params_udt['mode'] = _mode
@@ -284,7 +283,7 @@ def update_input_param(
         params_udt['label'] = label
         params_udt['model'] = _model_dropdown
         params_udt['job_name'] = _job_name_txt
-        params_udt['email'] = _email_txt
+        # params_udt['email'] = _email_txt
     else:
         params_udt['status'] = None
         error_message = SAV_message
