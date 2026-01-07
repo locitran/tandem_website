@@ -8,7 +8,6 @@ import os
 from pymongo import MongoClient
 
 from .logger import LOGGER
-from .update_output import render_finished_job
 from .web_interface import time_zone
 
 GRADIO_APP_ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
@@ -33,159 +32,25 @@ def toSAV_coords(SAVs):
     return out
 
 def send_job(_param_state, jobs_folder):
-
-    """
-        If job status is pending:
-            - hide output_section
-            - render submit_section: only submit_status
-            - hide input_section
-
-        If job status is None: (parameter defining)
-            - hide output_section
-            - render submit_section
-            - render input_section
-"""
     _job_status = _param_state.get('status', None)
-
     if _job_status != 'pending':
         return
-
     collections.insert_one(_param_state)
     LOGGER.info(f"✅ Submitted with payload: {_param_state}")
     return _param_state
 
-def on_job(_job_dropdown, _param_state, folder):
-    """Switch among existing jobs
-    Stimulate the effect of dropdown button of job, where it saves old jobs 
-    from a given session id.
+def on_job(job_dropdown, param_state):
+    _session_id = param_state["session_id"]
+    _job_name   = job_dropdown
 
-    on_job event is triggered when user select new job_name (same session id)
-        - Update and load _param_state (from jobs/session_id/job_name/params.json)
-        - Check status to decide rendering
-            + If finished: render submit_section, output_section
-            + If processing/pending: render submit_section
-            + No the other way --> Only submitted job has record
-
-    New task:
-        - Remove old job(s)
-    """
-    
-    _session_id = _param_state['session_id']
-    _job_name   = _job_dropdown
-
-    param_udt = collections.find_one(
-        {'session_id': _session_id, 'job_name'  : _job_name}, {"_id": 0}
+    param_state_udt = collections.find_one(
+        {"session_id": _session_id, "job_name": _job_name},
+        {"_id": 0},
     )
-    if not param_udt:
+    if not param_state_udt:
         raise LookupError("Cannot find job from on_job function")
 
-    _job_status = param_udt.get('status', None)
-    job_start = param_udt.get("job_start", None)
-    job_end   = param_udt.get("job_end", None)
-    _mode = param_udt.get("mode", None)
-
-    input_section_udt = gr.update(visible=False)   
-
-    output_section_udt  = gr.update(visible=False)
-    inf_output_secion_udt = gr.update(visible=False)
-    tf_output_secion_udt = gr.update(visible=False)
-
-    pred_table_udt      = gr.update(visible=False)
-    result_zip_udt      = gr.update(visible=False) 
-    image_selector_udt  = gr.update(visible=False)
-    image_viewer_udt    = gr.update(visible=False)
-
-    folds_state_udt     = gr.update(visible=False)
-    fold_dropdown_udt   = gr.update(visible=False)
-    train_box_udt       = gr.update(visible=False)
-    val_box_udt         = gr.update(visible=False)
-    test_box_udt        = gr.update(visible=False)
-    loss_image_udt      = gr.update(visible=False)
-    test_eval_udt       = gr.update(visible=False)
-
-    process_status_udt = gr.update(visible=False)
-    submit_btn_udt     = gr.update(visible=False)
-    reset_btn_udt      = gr.update(visible=True)
-    submit_section_udt = gr.update(visible=True)
-    timer_udt = gr.update(active=True)
-
-    if _job_status == 'finished':
-        job_folder = os.path.join(folder, _session_id, _job_name) 
-
-        (
-            output_section_udt,
-            result_zip_udt,
-            inf_output_secion_udt, 
-            pred_table_udt, 
-            image_selector_udt, 
-            image_viewer_udt,
-            tf_output_secion_udt,
-            folds_state_udt,
-            fold_dropdown_udt,
-            train_box_udt,
-            val_box_udt,
-            test_box_udt,
-            loss_image_udt,
-            test_eval_udt,
-        ) = render_finished_job(_mode, job_folder)
-
-        runtime = int(job_end - job_start)
-        msg = f"📦 Payload collected for job: {_job_name}"
-        msg += f"\n{json.dumps(param_udt, indent=2, sort_keys=True)}"
-        msg += f"\n✅ Finished in {runtime}s"
-        submit_status_udt = gr.update(value=msg, visible=True)
-        process_status_udt = gr.update(visible=False)
-        timer_udt = gr.update(active=False)
-
-    elif _job_status == 'pending':
-        msg = f"📦 Payload collected for job: {_job_name}"
-        msg += f"\n{json.dumps(_param_state, indent=2, sort_keys=True)}"
-        submit_status_udt  = gr.update(value=msg, visible=True)
-        process_status_udt = gr.update(value="⏳ Waiting in queue...", visible=True)
-    
-    elif _job_status == 'processing' and job_start:
-        msg = f"📦 Payload collected for job: {_job_name}"
-        msg += f"\n{json.dumps(_param_state, indent=2, sort_keys=True)}"
-        submit_status_udt  = gr.update(value=msg, visible=True)
-
-        elapsed = int(time.time() - job_start)
-        emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
-        icon = emoji_frames[elapsed % len(emoji_frames)]
-        process_status_udt = gr.update(value=f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed.", visible=True)
-          
-    else: # _job_status is None:
-        input_section_udt  = gr.update(visible=True)   
-        submit_btn_udt     = gr.update(visible=True)
-        reset_btn_udt      = gr.update(visible=False) # Unblind submit button
-        submit_status_udt   = gr.update(visible=False)
-        timer_udt           = gr.update(active=False)
-        
-    return (
-        input_section_udt,
-        submit_section_udt,
-        output_section_udt,
-        process_status_udt,
-
-        result_zip_udt,
-        inf_output_secion_udt, 
-        pred_table_udt, 
-        image_selector_udt, 
-        image_viewer_udt,
-        tf_output_secion_udt,
-        folds_state_udt,
-        fold_dropdown_udt,
-        train_box_udt,
-        val_box_udt,
-        test_box_udt,
-        loss_image_udt,
-        test_eval_udt,
-        
-        submit_status_udt,
-        submit_btn_udt,
-        reset_btn_udt,
-        param_udt,
-        timer_udt,
-    )
+    return param_state_udt
 
 # Freezing mode when clicking submit button
 def on_submit():
@@ -227,7 +92,7 @@ def on_reset(_param_state):
         interactive=True,
     )
 
-    param_udt = {
+    param_state_udt = {
         'session_id': _session_id,
         'job_name': job_name_udt,
         'status': None
@@ -251,7 +116,7 @@ def on_reset(_param_state):
     process_status_udt  = gr.update(value='', visible=False)
 
     return (
-        param_udt,
+        param_state_udt,
         job_dropdown_upt,
         input_section_udt,
         output_section_udt,
@@ -269,35 +134,86 @@ def on_reset(_param_state):
         process_status_udt,
     )
 
-def check_status(_param_state, _submit_status):
+def update_sections(param_state):
     """
-    This function is mainly to regulate timer, activating it when job_status is processing.
-    This activation needs to be search db through time.
+    Handle submit / processing UI:
+    - input section
+    - submit section
+    - status text
+    - buttons
     """
-    process_status_udt = gr.update()
-    timer_udt = gr.update()
-    _submit_status_udt = gr.update()
-    param_udt = _param_state.copy()
 
-    if not _param_state:
-        return process_status_udt, timer_udt, _submit_status_udt, param_udt
+    _session_id = param_state.get("session_id")
+    _job_status = param_state.get("status")
+    job_start = param_state.get("job_start")
 
-    session_id = _param_state.get("session_id", None)
-    job_name   = _param_state.get("job_name", None)
+    # ---- Only dump these fields ----
+    payload_view = {
+        "SAV": param_state.get("SAV"),
+        "label": param_state.get("label"),
+        "model": param_state.get("model"),
+        "job_name": param_state.get("job_name"),
+        "STR": param_state.get("STR"),
+    }
 
-    if not session_id or not job_name:
-        return process_status_udt, timer_udt, _submit_status_udt, param_udt
+    input_section_udt  = gr.update(visible=False)
+    submit_section_udt = gr.update(visible=True)
 
-    # Look for record in db in which it is updated from worker every second
-    param_udt = collections.find_one(
-        {"session_id": session_id, "job_name": job_name}, {"_id": 0}
+    submit_status_udt  = gr.update(visible=False)
+    submit_btn_udt     = gr.update(visible=False)
+    reset_btn_udt      = gr.update(visible=True)
+
+    if _job_status == "finished":
+        msg = f"{json.dumps(payload_view, indent=2, sort_keys=True)}"
+        submit_status_udt  = gr.update(value=msg, visible=True)
+
+    elif _job_status == "pending":
+        msg = f"{json.dumps(payload_view, indent=2, sort_keys=True)}"
+        submit_status_udt  = gr.update(value=msg, visible=True)
+
+    elif _job_status == "processing" and job_start:
+        msg = f"{json.dumps(payload_view, indent=2, sort_keys=True)}"
+        submit_status_udt  = gr.update(value=msg, visible=True)
+
+    elif _session_id is None:
+        reset_btn_udt      = gr.update(visible=False)
+        pass
+
+    elif _job_status is None:
+        input_section_udt  = gr.update(visible=True)
+        submit_btn_udt     = gr.update(visible=True)
+        reset_btn_udt      = gr.update(visible=False)
+
+    return (
+        input_section_udt,
+        submit_section_udt,
+        submit_status_udt,
+        submit_btn_udt,
+        reset_btn_udt,
     )
 
-    if not param_udt:
-        return process_status_udt, timer_udt, _submit_status_udt, param_udt
+def update_process_status(param_state, search_db: bool):
+    process_status_udt = gr.update()
+    param_state_udt = param_state.copy() if param_state else param_state
 
-    _job_status = param_udt.get('status', None)
-    job_start = param_udt.get("job_start", None)
+    if not param_state:
+        return process_status_udt, param_state_udt
+
+    session_id = param_state.get("session_id", None)
+    job_name   = param_state.get("job_name", None)
+
+    if not session_id or not job_name:
+        return process_status_udt, param_state_udt
+
+    # ---- Conditionally refresh from DB ----
+    if search_db:
+        updated = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 0})
+        if not updated:
+            return process_status_udt, param_state_udt
+        param_state_udt = updated
+
+    _job_status = param_state_udt.get("status")
+    job_start   = param_state_udt.get("job_start")
 
     if _job_status == "pending":
         process_status_udt = gr.update(value="⏳ Waiting in queue...", visible=True)
@@ -305,13 +221,24 @@ def check_status(_param_state, _submit_status):
         elapsed = int(time.time() - job_start)
         emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
         icon = emoji_frames[elapsed % len(emoji_frames)]
-        process_status_udt = gr.update(value=f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed.", visible=True)
+        msg = f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed."
+        process_status_udt = gr.update(value=msg, visible=True)
     elif _job_status == "finished":
-        job_end   = param_udt.get("job_end")
-        runtime = int(job_end - job_start)
-        process_status_udt = gr.update(visible=False)
-        msg = _submit_status + f"\n✅ Finished in {runtime}s"
-        _submit_status_udt = gr.update(value=msg)
-        timer_udt = gr.update(active=False)
+        job_end = param_state_udt.get("job_end")
+        if job_start and job_end:
+            runtime = int(job_end - job_start)
+            process_status_udt = gr.update(value=f"✅ Finished in {runtime}s", visible=True)
 
-    return process_status_udt, timer_udt, _submit_status_udt, param_udt
+    return process_status_udt, param_state_udt
+
+def update_timer(param_state):
+    _job_status = param_state.get('status', None)
+    
+    if _job_status == "finished":
+        timer_udt = gr.update(active=False)
+    elif _job_status is None:
+        timer_udt = gr.update(active=False)
+    else:
+        timer_udt = gr.update(active=True)
+    
+    return timer_udt

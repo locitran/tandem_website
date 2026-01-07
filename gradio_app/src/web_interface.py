@@ -4,7 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from .update_input import upload_file, on_delete_file
-from .settings import GRADIO_APP_ROOT
+from .settings import GRADIO_DIR
 from .update_output import on_fold
 
 basedir = os.path.dirname(__file__)
@@ -41,11 +41,15 @@ def session():
     
     return session_id, session_btn, session_status, job_dropdown
 
-def on_auto_fill(mode, auto_fill):
+def on_auto_fill(mode, auto_fill, param_state):
+    
+    param_state_udt = param_state.copy()
+
     if not auto_fill:
-        sav_txt = gr.update(value="")
-        str_file = gr.update()
-        return sav_txt, str_file
+        sav_txt_udt = gr.update(value="")
+        str_file_udt = gr.update()
+        job_name_udt = gr.update()
+        return sav_txt_udt, str_file_udt, job_name_udt, param_state_udt
     
     if mode == "Inferencing":
         inf_test_SAVs = (
@@ -61,8 +65,9 @@ def on_auto_fill(mode, auto_fill):
             f"O00206 E287G\n"
             f"O00206 C306W\n"
         )
-        sav_txt = gr.update(value=inf_test_SAVs)
-        str_file = gr.update()
+        sav_txt_udt = gr.update(value=inf_test_SAVs)
+        str_file_udt = gr.update()
+        job_name_udt = gr.update('Inference_test')
     elif mode == "Transfer Learning":
         tf_test_SAVs = (
             f"P29033 Y217D 0\n"
@@ -113,12 +118,14 @@ def on_auto_fill(mode, auto_fill):
             f"P29033 L205V 1\n"
             f"P29033 N206S 1\n"
         )
-        sav_txt = gr.update(value=tf_test_SAVs)
-        str_file = os.path.join(GRADIO_APP_ROOT, 'test/8qa2_opm_25Apr03.pdb')
+        sav_txt_udt = gr.update(value=tf_test_SAVs)
+        str_file_udt = os.path.join(GRADIO_DIR, 'test/8qa2_opm_25Apr03.pdb')
+        param_state_udt['GJB2_test'] = True
+        job_name_udt = gr.update(value='GJB2_test')
     else:
         raise KeyError(f"Unknown mode: {mode}")
 
-    return sav_txt, str_file
+    return sav_txt_udt, str_file_udt, job_name_udt, param_state_udt
 
 def on_mode(mode):
     inf_mode = gr.update(visible=(mode == "Inferencing"))
@@ -129,7 +136,7 @@ def on_structure(checked: bool):
     structure_section_udt = gr.update(visible=checked)
     return structure_section_udt
 
-def tandem_input(time_interval=1):
+def tandem_input(param_state, time_interval=1):
     """
     Next try: DeletedFileData, Error, ParamViewer
     https://www.gradio.app/docs/gradio/deletedfiledata
@@ -187,8 +194,8 @@ def tandem_input(time_interval=1):
     timer = gr.Timer(value=time_interval, active=False) # Timer to check result
 
     # Fill test case
-    inf_auto_fill.change(fn=on_auto_fill, inputs=[mode, inf_auto_fill], outputs=[inf_sav_txt, str_file])
-    tf_auto_fill.change(fn=on_auto_fill, inputs=[mode, tf_auto_fill], outputs=[tf_sav_txt, str_file])
+    inf_auto_fill.change(fn=on_auto_fill, inputs=[mode, inf_auto_fill, param_state], outputs=[inf_sav_txt, str_file, job_name_txt, param_state])
+    tf_auto_fill.change(fn=on_auto_fill, inputs=[mode, tf_auto_fill, param_state], outputs=[tf_sav_txt, str_file, job_name_txt, param_state])
 
     # Select mode (1) Inferencing or (2) Transfer Learning
     mode.change(fn=on_mode, inputs=mode, outputs=[inf_section, tf_section])
@@ -204,6 +211,7 @@ def tandem_input(time_interval=1):
     str_file.delete(fn=on_delete_file, inputs=[str_file], outputs=[str_btn, str_file])
 
     return (
+        param_state,
         input_section,
         mode,
         inf_section,

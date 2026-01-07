@@ -17,6 +17,9 @@ html, body {
   flex-direction: column;
 }
 
+/* ===============================
+   HOME / LANDING SECTION
+   =============================== */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--body-text-color);
@@ -46,6 +49,7 @@ h3 {
   font-size: 12px;
   background-color: var(--background-fill-secondary);
   color: var(--body-text-color);
+  overflow-y: auto !important;
 }
 
 .gr-button {
@@ -130,8 +134,7 @@ h3 {
   width: 100%;
   background-color: var(--background-fill-secondary);
   color: var(--body-text-color);
-  border-top: 1px solid var(--border-color-primary);
-  padding: 10px 20px;
+  padding: 5px 10px;
   z-index: 100;
 }
 

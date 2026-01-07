@@ -130,43 +130,45 @@ def on_authentication(pw):
 
 def manager_tab():
     authenticated = gr.State(False)
-    with gr.Tab("🗂️ Job Manager"):
-        with gr.Group(visible=True) as password_gate:
-            gr.Markdown("### 🔒 Admin Authentication")
-            password_box = gr.Textbox(type="password", label="Enter password")
-            login_btn = gr.Button("Unlock")
-            login_msg = gr.Markdown()
+    with gr.Group(visible=True) as password_gate:
+        gr.Markdown("### 🔒 Admin Authentication")
+        password_box = gr.Textbox(type="password", label="Enter password")
+        login_btn = gr.Button("Unlock")
+        login_msg = gr.Markdown()
 
-        with gr.Group(visible=False) as job_manager_ui:
-            gr.Markdown("## 🗂️ Job Manager")
-            # ---- Filters ----
-            with gr.Row():
-                label="Search (session_id or job_name)"
-                placeholder="Type to filter…"
-                choices = ["All", "pending", "processing", "finished"]
-                search = gr.Textbox(label=label, placeholder=placeholder, scale=2)
-                status_filter = gr.Dropdown(choices=choices, value="All", label="Status", scale=1)
+    with gr.Group(visible=False) as job_manager_ui:
+        gr.Markdown("## 🗂️ Job Manager")
+        # ---- Filters ----
+        with gr.Row():
+            label="Search (session_id or job_name)"
+            placeholder="Type to filter…"
+            choices = ["All", "pending", "processing", "finished"]
+            search = gr.Textbox(label=label, placeholder=placeholder, scale=2)
+            status_filter = gr.Dropdown(choices=choices, value="All", label="Status", scale=1)
 
-            # ---- Job Table ----
-            headers = ["session_id","job_name","mode","status",]
-            df_jobs = gr.Dataframe(headers=headers, interactive=False, wrap=True)
-            # ---- State: selected job ----
-            selected_session = gr.State(None)
-            selected_job = gr.State(None)
-            params_box = gr.Code(label="Job Parameters (Editable JSON")
+        # ---- Job Table ----
+        headers = ["session_id","job_name","mode","status",]
+        df_jobs = gr.Dataframe(headers=headers, interactive=False, wrap=True)
+        # ---- State: selected job ----
+        selected_session = gr.State(None)
+        selected_job = gr.State(None)
+        params_box = gr.Code(label="Job Parameters (Editable JSON")
 
-            with gr.Row():
-                save_btn = gr.Button("💾 Save Changes")
-                delete_btn = gr.Button("🗑 Delete Job")
-            status_msg = gr.Markdown()
+        with gr.Row():
+            save_btn = gr.Button("💾 Save Changes")
+            delete_btn = gr.Button("🗑 Delete Job")
+        status_msg = gr.Markdown()
 
-            # =========================================================
-            # Events
-            # =========================================================
-            search.change(on_refresh,           inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
-            status_filter.change(on_refresh,    inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
-            df_jobs.select(on_select_job,       inputs=[df_jobs], outputs=[selected_session, selected_job, params_box, status_msg])
-            save_btn.click(on_save_job,         inputs=[selected_session, selected_job, params_box], outputs=status_msg)
-            delete_btn.click(on_delete_job,     inputs=[selected_session, selected_job, df_jobs], outputs=[status_msg, df_jobs])
-        password_box.submit(on_authentication,  inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
-        login_btn.click(on_authentication,      inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
+        # =========================================================
+        # Events
+        # =========================================================
+        search.change(on_refresh,           inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
+        status_filter.change(on_refresh,    inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
+        df_jobs.select(on_select_job,       inputs=[df_jobs], outputs=[selected_session, selected_job, params_box, status_msg])
+        save_btn.click(on_save_job,         inputs=[selected_session, selected_job, params_box], outputs=status_msg)
+        delete_btn.click(on_delete_job,     inputs=[selected_session, selected_job, df_jobs], outputs=[status_msg, df_jobs])
+    password_box.submit(on_authentication,  inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
+    login_btn.click(on_authentication,      inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
+
+if __name__ == "__main__":
+    pass

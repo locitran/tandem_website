@@ -128,12 +128,12 @@ def zip_folder(folder):
         LOGGER.info(f"Creating Zip {zip_path}")
     return zip_path
 
-def on_select_image(image_name, folder, _param_state):
+def on_select_image(image_name, folder, param_state):
     if not image_name:
         return gr.update(visible=False)
 
     path = os.path.join(
-        folder, _param_state["session_id"], _param_state["job_name"], 'tandem_shap', image_name)
+        folder, param_state["session_id"], param_state["job_name"], 'tandem_shap', image_name)
     return gr.update(value=path, visible=True)
 
 def render_finished_job(_mode, job_folder):
@@ -235,50 +235,28 @@ def render_finished_job(_mode, job_folder):
         test_eval_udt,
     )
 
-def render_output(param_state, folder):
-    ""
-    _job_status = param_state.get('status', None)
-    _mode = param_state.get("mode", None)
+def update_output_sections(param_state, folder):
+    """
+    Handle output-related UI updates:
+    - output section visibility
+    - prediction table
+    - images
+    - training / evaluation artifacts
+    """
+    _session_id = param_state.get("session_id")
+    _job_status = param_state.get("status")
+    _job_name   = param_state.get("job_name")
+    _mode       = param_state.get("mode")
 
-    output_section_udt  = gr.update(visible=False)
-    inf_output_secion_udt = gr.update(visible=False)
-    tf_output_secion_udt = gr.update(visible=False)
+    # Defaults: hide everything
+    def hide_all(n):
+        return [gr.update(visible=False) for _ in range(n)]
 
-    pred_table_udt      = gr.update(visible=False)
-    result_zip_udt      = gr.update(visible=False) 
-    image_selector_udt  = gr.update(visible=False)
-    image_viewer_udt    = gr.update(visible=False)
-
-    folds_state_udt     = gr.update(visible=False)
-    fold_dropdown_udt   = gr.update(visible=False)
-    train_box_udt       = gr.update(visible=False)
-    val_box_udt         = gr.update(visible=False)
-    test_box_udt        = gr.update(visible=False)
-    loss_image_udt      = gr.update(visible=False)
-    test_eval_udt       = gr.update(visible=False)
-
-    if _job_status != "finished":
-        return (
-            output_section_udt,
-            result_zip_udt,
-            inf_output_secion_udt, 
-            pred_table_udt, 
-            image_selector_udt, 
-            image_viewer_udt,
-            tf_output_secion_udt,
-            folds_state_udt,
-            fold_dropdown_udt,
-            train_box_udt,
-            val_box_udt,
-            test_box_udt,
-            loss_image_udt,
-            test_eval_udt,
-        )
-
-    _session_id = param_state["session_id"]
-    _job_name   = param_state["job_name"]
-    job_folder = os.path.join(folder, _session_id, _job_name) 
-    return render_finished_job(_mode, job_folder)
-
+    if _job_status == "finished":
+        job_folder = os.path.join(folder, _session_id, _job_name)
+        return render_finished_job(_mode, job_folder)
+    else:
+        return hide_all(14)
+    
 if __name__ == "__main__":
     pass

@@ -178,3 +178,5 @@ cython_debug/
 note.md
 .gitignore
 .gitmodules
+
+./gradio_app/test.html

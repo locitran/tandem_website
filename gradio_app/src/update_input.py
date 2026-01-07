@@ -74,11 +74,12 @@ def handle_SAV(mode: str, SAV_input: str):
     (bool, str, np.ndarray | None)
     """
 
-    message = f"Unknown mode: {mode}"
+    
     data = None
 
     if mode not in {"Inferencing", "Transfer Learning"}:
-        return message, data
+        gr.Warning(message=f"Unknown mode: {mode}")
+        return data
 
     if mode == "Inferencing":
         pattern = INF_PATTERN
@@ -98,8 +99,8 @@ def handle_SAV(mode: str, SAV_input: str):
     lines = clean_text.splitlines()
 
     if not lines or all(not l.strip() for l in lines):
-        message = "You provide no input, please provide uniprot ID and SAV."
-        return message, data
+        gr.Warning("You provide no input, please provide uniprot ID and SAV.")
+        return data
 
     # ---------- validation ----------
     for line in lines:
@@ -118,21 +119,22 @@ def handle_SAV(mode: str, SAV_input: str):
                 f"{line}: Wrong format\n"
                 f"  Expected: {expected}"
             )
-            return message, data
+            gr.Warning(message=message)
+            return data
         
         resid = int(m.group("resid"))
         if resid <= 0:
-            message = f"{line}: residue index must be positive"
-            return message, data
+            gr.Warning(f"{line}: residue index must be positive")
+            return data
 
         if m.group("wt") == m.group("mt"):
-            message = f"{line}: WT and mutant are identical"
-            return message, data
+            gr.Warning(f"{line}: WT and mutant are identical")
+            return data
 
         if mode == "Transfer Learning":
             if int(m.group("label")) not in (0, 1):
-                message = f"{line}: label must be 0 or 1"
-                return message, data
+                gr.Warning(f"{line}: label must be 0 or 1")
+                return data
 
     # ---------- NumPy load (ONCE) ----------
     try:
@@ -145,9 +147,10 @@ def handle_SAV(mode: str, SAV_input: str):
         data = np.atleast_1d(data)
         data["acc"] = np.char.upper(data["acc"])
         data["wt_resid_mt"] = np.char.upper(data["wt_resid_mt"])
-        return "OK", data
+        return data
     except Exception as e:
-        return f"NumPy parsing failed: {e}", data
+        gr.Warning(message=f"NumPy parsing failed: {e}")
+        return data
 
 def handle_STR(_str_txt: str):
     """
@@ -182,8 +185,8 @@ def handle_STR(_str_txt: str):
                 try:
                     out = r.json()
                     if isinstance(out, list) and len(out) > 0:
-                        message = f"✅ Valid AlphaFold UniProt ID: {uniprot}"
-                        return message, uniprot
+                        LOGGER.info(f"✅ Valid AlphaFold UniProt ID: {uniprot}")
+                        return uniprot
                 except ValueError:
                     pass
         except requests.RequestException:
@@ -195,14 +198,13 @@ def handle_STR(_str_txt: str):
             try:
                 h = requests.head(url, allow_redirects=True, timeout=10)
                 if h.ok:
-                    message = f"✅ Valid AlphaFold UniProt ID: {uniprot}"
-                    return message, uniprot
+                    LOGGER.info(f"✅ Valid AlphaFold UniProt ID: {uniprot}")
+                    return uniprot
             except requests.RequestException:
                 continue
         
-        message = f"❌ AlphaFold structure not found for UniProt ID: {uniprot}"
-        uniprot = None
-        return message, uniprot
+        gr.Warning(f"❌ AlphaFold structure not found for UniProt ID: {uniprot}")
+        return None
 
     # ---------- PDB ----------
     if PDB_PATTERN.fullmatch(s):
@@ -211,18 +213,18 @@ def handle_STR(_str_txt: str):
         try:
             r = requests.get(url, timeout=10)
             if r.status_code == 200:
-                message = f"✅ Valid PDB ID: {pdb_id}"
+                LOGGER.info(f"✅ Valid PDB ID: {pdb_id}")
             else:
-                message = f"❌ PDB ID not found in RCSB: {pdb_id}"
+                gr.Warning(f"❌ PDB ID not found in RCSB: {pdb_id}")
                 pdb_id = None
-            return message, pdb_id
+            return pdb_id
         except requests.RequestException:
-            message = f"❌ Failed to reach RCSB for PDB ID: {pdb_id}"
-            pdb_id = None
-            return message, pdb_id
+            gr.Warning(f"❌ Failed to reach RCSB for PDB ID: {pdb_id}")
+            return None
 
     # ---------- Invalid ----------
-    return "❌ Invalid input: not a UniProt / AlphaFold / PDB ID", None
+    gr.Warning("❌ Invalid input: not a UniProt / AlphaFold / PDB ID")
+    return None
 
 # Update parameters in param_state to param_state
 def update_input_param(
@@ -233,11 +235,11 @@ def update_input_param(
     _model_dropdown,
     _tf_sav_txt,
     _tf_sav_file,
-    _str_txt,
+    str_txt,
     _str_file,
     _job_name_txt,
     _email_txt,
-    _param_state,
+    param_state,
     _submit_status,
 ):  
     """Validate user inputs after clicking Submit, normalize them into a job payload, 
@@ -259,9 +261,7 @@ def update_input_param(
     | Status message    | Payload preview    | Error message      |
     | Polling timer     | Activated          | Deactivated        |
     """
-    _submit_status = (_submit_status or "")
-    params_udt = _param_state.copy()
-    error_message = ""
+    param_state_udt = param_state.copy()
 
     # 1) Pick SAV input (file > text)
     if _mode == "Inferencing":
@@ -272,21 +272,20 @@ def update_input_param(
         raise KeyError(f"Unknown mode: {_mode}")
 
     # 2) Validate SAVs
-    SAV_message, SAV_data = handle_SAV(_mode, SAV_input)
+    SAV_data = handle_SAV(_mode, SAV_input)
     if (SAV_data is not None):
         SAV = [f"{ele['acc']} {ele['wt_resid_mt']}" for ele in SAV_data]
         label = None if _mode == 'Inferencing' else SAV_data['label'].tolist()
         
-        params_udt['status'] = 'pending'
-        params_udt['mode'] = _mode
-        params_udt['SAV'] = SAV
-        params_udt['label'] = label
-        params_udt['model'] = _model_dropdown
-        params_udt['job_name'] = _job_name_txt
-        # params_udt['email'] = _email_txt
+        param_state_udt['status'] = 'pending'
+        param_state_udt['mode'] = _mode
+        param_state_udt['SAV'] = SAV
+        param_state_udt['label'] = label
+        param_state_udt['model'] = _model_dropdown
+        param_state_udt['job_name'] = _job_name_txt
+        # param_state_udt['email'] = _email_txt
     else:
-        params_udt['status'] = None
-        error_message = SAV_message
+        param_state_udt['status'] = None
 
     # 3) Validate STR
     # If user uploaded a file
@@ -295,37 +294,133 @@ def update_input_param(
         basename = os.path.basename(_str_file)
         tmpfile = os.path.join(tmp_folder, basename)
         shutil.copy2(_str_file, tmpfile)
-        params_udt['STR'] = tmpfile
+        param_state_udt['STR'] = tmpfile
     # If nothing provided, allow None
-    elif _str_txt is None or _str_txt.strip() == "":
-        params_udt['STR'] = None
+    elif str_txt is None or str_txt.strip() == "":
+        param_state_udt['STR'] = None
     else:
-        STR_message, STR_input = handle_STR(_str_txt)
+        STR_input = handle_STR(str_txt)
         if STR_input is None:
-            params_udt['status'] = None
-            error_message = STR_message
+            param_state_udt['status'] = None
         else:
-            params_udt['STR'] = STR_input
+            param_state_udt['STR'] = STR_input
 
     # status is False meaning that either STR_input or SAV_data are fail
-    if params_udt['status'] is not None:
+    if param_state_udt['status'] is not None:
         input_section_udt  = gr.update(visible=False)   
-        _submit_status += f"\n📦 Payload collected for job: {_job_name_txt}"
-        _submit_status += f"\n{pformat(params_udt, width=200, compact=True)}"
-        submit_status_udt = gr.update(value=_submit_status, visible=True)
         submit_btn_udt = gr.update(visible=False) # turn off
         reset_btn_udt = gr.update(visible=True, interactive=True) # turn on
         timer_udt = gr.update(active=True) # turn on
     else:
-        params_udt = _param_state.copy()
+        param_state_udt = param_state.copy()
         input_section_udt  = gr.update(visible=True)   
-        _submit_status += f"\n❌ {error_message}"
-        submit_status_udt = gr.update(value=_submit_status, visible=True)
         submit_btn_udt = gr.update(visible=True, interactive=True) # turn off
         reset_btn_udt = gr.update(visible=False) # turn off
         timer_udt = gr.update(active=False) # turn on
     
-    return params_udt, input_section_udt, submit_status_udt, submit_btn_udt, reset_btn_udt, timer_udt
+    return param_state_udt, input_section_udt, submit_btn_udt, reset_btn_udt, timer_udt
+
+# def update_input_param(
+    
+#     _mode,
+#     _inf_sav_txt,
+#     _inf_sav_file,
+#     _model_dropdown,
+#     _tf_sav_txt,
+#     _tf_sav_file,
+#     _str_txt,
+#     _str_file,
+#     _job_name_txt,
+#     _email_txt,
+#     _param_state,
+#     _submit_status,
+# ):  
+#     """Validate user inputs after clicking Submit, normalize them into a job payload, 
+#     update UI states, and decide whether the job can enter the queue.
+
+#     After the submit button is clicked, this function:
+# 	1.	Selects the correct input sources (uploaded files take priority)
+# 	2.	Validates SAV (variant) input
+# 	3.	Validates structure (STR) input
+# 	4.	Builds a clean job parameter dictionary
+# 	6.	Updates UI state based on success or failure
+# 	7.	Starts or stops the polling timer
+
+#     | UI Component      | Validation Success | Validation Failure |
+#     |-------------------|--------------------|--------------------|
+#     | Input section     | Hidden             | Visible            |
+#     | Submit button     | Hidden             | Visible            |
+#     | Reset button      | Visible            | Hidden             |
+#     | Status message    | Payload preview    | Error message      |
+#     | Polling timer     | Activated          | Deactivated        |
+#     """
+#     _submit_status = (_submit_status or "")
+#     param_state_udt = _param_state.copy()
+#     error_message = ""
+
+#     # 1) Pick SAV input (file > text)
+#     if _mode == "Inferencing":
+#         SAV_input = _inf_sav_file if (_inf_sav_file and os.path.isfile(_inf_sav_file)) else (_inf_sav_txt or "")
+#     elif _mode == "Transfer Learning":
+#         SAV_input = _tf_sav_file if (_tf_sav_file and os.path.isfile(_tf_sav_file)) else (_tf_sav_txt or "")
+#     else:
+#         raise KeyError(f"Unknown mode: {_mode}")
+
+#     # 2) Validate SAVs
+#     SAV_message, SAV_data = handle_SAV(_mode, SAV_input)
+#     if (SAV_data is not None):
+#         SAV = [f"{ele['acc']} {ele['wt_resid_mt']}" for ele in SAV_data]
+#         label = None if _mode == 'Inferencing' else SAV_data['label'].tolist()
+        
+#         param_state_udt['status'] = 'pending'
+#         param_state_udt['mode'] = _mode
+#         param_state_udt['SAV'] = SAV
+#         param_state_udt['label'] = label
+#         param_state_udt['model'] = _model_dropdown
+#         param_state_udt['job_name'] = _job_name_txt
+#         # param_state_udt['email'] = _email_txt
+#     else:
+#         param_state_udt['status'] = None
+#         error_message = SAV_message
+
+#     # 3) Validate STR
+#     # If user uploaded a file
+#     if _str_file and os.path.isfile(_str_file):
+#         # basename of uploaded file
+#         basename = os.path.basename(_str_file)
+#         tmpfile = os.path.join(tmp_folder, basename)
+#         shutil.copy2(_str_file, tmpfile)
+#         param_state_udt['STR'] = tmpfile
+#     # If nothing provided, allow None
+#     elif _str_txt is None or _str_txt.strip() == "":
+#         param_state_udt['STR'] = None
+#     else:
+#         STR_message, STR_input = handle_STR(_str_txt)
+#         if STR_input is None:
+#             param_state_udt['status'] = None
+#             error_message = STR_message
+#         else:
+#             param_state_udt['STR'] = STR_input
+
+#     # status is False meaning that either STR_input or SAV_data are fail
+#     if param_state_udt['status'] is not None:
+#         input_section_udt  = gr.update(visible=False)   
+#         _submit_status += f"\n📦 Payload collected for job: {_job_name_txt}"
+#         _submit_status += f"\n{pformat(param_state_udt, width=200, compact=True)}"
+#         submit_status_udt = gr.update(value=_submit_status, visible=True)
+#         submit_btn_udt = gr.update(visible=False) # turn off
+#         reset_btn_udt = gr.update(visible=True, interactive=True) # turn on
+#         timer_udt = gr.update(active=True) # turn on
+#     else:
+#         param_state_udt = _param_state.copy()
+#         input_section_udt  = gr.update(visible=True)   
+#         _submit_status += f"\n❌ {error_message}"
+#         submit_status_udt = gr.update(value=_submit_status, visible=True)
+#         submit_btn_udt = gr.update(visible=True, interactive=True) # turn off
+#         reset_btn_udt = gr.update(visible=False) # turn off
+#         timer_udt = gr.update(active=False) # turn on
+    
+#     return param_state_udt, input_section_udt, submit_status_udt, submit_btn_udt, reset_btn_udt, timer_udt
 
 if __name__ == "__main__":
     pass

@@ -1,5 +1,7 @@
 // Layout, containers
 
+// Layout, containers
+
 .gradio-container {
   min-height: 100vh;
   display: flex;
@@ -13,3 +15,202 @@
   display: flex;
   flex-direction: column;
 }
+
+
+// .gradio-container {
+//   min-height: 100vh;
+//   display: flex;
+//   flex-direction: column;
+// }
+
+// /* ===== Main content grows ===== */
+// #main-content {
+//   flex: 1;
+//   min-height: 70vh;
+//   display: flex;
+//   flex-direction: column;
+
+//   /* Center content */
+//   max-width: 1200px;
+//   width: 100%;
+//   margin: 0 auto;
+
+//   margin-top: 0;
+//   padding-top: 0;
+
+//   /* Responsive side spacing */
+//   padding: clamp(16px, 4vw, 32px);
+// }
+
+/* ===============================
+   HOME / LANDING SECTION
+   =============================== */
+
+// .home-main {
+//   max-width: 680px;
+//   background-color: var(--background-fill-secondary) !important;
+//   margin: 0 auto;
+//   padding: 24px 24px 20px;
+//   box-sizing: border-box;
+// }
+
+// .home-greeting {
+//   font-size: 2.2rem;
+//   font-weight: 700;
+//   text-align: center;
+//   margin-bottom: 24px;
+//   line-height: 1.25;
+// }
+
+// /* -------------------------------
+//    Session actions
+//    ------------------------------- */
+
+// .home-actions {
+//   display: flex;
+//   flex-direction: column;
+//   gap: 10px;
+//   margin-bottom: 20px;
+//   background-color: var(--background-fill-secondary);
+// }
+
+// /* Optional fine-tuning */
+// #home-textbox {
+//   margin-bottom: 0;
+// }
+
+// #home-btn {
+//   margin-top: 0;
+// }
+
+// /* -------------------------------
+//    Footer
+//    ------------------------------- */
+
+// .home-footer {
+//   text-align: center;
+//   font-size: 0.95rem;
+//   color: var(--body-text-color);
+// }
+
+// .home-footer-title {
+//   font-size: 1.2rem;
+//   margin-bottom: 6px;
+// }
+
+// .home-footer-link {
+//   font-weight: 600;
+//   text-decoration: none;
+// }
+
+// /* ===== Home page container ===== *//* ===== Home page container ===== *//* ===== Home page container ===== *//* ===== Home page container ===== */
+// .home-main {
+//   max-width: 640px;        /* or 560px / 720px */
+//   margin: 0 auto;          /* center horizontally */
+//   padding: 16px 20px;      /* CONSTRAIN spacing HERE */
+//   box-sizing: border-box;
+//   background-color: var(--background-fill-secondary);
+// }
+
+// // /* ===== Greeting ===== */
+// // .home-greeting {
+// //   font-size: 2.2rem;
+// //   font-weight: 700;
+// //   text-align: center;
+// //   margin-bottom: 28px;
+// //   background-color: var(--background-fill-secondary);
+// //   background: none;   /* important */
+// // }
+
+// // /* ===== Buttons row ===== */
+
+// // .home-actions {
+// //   display: flex;
+// //   flex-direction: column;
+// //   gap: 8px;          /* explicit spacing */
+// //   margin: 12px 0;    /* controlled vertical breathing */
+// //   background-color: var(--background-fill-secondary);
+// // }
+
+// // /* ===== Buttons ===== */
+// // .home-btn {
+// //   font-size: 1.15rem;
+// //   padding: 18px 36px;
+// //   border-radius: 14px;
+// //   min-width: 260px;
+// //   font-weight: 600;
+// // }
+
+// // /* ===== Footer note ===== */
+// // .home-note {
+// //   font-size: 1.2rem;
+// //   opacity: 0.85;
+// //   text-align: center;
+// // }
+
+// /* ===== Responsive ===== */
+// @media (max-width: 768px) {
+//   .home-greeting {
+//     font-size: 1.6rem;
+//   }
+
+//   .home-btn {
+//     width: 100%;
+//     min-width: unset;
+//   }
+
+//   .home-actions {
+//     gap: 16px;
+//   }
+// }
+
+// .home-btn:hover {
+//   transform: translateY(-2px);
+//   transition: 0.2s ease;
+// }
+
+// /* =============================
+// Remove Gradio textbox containers
+// ============================= */
+
+// /* Outer Gradio container */
+// #home-textbox {
+//     background: transparent !important;
+//     border: none !important;
+//     box-shadow: none !important;
+//     margin: 0 !important;
+//     padding: 0 !important;
+//     padding-bottom: 0 !important;
+// }
+
+// #home-btn {
+//   margin-top: 0 !important;
+// }
+
+// /* Inner wrap */
+// #home-textbox .wrap {
+//     background: transparent !important;
+//     border: none !important;
+//     box-shadow: none !important;
+//     margin: 0 !important;
+//     padding: 0 !important;
+// }
+
+// /* The actual input element */
+// #home-textbox textarea,
+// #home-textbox input {
+//     background: transparent !important;      /* remove gray fill */
+//     border: none !important;                 /* remove default border */
+//     outline: none !important;                /* no focus outline */
+//     box-shadow: none !important;
+//     padding: 6px 8px !important;             /* small internal padding */
+//     font-size: 1rem;                         /* readable text */
+//     color: var(--body-text-color);           /* matches theme */
+// }
+
+// /* Optional: underline styling only */
+// #home-textbox textarea:focus,
+// #home-textbox input:focus {
+//     border-bottom: 2px solid var(--primary-color);  /* nice focus line */
+//     background: transparent;
+// }
