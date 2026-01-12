@@ -180,3 +180,4 @@ note.md
 .gitmodules
 
 ./gradio_app/test.html
+./docker-compose-dev.yml

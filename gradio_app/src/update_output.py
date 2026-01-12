@@ -235,7 +235,7 @@ def render_finished_job(_mode, job_folder):
         test_eval_udt,
     )
 
-def update_output_sections(param_state, folder):
+def update_finished_job(param_state, folder):
     """
     Handle output-related UI updates:
     - output section visibility

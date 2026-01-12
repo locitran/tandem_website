@@ -10,31 +10,37 @@ collections = db["input_queue"]
 ADMIN_PASSWORD = "yanglab"
 JOBS_ROOT = "/tandem/jobs"
 
-def on_save_job(session_id, job_name, json_text):
+def on_save_job(session_id, job_name, json_text, df_jobs):
+    df_jobs_udt = gr.update()
     status_msg_udt = "⚠️ No job selected."
     if not session_id or not job_name:
-        return status_msg_udt
+        return status_msg_udt, df_jobs_udt
 
     try:
-        
         data = json.loads(json_text) # Parse JSON
         collections.update_one( # Update MongoDB
             {"session_id": session_id, "job_name": job_name},
             {"$set": data}
         )
 
+        headers = ["session_id","job_name","mode","status",]
+        saved_idx = df_jobs[(df_jobs['session_id'] == session_id) & (df_jobs['job_name'] == job_name)].index
+        df_jobs_udt = df_jobs.copy()
+        for h in headers:
+            df_jobs_udt.loc[saved_idx, h] = data.get(h)
+
         # ---- Write params.json ----
         path = f"{JOBS_ROOT}/{session_id}/{job_name}/params.json"
         os.makedirs(os.path.dirname(path), exist_ok=True)
-
         with open(path, "w") as f:
             json.dump(data, f, indent=4)
         status_msg_udt = "✅ Job updated successfully"
-        return status_msg_udt
+
+        return status_msg_udt, df_jobs_udt
 
     except Exception as e:
         status_msg_udt = f"❌ Error: {e}"
-        return status_msg_udt
+        return status_msg_udt, df_jobs_udt
 
 def on_delete_job(session_id, job_name, df_jobs):
     df_jobs_udt = gr.update()
@@ -108,10 +114,12 @@ def on_select_job(evt: gr.SelectData, df):
     )
     if job:
         params = jsonyx.dumps(job, indent=2, indent_leaves=False, separators=(",", ": "))
+        nlines = len(job)+3
     else:
         params = {}
+        nlines = 1
     
-    params_box_udt = gr.update(value=params, lines=len(job)+3)
+    params_box_udt = gr.update(value=params, lines=nlines)
     status_msg_udt = gr.update(value=None)
     return session_id, job_name, params_box_udt, status_msg_udt
 
@@ -152,7 +160,7 @@ def manager_tab():
         # ---- State: selected job ----
         selected_session = gr.State(None)
         selected_job = gr.State(None)
-        params_box = gr.Code(label="Job Parameters (Editable JSON")
+        params_box = gr.Code(label="Job Parameters")
 
         with gr.Row():
             save_btn = gr.Button("💾 Save Changes")
@@ -162,13 +170,18 @@ def manager_tab():
         # =========================================================
         # Events
         # =========================================================
-        search.change(on_refresh,           inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
-        status_filter.change(on_refresh,    inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
-        df_jobs.select(on_select_job,       inputs=[df_jobs], outputs=[selected_session, selected_job, params_box, status_msg])
-        save_btn.click(on_save_job,         inputs=[selected_session, selected_job, params_box], outputs=status_msg)
-        delete_btn.click(on_delete_job,     inputs=[selected_session, selected_job, df_jobs], outputs=[status_msg, df_jobs])
-    password_box.submit(on_authentication,  inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
-    login_btn.click(on_authentication,      inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
+        search.change(on_refresh,        inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
+        status_filter.change(on_refresh, inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
+        df_jobs.select(on_select_job,    inputs=[df_jobs],  outputs=[selected_session, selected_job, params_box, status_msg])
+        save_btn.click(on_save_job,      inputs=[selected_session, selected_job, params_box, df_jobs], outputs=[status_msg, df_jobs])
+        delete_btn.click(on_delete_job,  inputs=[selected_session, selected_job, df_jobs], outputs=[status_msg, df_jobs])
+    
+    event_1 = password_box.submit(on_authentication,  inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
+    event_2 = login_btn.click(on_authentication,      inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
+    authen_event = [event_1, event_2]
+    for _event in authen_event:
+        _event.then(on_refresh, inputs=[gr.State("All"), gr.State()], outputs=[df_jobs, params_box, status_msg])
+
 
 if __name__ == "__main__":
     pass

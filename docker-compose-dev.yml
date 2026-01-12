@@ -6,9 +6,9 @@ services:
   gradio_app:
     # platform: linux/amd64
     build: ./gradio_app
-    # container_name: gradio_app
+    container_name: gradio_app_dev
     ports:
-      - "7861:7861"
+      - "7862:7861"
     volumes:
       - ./gradio_app:/gradio_app
       - ./tandem:/tandem
@@ -18,12 +18,12 @@ services:
       - tandem
     labels:
       owner: "yang_loci"
-      project: "tandem_website"
+      project: "tandem_website_dev"
 
   tandem:
     platform: linux/amd64
     build: ./tandem
-    # container_name: tandem
+    container_name: tandem_dev
     expose:
       - "5000"   # internal only; not mapped to host
     depends_on:
@@ -34,12 +34,12 @@ services:
       - ./gradio_app:/gradio_app
     labels:
       owner: "yang_loci"
-      project: "tandem_website"
+      project: "tandem_website_dev"
 
   worker:
     # platform: linux/amd64
     build: ./worker
-    container_name: worker
+    container_name: worker_dev
     depends_on:
       - mongodb
       - tandem
@@ -48,12 +48,12 @@ services:
       - ./tandem:/tandem
     labels:
       owner: "yang_loci"
-      project: "tandem_website"
+      project: "tandem_website_dev"
 
   mongodb:
     # platform: linux/amd64
     image: mongo:4.4
-    container_name: mongodb
+    container_name: mongodb_dev
     ports:
       - "27017:27017"
     volumes:
@@ -61,7 +61,7 @@ services:
     restart: always
     labels:
       owner: "yang_loci"
-      project: "tandem_website"
+      project: "tandem_website_dev"
 
 volumes:
   mongo_data:

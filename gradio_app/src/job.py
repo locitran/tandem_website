@@ -60,20 +60,11 @@ def on_submit():
         2. Update submit status
     """
     submit_status_udt = gr.update(value="✅ Your job is just submitted.", visible=True)
-    submit_btn_udt = gr.update(interactive=False)
-    return (submit_status_udt, submit_btn_udt)
+    return submit_status_udt
 
 def on_reset(_param_state):
-    """
-    Render input_section, submit_section, Hide result_section
-    Reset all buttons and textbox
-
-    In case, we are at current session with some existing jobs, 
-    then we need to render these jobs.
-
-    """
     job_name_udt = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
-
+    
     _session_id = _param_state['session_id']
 
     # List out existing jobs of this _session_id and status not None
@@ -98,6 +89,7 @@ def on_reset(_param_state):
         'status': None
     }
 
+    input_page_udt      = gr.update(visible=True)
     input_section_udt   = gr.update(visible=True)
     output_section_udt  = gr.update(visible=False)
 
@@ -111,11 +103,11 @@ def on_reset(_param_state):
     job_name_txt_udt    = gr.update(value=job_name_udt)
     email_txt_udt       = gr.update('')
     submit_status_udt   = gr.update(visible=False)
-    submit_btn_udt      = gr.update(visible=True, interactive=True)
     reset_btn_udt       = gr.update(visible=False)
     process_status_udt  = gr.update(value='', visible=False)
 
     return (
+        input_page_udt,
         param_state_udt,
         job_dropdown_upt,
         input_section_udt,
@@ -129,68 +121,50 @@ def on_reset(_param_state):
         job_name_txt_udt,
         email_txt_udt,
         submit_status_udt,
-        submit_btn_udt,
         reset_btn_udt,
         process_status_udt,
     )
 
 def update_sections(param_state):
-    """
-    Handle submit / processing UI:
-    - input section
-    - submit section
-    - status text
-    - buttons
-    """
-
     _session_id = param_state.get("session_id")
-    _job_status = param_state.get("status")
-    job_start = param_state.get("job_start")
+    _job_status = param_state.get("status", None)
 
     # ---- Only dump these fields ----
-    payload_view = {
-        "SAV": param_state.get("SAV"),
-        "label": param_state.get("label"),
-        "model": param_state.get("model"),
-        "job_name": param_state.get("job_name"),
-        "STR": param_state.get("STR"),
-    }
+    input_section_udt   = gr.update(visible=False)   
+    input_page_udt      = gr.update(visible=False)   
+    reset_btn_udt       = gr.update(visible=False)
+    output_page_udt     = gr.update(visible=False)
 
-    input_section_udt  = gr.update(visible=False)
-    submit_section_udt = gr.update(visible=True)
-
-    submit_status_udt  = gr.update(visible=False)
-    submit_btn_udt     = gr.update(visible=False)
-    reset_btn_udt      = gr.update(visible=True)
-
-    if _job_status == "finished":
-        msg = f"{json.dumps(payload_view, indent=2, sort_keys=True)}"
-        submit_status_udt  = gr.update(value=msg, visible=True)
-
-    elif _job_status == "pending":
-        msg = f"{json.dumps(payload_view, indent=2, sort_keys=True)}"
-        submit_status_udt  = gr.update(value=msg, visible=True)
-
-    elif _job_status == "processing" and job_start:
-        msg = f"{json.dumps(payload_view, indent=2, sort_keys=True)}"
-        submit_status_udt  = gr.update(value=msg, visible=True)
-
-    elif _session_id is None:
-        reset_btn_udt      = gr.update(visible=False)
+    if _session_id is None:
         pass
-
     elif _job_status is None:
-        input_section_udt  = gr.update(visible=True)
-        submit_btn_udt     = gr.update(visible=True)
-        reset_btn_udt      = gr.update(visible=False)
+        input_section_udt  = gr.update(visible=True)   
+        input_page_udt      = gr.update(visible=True)
 
-    return (
-        input_section_udt,
-        submit_section_udt,
-        submit_status_udt,
-        submit_btn_udt,
-        reset_btn_udt,
-    )
+    elif _job_status in ["finished", "pending", "processing"]:
+        output_page_udt     = gr.update(visible=True)
+        reset_btn_udt       = gr.update(visible=True)
+
+    return input_section_udt, input_page_udt, output_page_udt, reset_btn_udt
+
+def update_submit_status(param_state):
+    _session_id = param_state.get("session_id")
+    _job_status = param_state.get("status", None)
+
+    if _session_id is None or _job_status is None:
+        submit_status_udt  = gr.update(visible=False)
+    else:
+        payload_view = {
+            "SAV": param_state.get("SAV"),
+            "label": param_state.get("label"),
+            "model": param_state.get("model"),
+            "job_name": param_state.get("job_name"),
+            "STR": param_state.get("STR"),
+        }
+        msg = f"{json.dumps(payload_view, indent=2, sort_keys=True)}"
+        submit_status_udt  = gr.update(value=msg, visible=True)
+
+    return submit_status_udt
 
 def update_process_status(param_state, search_db: bool):
     process_status_udt = gr.update()
@@ -242,3 +216,6 @@ def update_timer(param_state):
         timer_udt = gr.update(active=True)
     
     return timer_udt
+
+if __name__ == "__main__":
+    pass

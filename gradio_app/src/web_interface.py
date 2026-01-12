@@ -159,7 +159,7 @@ def tandem_input(param_state, time_interval=1):
             
             inf_auto_fill = gr.Checkbox(label="Do you want to load the test input?", interactive=True)
             choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
-            model_dropdown = gr.Dropdown(value="TANDEM", label="Model", choices=choices, interactive=True, filterable=False)
+            model_dropdown = gr.Dropdown(value="TANDEM", label="Select model for prediction", choices=choices, interactive=True, filterable=False)
 
         # Transfer Learning input mode
         with gr.Group(visible=False) as tf_section:
@@ -183,13 +183,11 @@ def tandem_input(param_state, time_interval=1):
         job_name = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
         job_name_txt = gr.Textbox(value=job_name, label="Job name", placeholder="Enter job name", interactive=True, elem_classes="gr-textbox")
         email_txt = gr.Textbox(value=None, label="Email (Optional)", placeholder="Enter your email", interactive=True, visible=False, type='email', elem_classes="gr-textbox")
-
-    with gr.Group(visible=False) as submit_section:
-        # Submit job
-        submit_status = gr.Textbox(label="Submission Status", visible=False, lines=10, interactive=False, elem_classes="gr-textbox")
-        process_status = gr.Textbox(label="Processing Status", visible=False, lines=1, interactive=False, elem_classes="gr-textbox")
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
-        reset_btn = gr.Button("New job", visible=False, elem_classes="gr-button")
+
+    # Submit job
+    # submit_status = gr.Textbox(label="Submission Status", visible=False, lines=10, interactive=False, elem_classes="gr-textbox")
+    # process_status = gr.Textbox(label="Processing Status", visible=False, lines=1, interactive=False, elem_classes="gr-textbox")
     
     timer = gr.Timer(value=time_interval, active=False) # Timer to check result
 
@@ -214,12 +212,10 @@ def tandem_input(param_state, time_interval=1):
         param_state,
         input_section,
         mode,
-        inf_section,
         inf_sav_txt,
         inf_sav_file,
         model_dropdown,
         
-        tf_section,
         tf_sav_txt,
         tf_sav_file,
 
@@ -229,11 +225,9 @@ def tandem_input(param_state, time_interval=1):
         job_name_txt,
         email_txt,
 
-        submit_section,
-        submit_status,
-        process_status,
+        # submit_status,
+        # process_status,
         submit_btn,
-        reset_btn,
 
         timer,
     )
@@ -244,11 +238,12 @@ def tandem_output():
         gr.Markdown("### Results", elem_classes="h3")
         
         with gr.Group(visible=False) as inf_output_secion:
-            pred_table = gr.HTML()
-            # Image selector (top bar)
-            image_selector = gr.Dropdown(label="Select visualization", choices=[], value=None, interactive=True)
-            # Image display (single image)
-            image_viewer = gr.Image(label="Visualization", show_download_button=False)
+            with gr.Row():
+                with gr.Column(scale=7):
+                    pred_table = gr.HTML()
+                with gr.Column(scale=3):
+                    image_selector = gr.Dropdown(label="Select visualization", choices=[], value=None, interactive=True)
+                    image_viewer = gr.Image(label="Visualization", show_download_button=False)
 
         with gr.Group(visible=False) as tf_output_secion:
             folds_state = gr.State(value={})
@@ -294,7 +289,7 @@ def build_header():
 
         <div class="header-content">
             <div class="header-text">
-                <div class="header-title">TANDEM-DIMPLE</div>
+                <div class="header-title">TANDEM-DIMPLE-DEV</div>
                 <div class="header-subtitle">Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Estimation</div>
             </div>
         </div>

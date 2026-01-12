@@ -3,7 +3,6 @@ import re
 import requests
 import shutil
 
-from pprint import pformat
 import gradio as gr
 import numpy as np
 from io import StringIO
@@ -308,17 +307,15 @@ def update_input_param(
     # status is False meaning that either STR_input or SAV_data are fail
     if param_state_udt['status'] is not None:
         input_section_udt  = gr.update(visible=False)   
-        submit_btn_udt = gr.update(visible=False) # turn off
         reset_btn_udt = gr.update(visible=True, interactive=True) # turn on
         timer_udt = gr.update(active=True) # turn on
     else:
         param_state_udt = param_state.copy()
         input_section_udt  = gr.update(visible=True)   
-        submit_btn_udt = gr.update(visible=True, interactive=True) # turn off
         reset_btn_udt = gr.update(visible=False) # turn off
         timer_udt = gr.update(active=False) # turn on
     
-    return param_state_udt, input_section_udt, submit_btn_udt, reset_btn_udt, timer_udt
+    return param_state_udt, input_section_udt, reset_btn_udt, timer_udt
 
 # def update_input_param(
     

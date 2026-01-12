@@ -86,7 +86,7 @@ def on_session(_session_id, _param_state):
                 {
                     "session_id": _session_id, 
                     "status": "finished",
-                    "mode": "Transfer learning"
+                    "mode": "Transfer Learning"
                 }
             )
             model_choices += pre_trained_models

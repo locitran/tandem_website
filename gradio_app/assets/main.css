@@ -208,3 +208,78 @@ h3 {
 .pred-table tbody tr:nth-child(odd) {
   background-color: var(--background-fill-primary);
 }
+
+/* ---------- Variables ---------- */
+/* ---------- Container ---------- */
+.qa-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.9;
+  /* ---------- Title ---------- */
+  /* ---------- General Q blocks ---------- */
+}
+
+.qa-container h2 {
+  text-align: center;
+  margin-bottom: 32px;
+  font-size: 1.5rem;
+}
+
+.qa-container > div[class^="q"] {
+  margin-bottom: 20px;
+}
+
+.qa-container h3 {
+  font-size: 1.1rem;
+  margin-bottom: 2px;
+}
+
+.qa-container p {
+  margin: 6px 0;
+  color: #222;
+}
+
+/* ---------- Q1 two-column layout ---------- */
+.q1-item {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  align-items: start;
+  /* Text column */
+  /* Figure column */
+}
+
+.q1-item .q1-text h3 {
+  margin-top: 0;
+}
+
+.q1-item .q1-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.q1-item .q1-figure img {
+  max-width: 100%;
+  padding: 6px;
+  display: block;
+}
+
+.q1-item .q1-figure figcaption {
+  font-size: 0.9em;
+  color: #555;
+  margin-top: 6px;
+}
+
+/* ---------- Responsive behavior ---------- */
+@media (max-width: 820px) {
+  .q1-item {
+    grid-template-columns: 1fr;
+  }
+  .q1-item .q1-figure {
+    margin-top: 12px;
+  }
+}
