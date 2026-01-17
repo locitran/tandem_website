@@ -1,3 +1,5 @@
+
+<style>
 /* sass/base/_reset.scss */
 html, body {
   height: 100%;
@@ -42,15 +44,14 @@ h3 {
   margin-bottom: 1px;
 }
 
-#gr-box textarea {
-  resize: both !important;
-  font-family: monospace !important;
-  white-space: nowrap !important;
-  font-size: 12px !important;
-  background-color: var(--background-fill-secondary) !important;
-  color: var(--body-text-color) !important;
+#text-box textarea {
+  resize: none;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 12px;
+  background-color: var(--background-fill-secondary);
+  color: var(--body-text-color);
   overflow-y: auto !important;
-  overflow-x: auto !important;
 }
 
 .gr-button {
@@ -63,16 +64,13 @@ h3 {
 #tf_auto_fill,
 #tf_auto_view,
 #inf_auto_fill,
-#inf_auto_view,
-#inf_clear_btn,
-#tf_clear_btn {
+#inf_auto_view {
   display: none !important;
 }
 
 /* ---------- base style ---------- */
 .load-input-btn,
-.view-output-btn,
-.clear-input-btn {
+.view-output-btn {
   background: none !important;
   border: none !important;
   padding: 4px 8px !important;
@@ -99,8 +97,7 @@ h3 {
     /* very light orange */
   }
   .load-input-btn:hover,
-.view-output-btn:hover,
-.clear-input-btn:hover {
+.view-output-btn:hover {
     text-decoration: underline !important;
   }
 }
@@ -120,8 +117,7 @@ h3 {
     /* lighter deep orange */
   }
   .load-input-btn:hover,
-.view-output-btn:hover,
-.clear-input-btn:hover {
+.view-output-btn:hover {
     text-decoration: underline !important;
   }
 }
@@ -456,3 +452,6 @@ h3 {
 .s4-figure img {
   max-width: 50%;
 }
+
+</style>
+<table class="pred-table"><colgroup><col class="col-index" /><col class="col-sav" /><col class="col-prob" /><col class="col-class" /></colgroup><thead><tr><th rowspan="2">#</th><th rowspan="2">SAV</th><th colspan="2">TANDEM</th></tr><tr><th>probability</th><th>classification</th></tr></thead><tbody><tr><td>0</td><td>O00189 R271H</td><td>0.052</td><td>benign</td></tr><tr><td>1</td><td>O00194 P138L</td><td>0.038</td><td>benign</td></tr><tr><td>2</td><td>O00194 A92T</td><td>0.616</td><td>pathogenic</td></tr><tr><td>3</td><td>O00204 V240I</td><td>0.573</td><td>pathogenic</td></tr><tr><td>4</td><td>O00204 L51S</td><td>0.150</td><td>benign</td></tr><tr><td>5</td><td>O00206 T175A</td><td>0.790</td><td>pathogenic</td></tr><tr><td>6</td><td>O00206 Q188R</td><td>0.564</td><td>pathogenic</td></tr><tr><td>7</td><td>O00206 C246S</td><td>0.821</td><td>pathogenic</td></tr><tr><td>8</td><td>O00206 E287D</td><td>0.930</td><td>pathogenic</td></tr><tr><td>9</td><td>O00206 E287G</td><td>0.965</td><td>pathogenic</td></tr><tr><td>10</td><td>O00206 C306W</td><td>0.991</td><td>pathogenic</td></tr></tbody></table>

@@ -1,11 +1,13 @@
 import os
+import json
 import gradio as gr
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from .update_input import upload_file, on_delete_file
+from .update_input import upload_file, on_clear_file, on_clear_param
 from .settings import GRADIO_DIR
-from .update_output import on_fold
+from .update_output import on_sav_set_select
+from .logger import LOGGER
 
 basedir = os.path.dirname(__file__)
 parentdir = os.path.dirname(basedir)
@@ -35,22 +37,18 @@ def session():
         gr.Markdown("### User session", elem_classes="h3")
         placeholder = "Start a new session or paste an existing session ID"
         session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder,  interactive=True, show_copy_button=True, elem_classes="gr-textbox")
+        # session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder,  interactive=True, buttons=['copy'], elem_classes="gr-textbox")
         session_btn = gr.Button("▶️ Start / Resume Session", elem_classes="gr-button")
         session_status = gr.Markdown("")
         job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
     
     return session_id, session_btn, session_status, job_dropdown
 
-def on_auto_fill(mode, auto_fill, param_state):
+def on_auto_fill(mode, param):
     
-    param_state_udt = param_state.copy()
+    param_udt = param.copy()
+    str_file_udt = gr.update()
 
-    if not auto_fill:
-        sav_txt_udt = gr.update(value="")
-        str_file_udt = gr.update()
-        job_name_udt = gr.update()
-        return sav_txt_udt, str_file_udt, job_name_udt, param_state_udt
-    
     if mode == "Inferencing":
         inf_test_SAVs = (
             f"O00189 R271H\n"
@@ -66,8 +64,10 @@ def on_auto_fill(mode, auto_fill, param_state):
             f"O00206 C306W\n"
         )
         sav_txt_udt = gr.update(value=inf_test_SAVs)
-        str_file_udt = gr.update()
-        job_name_udt = gr.update('Inference_test')
+        job_name_udt = gr.update(value='Inference_test')
+        str_btn_udt = gr.update(visible=True)
+        str_file_udt = gr.update(value=None, visible=False)
+        str_check_udt = gr.update(value=False)
     elif mode == "Transfer Learning":
         tf_test_SAVs = (
             f"P29033 Y217D 0\n"
@@ -119,24 +119,47 @@ def on_auto_fill(mode, auto_fill, param_state):
             f"P29033 N206S 1\n"
         )
         sav_txt_udt = gr.update(value=tf_test_SAVs)
-        str_file_udt = os.path.join(GRADIO_DIR, 'test/8qa2_opm_25Apr03.pdb')
-        param_state_udt['GJB2_test'] = True
+        param_udt['GJB2_test'] = True
         job_name_udt = gr.update(value='GJB2_test')
+
+        # STR
+        str_check_udt = gr.update(value=True)
+        str_btn_udt = gr.update(visible=False)
+        str_file_udt = os.path.join(GRADIO_DIR, 'test/8qa2_opm_25Apr03.pdb')
+        str_file_udt = gr.update(value=str_file_udt, visible=True)
     else:
         raise KeyError(f"Unknown mode: {mode}")
 
-    return sav_txt_udt, str_file_udt, job_name_udt, param_state_udt
+    return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt, param_udt
 
-def on_mode(mode):
+def on_auto_view(mode, jobs_folder):
+    test_session = 'test'
+    if mode == "Inferencing":
+        job_name = "inferencing_test"
+    elif mode == "Transfer Learning":
+        job_name = "transfer_learning_test"
+    else:
+        raise InterruptedError()
+    test_param_file = os.path.join(jobs_folder, test_session, job_name, 'params.json')
+    with open(test_param_file, 'r') as f:
+        test_param = json.load(f)
+    LOGGER.info(test_param)
+    return test_param
+
+def on_mode(mode, param):
+    param_udt = param.copy()
+    param_udt['GJB2_test'] = False
+
     inf_mode = gr.update(visible=(mode == "Inferencing"))
     tf_mode = gr.update(visible=(mode == "Transfer Learning"))
-    return (inf_mode, tf_mode)
+
+    return (inf_mode, tf_mode, param_udt)
 
 def on_structure(checked: bool):
     structure_section_udt = gr.update(visible=checked)
     return structure_section_udt
 
-def tandem_input(param_state, time_interval=1):
+def tandem_input(param):
     """
     Next try: DeletedFileData, Error, ParamViewer
     https://www.gradio.app/docs/gradio/deletedfiledata
@@ -157,7 +180,26 @@ def tandem_input(param_state, time_interval=1):
                 inf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 inf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
             
-            inf_auto_fill = gr.Checkbox(label="Do you want to load the test input?", interactive=True)
+            with gr.Row():
+                inf_auto_fill = gr.Button(elem_id="inf_auto_fill")
+                inf_auto_view = gr.Button(elem_id="inf_auto_view")
+                inf_clear_btn = gr.Button(elem_id="inf_clear_btn")
+                gr.HTML("""
+                    <button class="load-input-btn"
+                        onclick="document.getElementById('inf_auto_fill').click()">
+                        Load input example
+                    </button>
+
+                    <button class="view-output-btn"
+                        onclick="document.getElementById('inf_auto_view').click()">
+                        View output example
+                    </button>
+                    
+                    <button class="clear-input-btn"
+                        onclick="document.getElementById('inf_clear_btn').click()">
+                        Clear all
+                    </button>
+                    """)
             choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
             model_dropdown = gr.Dropdown(value="TANDEM", label="Select model for prediction", choices=choices, interactive=True, filterable=False)
 
@@ -169,7 +211,26 @@ def tandem_input(param_state, time_interval=1):
                 tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox")
                 tf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 tf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
-            tf_auto_fill = gr.Checkbox(label="Do you want to load the test input?", interactive=True)
+            with gr.Row():
+                tf_auto_fill = gr.Button(elem_id="tf_auto_fill")
+                tf_auto_view = gr.Button(elem_id="tf_auto_view")
+                tf_clear_btn = gr.Button(elem_id="tf_clear_btn")
+                gr.HTML("""
+                    <button class="load-input-btn"
+                        onclick="document.getElementById('tf_auto_fill').click()">
+                        Load input example
+                    </button>
+
+                    <button class="view-output-btn"
+                        onclick="document.getElementById('tf_auto_view').click()">
+                        View output example
+                    </button>
+                    
+                    <button class="clear-input-btn"
+                        onclick="document.getElementById('tf_clear_btn').click()">
+                        Clear all
+                    </button>
+                    """)
 
         # Assign/Upload your structure
         str_check = gr.Checkbox(value=False, label="Provide PDB/AF2 ID or upload coordinate file", interactive=True)
@@ -185,18 +246,14 @@ def tandem_input(param_state, time_interval=1):
         email_txt = gr.Textbox(value=None, label="Email (Optional)", placeholder="Enter your email", interactive=True, visible=False, type='email', elem_classes="gr-textbox")
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
 
-    # Submit job
-    # submit_status = gr.Textbox(label="Submission Status", visible=False, lines=10, interactive=False, elem_classes="gr-textbox")
-    # process_status = gr.Textbox(label="Processing Status", visible=False, lines=1, interactive=False, elem_classes="gr-textbox")
     
-    timer = gr.Timer(value=time_interval, active=False) # Timer to check result
 
     # Fill test case
-    inf_auto_fill.change(fn=on_auto_fill, inputs=[mode, inf_auto_fill, param_state], outputs=[inf_sav_txt, str_file, job_name_txt, param_state])
-    tf_auto_fill.change(fn=on_auto_fill, inputs=[mode, tf_auto_fill, param_state], outputs=[tf_sav_txt, str_file, job_name_txt, param_state])
+    inf_auto_fill.click(fn=on_auto_fill, inputs=[mode, param], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt, param])
+    tf_auto_fill.click(fn=on_auto_fill, inputs=[mode, param], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt, param])
 
     # Select mode (1) Inferencing or (2) Transfer Learning
-    mode.change(fn=on_mode, inputs=mode, outputs=[inf_section, tf_section])
+    mode.change(fn=on_mode, inputs=[mode, param], outputs=[inf_section, tf_section, param])
 
     # Upload
     inf_sav_btn.upload(fn=upload_file, inputs=[inf_sav_btn], outputs=[inf_sav_btn, inf_sav_file])
@@ -204,78 +261,73 @@ def tandem_input(param_state, time_interval=1):
     str_btn.upload(fn=upload_file, inputs=[str_btn], outputs=[str_btn, str_file])
 
     # Delete file
-    inf_sav_file.delete(fn=on_delete_file, inputs=[inf_sav_file], outputs=[inf_sav_btn, inf_sav_file])
-    tf_sav_file.delete(fn=on_delete_file, inputs=[tf_sav_file], outputs=[tf_sav_btn, tf_sav_file])
-    str_file.delete(fn=on_delete_file, inputs=[str_file], outputs=[str_btn, str_file])
-
+    inf_sav_file.clear(fn=on_clear_file, inputs=[], outputs=[inf_sav_btn, inf_sav_file])
+    tf_sav_file.clear(fn=on_clear_file, inputs=[], outputs=[tf_sav_btn, tf_sav_file])
+    str_file.clear(fn=on_clear_file, inputs=[], outputs=[str_btn, str_file])
+    
+    # Clear parameters
+    inf_clear_btn.click(fn=on_clear_param, inputs=[], outputs=[inf_sav_txt, inf_sav_btn, inf_sav_file, tf_sav_txt, tf_sav_btn, tf_sav_file, str_txt, str_btn, str_file, job_name_txt, email_txt,])
+    tf_clear_btn.click(fn=on_clear_param, inputs=[], outputs=[inf_sav_txt, inf_sav_btn, inf_sav_file, tf_sav_txt, tf_sav_btn, tf_sav_file, str_txt, str_btn, str_file, job_name_txt, email_txt,])
     return (
-        param_state,
+        param,
         input_section,
         mode,
         inf_sav_txt,
+        inf_sav_btn,
         inf_sav_file,
+        inf_auto_view,
+
         model_dropdown,
         
         tf_sav_txt,
+        tf_sav_btn,
         tf_sav_file,
-
+        tf_auto_view,
         str_txt,
+        str_btn,
         str_file,
 
         job_name_txt,
         email_txt,
-
-        # submit_status,
-        # process_status,
         submit_btn,
-
-        timer,
     )
 
 def tandem_output():
 
     with gr.Group(visible=False) as output_section:
-        gr.Markdown("### Results", elem_classes="h3")
+        gr.Markdown("### Results", elem_classes="h3")    
         
         with gr.Group(visible=False) as inf_output_secion:
             with gr.Row():
-                with gr.Column(scale=7):
-                    pred_table = gr.HTML()
-                with gr.Column(scale=3):
-                    image_selector = gr.Dropdown(label="Select visualization", choices=[], value=None, interactive=True)
-                    image_viewer = gr.Image(label="Visualization", show_download_button=False)
-
+                with gr.Column(scale=6):
+                    pred_table = gr.Dataframe(interactive=False, max_height=340, show_label=False)
+                with gr.Column(scale=4):
+                    # image_viewer = gr.Image(height=340, show_download_button=False, show_label=False)
+                    image_viewer = gr.Image(height=340, show_label=False)
+        
         with gr.Group(visible=False) as tf_output_secion:
-            folds_state = gr.State(value={})
-            fold_dropdown = gr.Dropdown(label="Select Fold", choices=[], interactive=True)
-            with gr.Accordion("📘 Training set", open=False):
-                train_box = gr.Textbox(lines=3, interactive=False, show_label=False, elem_classes="gr-textbox")
-            with gr.Accordion("📙 Validation set", open=False):
-                val_box = gr.Textbox(lines=3, interactive=False, show_label=False, elem_classes="gr-textbox")
-            with gr.Accordion("📕 Test set", open=False):
-                test_box = gr.Textbox(lines=3, interactive=False, show_label=False, elem_classes="gr-textbox")
-            fold_dropdown.change(fn=on_fold, inputs=[fold_dropdown, folds_state], outputs=[train_box, val_box, test_box])
-
-            loss_image = gr.Image(label="", show_download_button=False)
-            test_evaluation = gr.HTML()
+            with gr.Row():
+                with gr.Column():
+                    folds_state = gr.State(value={})
+                    fold_dropdown = gr.Dropdown(info="View SAV set", choices=[], show_label=False, interactive=True, visible=False, elem_classes="gr-button", elem_id="sav_dropdown")
+                    sav_textbox = gr.Textbox(lines=1, interactive=False, show_label=False, elem_classes="gr-textbox", elem_id="sav_textbox", autoscroll=False)
+                    fold_dropdown.change(fn=on_sav_set_select, inputs=[fold_dropdown, folds_state], outputs=sav_textbox)
+                    test_evaluation = gr.Dataframe(interactive=False, max_height=250, show_label=False)
+                # loss_image = gr.Image(label="", show_download_button=False, show_fullscreen_button=False, show_label=False)
+                loss_image = gr.Image(label="", show_label=False, height=390)
             model_save = gr.Markdown("#### TANDEM-DIMPLE models have been saved!")
-
-        result_zip = gr.File(label="Download Results (.zip)")
-
+        result_zip = gr.File(label="Download Results")
     return (
         output_section,
         inf_output_secion,
         tf_output_secion,
 
         pred_table,
-        image_selector,
         image_viewer,
 
         folds_state,
         fold_dropdown,
-        train_box,
-        val_box,
-        test_box,
+        sav_textbox,
         loss_image,
         test_evaluation,
 

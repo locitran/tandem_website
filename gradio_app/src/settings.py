@@ -1,5 +1,7 @@
 import os 
+from zoneinfo import ZoneInfo
 
+time_zone = ZoneInfo("Asia/Taipei")
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # ./tandem_website
 
 GRADIO_DIR = os.path.join(ROOT_DIR, 'gradio_app')

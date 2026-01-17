@@ -19,7 +19,7 @@ def generate_token(length=10):
     alphabet = string.ascii_letters + string.digits  # A–Z, a–z, 0–9
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-def on_session(_session_id, _param_state):
+def on_session(_session_id, param):
     """
     1. Start session by generating new id or providing old id
     2. Update parameter state (status and session_id)
@@ -30,7 +30,7 @@ def on_session(_session_id, _param_state):
     """
     old_session_ids = collections.distinct("session_id")
     _session_id = _session_id.strip()
-    param_udt = _param_state.copy()
+    param_udt = param.copy()
     param_udt['status'] = None
     param_udt["session_id"] = None
     job_dropdown_upt = gr.update(visible=False)
@@ -57,6 +57,7 @@ def on_session(_session_id, _param_state):
         gr.Warning(session_status_udt)
     # Case 3: Valid existing session
     else:
+        param_udt["session_id"] = _session_id
         session_id_udt = gr.update(value=_session_id, interactive=False)
         session_status_udt = f"✅ Session resumed."
 
@@ -73,12 +74,15 @@ def on_session(_session_id, _param_state):
             job_dropdown_upt = gr.update(visible=False, value=None, choices=[], 
                 interactive=False,label="No jobs in this session yet",)
         else:
-            first_job = existing_jobs[0]
-            param_udt = collections.find_one(
-                {'session_id': _session_id,'job_name'  : first_job,}, {"_id": 0}
-            )
+            # first_job = existing_jobs[0]
+            # param_udt = collections.find_one(
+            #     {'session_id': _session_id,'job_name'  : first_job,}, {"_id": 0}
+            # )
+            # job_dropdown_upt = gr.update(
+            #     visible=True, value=first_job, choices=existing_jobs, interactive=True, label='Old jobs',)
+
             job_dropdown_upt = gr.update(
-                visible=True, value=first_job, choices=existing_jobs, interactive=True, label='Old jobs',)
+                visible=True, choices=existing_jobs, interactive=True, label='Old jobs',)
 
             # List out pretrained model saved from job_name, status, and mode 
             pre_trained_models = collections.distinct(

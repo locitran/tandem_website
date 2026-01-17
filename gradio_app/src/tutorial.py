@@ -1,0 +1,139 @@
+import gradio as gr
+def tutorial(mount_point):
+    html_str = f"""
+        <div class="tutorial-container">
+
+        <h2>TANDEM-DIMPLE Webserver Tutorial</h2>
+        <p>The webserver provides two core functionalities:</p>
+
+        <ul>
+            <li>
+            <b>Model Inferencing</b>: Predicting the pathogenicity of 
+            single amino acid variants (SAVs) using pre-trained models.
+            </li>
+            <li>
+            <b>Transfer Learning</b>: Training and fine-tuning gene/disease-specific models 
+            using curated variant datasets to improve prediction accuracy.
+            </li>
+        </ul>
+
+        <p>Below is a step-by-step guide to using the webserver.</p>
+
+        <h3>Step 1: Create a new session or resume a previous one by entering a session ID. </h3>
+        <p>
+            Session ID is similar as your user ID. Under this session ID, 
+            you could have several job IDs (see below).
+        </p>
+
+        <figure class="s1-figure">
+            <img src="{mount_point}/gradio_api/file=assets/images/tutorial_figure_1.jpg"
+            alt="tutorial_figure_1">
+        </figure>
+
+        <h3>Step 2: Configure and Submit a Job</h3>
+        <figure class="s2-figure">
+            <img src="{mount_point}/gradio_api/file=assets/images/tutorial_figure_2.jpg"
+            alt="tutorial_figure_2">
+        </figure>
+
+        <ol>
+            <li>Select <b>Mode of Actions</b>: <i>Inferencing</i> or <i>Transfer Learning</i>.</li>
+
+            <li>
+            Provide SAVs of a gene directly into the text box or upload a text file containing SAVs.
+            <p>Each SAV must follow the format: <UniProt_ID> <Mutation>.</p>
+
+            <pre>&lt;UniProt_ID&gt; &lt;Mutation&gt;</pre>
+
+            <p><b>Example:</b></p>
+            <pre>
+                P29033 H1000Q
+                P29033 D50N
+            </pre>
+
+            <p>
+                For <i>Transfer Learning</i>, each SAV must include a label,
+                <b>1</b> for pathogenic and <b>0</b> for benign.
+            </p>
+
+            <pre>
+                P29033 H1000Q 1
+                P29033 D50N 0
+            </pre>
+
+            <p class="note">
+                • SAVs must be separated by new lines.<br>
+                • If both text input and file upload are provided, the uploaded file is used.
+            </p>
+            </li>
+
+            <li>
+            Provide PDB/AF2 ID in the textbox or upload a coordinate file 
+            for SAVs feature generation. (Optional)
+            <ul>
+                <li>PDB ID: retrieved from the Protein Data Bank.</li>
+                <li>AlphaFold2 ID predicted structure is used if available.</li>
+            </ul>
+
+            <p>
+                If no structure is provided, the system automatically selects 
+                a representative structure from the UniProt ID using the following criteria: 
+                (1) Sequence coverage, (2) Structural resolution, and (3) PDB deposition date.
+            </p>
+            </li>
+
+            <li>
+            Select a Model from a dropdown menu (<i>Inferencing</i> Mode Only).
+            <ul>
+                <li>TANDEM (gene/disease-general model)</li>
+                <li>TANDEM-DIMPLE for GJB2 (gene/disease-specific model)</li>
+                <li>TANDEM-DIMPLE for RYR1 (gene/disease-specific model)</li>
+            </ul>
+            <p>
+                User-trained models from previous sessions may also appear.
+            </p>
+            </li>
+
+            <li>Assign a job name to record your work.</li>
+            <li>You now ready to go “Submit” your job!</li>
+        </ol>
+
+        <h3>Step 3: Monitor Job Status</h3>
+        
+        <figure class="s3-figure">
+            <img src="{mount_point}/gradio_api/file=assets/images/tutorial_figure_3.jpg"
+            alt="tutorial_figure_3">
+        </figure>
+
+        <ul>
+            <li><b>Submission Status</b>: Displays all submitted parameters or reports errors.</li>
+            <li><b>Processing Status</b>: Shows real-time execution progress.</li>
+            <li>Clicking <b>New Job</b> to start a new job.</li>
+        </ul>
+
+        <h3>Step 4: Analyze Results</h3>
+
+        <h4>Inferencing Results</h4>
+        <figure class="s4-figure">
+            <img src="{mount_point}/gradio_api/file=assets/images/tutorial_figure_4.jpg"
+            alt="tutorial_figure_4">
+        </figure>
+
+
+        <ul>
+            <li>
+            The pathogenicity probability is reported for each SAV, 
+            classified as pathogenic (probability ≥ 0.5) or benign (probability < 0.5). 
+            </li>
+            <li>SHAP analysis for each SAV is selected from a dropdown menu.</li>
+            <li>Download all raw output files is available by clicking 
+            the ↓ button on the right most of the results.</li>
+        </ul>
+
+        <h4>Transfer Learning Results</h4>
+        <p>TBD</p>
+
+        </div>
+    """
+    tutorial_page = gr.HTML(html_str, elem_classes="tutorial")
+    return tutorial_page

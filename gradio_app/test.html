@@ -1,256 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Home Page Test</title>
+    <meta charset="UTF-8">
+    <title>Pure HTML Dropdown Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
 
-<!-- Load your compiled CSS -->
-<link rel="stylesheet" href="assets/main.css">
+        .custom-dropdown {
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .output {
+            margin-top: 12px;
+            font-size: 14px;
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="gradio-container">
+    <!-- Dropdown -->
+    <select class="custom-dropdown" id="html_dropdown">
+        <option value="test">Test set</option>
+        <option value="val">Validation set</option>
+        <option value="train">Training set</option>
+    </select>
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-content">
-      <div class="header-text">
-        <div class="header-title">TANDEM-DIMPLE</div>
-        <div class="header-subtitle">
-          Transfer Learning & Dynamics for Missense Pathogenicity
-        </div>
-      </div>
-    </div>
-  </header>
-
-<div class="tabs">
-  <style>
-    .tabs {
-      max-width: 640px;
-      margin: 20px auto;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    /* Hide radio buttons */
-    .tabs input[type="radio"] {
-      display: none;
-    }
-
-    /* Tab labels */
-    .tabs label {
-      display: inline-block;
-      padding: 10px 16px;
-      margin-right: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      color: #aaa;
-      border-bottom: 2px solid transparent;
-    }
-
-    .tabs label:hover {
-      color: #fff;
-    }
-
-    /* Active tab */
-    #tab-home:checked + label,
-    #tab-job:checked + label {
-      color: #fff;
-      border-bottom: 2px solid #ff7a18;
-    }
-
-    /* Tab content container */
-    .tab-content {
-      margin-top: 16px;
-    }
-
-    /* Panels */
-    .tab-panel {
-      display: none;
-      padding: 16px;
-      background: #ffffff;
-      border-radius: 8px;
-    }
-
-    /* Show correct panel */
-    #tab-home:checked ~ .tab-content #home-panel {
-      display: block;
-    }
-
-    #tab-job:checked ~ .tab-content #job-panel {
-      display: block;
-    }
-
-    /* Input styling */
-    .tab-input {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-  </style>
-
-<div class="tabs">
-  <style>
-    .tabs {
-      max-width: 720px;
-      margin: 20px auto;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    /* ===== Top bar (tabs + textbox) ===== */
-    .tab-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #333;
-      padding-bottom: 6px;
-    }
-
-    /* Hide radio buttons */
-    .tabs input[type="radio"] {
-      display: none;
-    }
-
-    /* Tabs container */
-    .tab-labels {
-      display: flex;
-      gap: 12px;
-    }
-
-    /* Tab labels */
-    .tabs label {
-      cursor: pointer;
-      font-weight: 600;
-      color: #aaa;
-      padding: 6px 0;
-      border-bottom: 2px solid transparent;
-    }
-
-    .tabs label:hover {
-      color: #fff;
-    }
-
-    /* Active tab */
-    #tab-home:checked + label,
-    #tab-job:checked + label {
-      color: #fff;
-      border-bottom: 2px solid #ff7a18;
-    }
-
-    /* Right-side textbox */
-    .tab-textbox {
-      width: 220px;
-      padding: 6px 10px;
-      font-size: 0.95rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-
-    /* ===== Tab content ===== */
-    .tab-content {
-      margin-top: 16px;
-    }
-
-    .tab-panel {
-      display: none;
-      padding: 16px;
-      background: #ffffff;
-      border-radius: 8px;
-    }
-
-    #tab-home:checked ~ .tab-content #home-panel {
-      display: block;
-    }
-
-    #tab-job:checked ~ .tab-content #job-panel {
-      display: block;
-    }
-  </style>
-
-  <!-- ===== Tab bar ===== -->
-  <div class="tab-bar">
-    <div class="tab-labels">
-      <input type="radio" id="tab-home" name="tab-group" checked>
-      <label for="tab-home">Home</label>
-
-      <input type="radio" id="tab-job" name="tab-group">
-      <label for="tab-job">🗂️ Job Manager</label>
+    <!-- Output -->
+    <div class="output">
+        Selected: <span id="output">test</span>
     </div>
 
-    <input
-      type="text"
-      class="tab-textbox"
-      placeholder="Session / Job ID"
-    >
-  </div>
+    <script>
+        const dropdown = document.getElementById("html_dropdown");
+        const output = document.getElementById("output");
 
-  <!-- ===== Tab panels ===== -->
-  <div class="tab-content">
-    <div class="tab-panel" id="home-panel">
-      <h3>Home</h3>
-      Home tab content goes here.
-    </div>
-
-    <div class="tab-panel" id="job-panel">
-      <h3>Job Manager</h3>
-      Job Manager content goes here.
-    </div>
-  </div>
-</div>
-
-  <!-- Main -->
-  <main id="main-content">
-    <div class="home-main">
-
-      <!-- Greeting -->
-      <div class="home-greeting">
-        Welcome to <strong>TANDEM-DIMPLE</strong>!
-      </div>
-
-      <!-- Session input + button -->
-      <div class="home-actions" style="flex-direction: column; gap: 16px;">
-
-        <!-- Session ID input -->
-        <input
-          type="text"
-          class="home-session-input"
-          placeholder="Enter your session ID"
-        />
-
-        <!-- Start session button -->
-        <button class="home-btn">
-          Start / Resume a session
-        </button>
-
-      </div>
-
-      <!-- Footer note -->
-      <div class="home-note">
-        This webserver is free to access!
-      </div>
-
-            <!-- Tutorial link -->
-      <div style="margin-bottom: 18px; font-size: 1.1rem;">
-        <a href="tutorial.html" class="home-link">
-          Learn how to use this website →
-        </a>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-container">
-      Footer content here
-    </div>
-  </footer>
-
-</div>
+        dropdown.addEventListener("change", () => {
+            output.textContent = dropdown.value;
+        });
+    </script>
 
 </body>
 </html>

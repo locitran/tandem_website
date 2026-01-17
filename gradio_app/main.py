@@ -3,12 +3,15 @@ import sass
 import gradio as gr
 from pymongo import MongoClient
 
-from src.web_interface import session, tandem_input, tandem_output, build_header, left_column, build_footer
+from src.web_interface import session, tandem_input, tandem_output, build_header, left_column, build_footer, on_auto_view
 from src.update_session import on_session
 from src.update_input import update_input_param
 from src.job import on_submit, on_job, on_reset, send_job, update_sections, update_timer, update_process_status, update_submit_status
-from src.update_output import update_finished_job, on_select_image
+from src.update_output import update_finished_job, on_select_sav
 from src.job_manager import manager_tab
+from src.QA import qa
+from src.tutorial import tutorial
+from src.logger import LOGGER
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -33,6 +36,9 @@ with open(os.path.join(ASSETS_DIR, "main.css")) as f:
     custom_css = f.read()
 
 def home_tab(folder):
+
+    timer = gr.Timer(value=1, active=True) # Timer to check result
+
     with gr.Row() as input_page:
         with gr.Column(scale=1):
             left_column()
@@ -49,31 +55,30 @@ def home_tab(folder):
                 input_section,
                 mode,
                 inf_sav_txt,
+                inf_sav_btn,
                 inf_sav_file,
+                inf_auto_view,
+
                 model_dropdown,
                 
                 tf_sav_txt,
+                tf_sav_btn,
                 tf_sav_file,
-
+                tf_auto_view,
                 str_txt,
+                str_btn,
                 str_file,
 
                 job_name_txt,
                 email_txt,
-
-                # submit_status,
-                # process_status,
                 submit_btn,
-
-                timer,
-
             ) = tandem_input(param_state)
 
     ##### Result page
     with gr.Group(visible=False) as output_page:    
         with gr.Row():
-            submit_status = gr.Textbox(label="Submission Status", visible=False, lines=10, interactive=False, elem_classes="gr-textbox")
-            process_status = gr.Textbox(label="Processing Status", visible=False, lines=1, interactive=False, elem_classes="gr-textbox")
+            submit_status = gr.Textbox(label="Submission Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
+            process_status = gr.Textbox(label="Processing Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
 
         # Result UI
         (
@@ -82,14 +87,11 @@ def home_tab(folder):
             tf_output_secion,
 
             pred_table,
-            image_selector,
             image_viewer,
 
             folds_state,
             fold_dropdown,
-            train_box,
-            val_box,
-            test_box,
+            sav_textbox,
             loss_image,
             test_evaluation,
 
@@ -98,6 +100,11 @@ def home_tab(folder):
         ) = tandem_output()
         reset_btn = gr.Button("New job", elem_classes="gr-button")
 
+    # Stop timer after reset
+    reset_btn.click(fn=lambda: gr.update(active=False), inputs=[], outputs=timer
+    ).then(fn=on_reset, inputs=[param_state], 
+        outputs=[input_page, param_state, job_dropdown, input_section, output_section, inf_sav_txt, inf_sav_btn, inf_sav_file, tf_sav_txt, tf_sav_btn, tf_sav_file, str_txt, str_btn, str_file, job_name_txt, email_txt, submit_status, process_status,])
+    
     ################-------------Simulate session event----------------################
     # Generate/resume session
     session_click_event = session_btn.click(fn=on_session, inputs=[session_id, param_state], outputs=[session_id, session_btn, session_status, job_dropdown, param_state, model_dropdown])
@@ -107,68 +114,55 @@ def home_tab(folder):
     session_event = [session_click_event, session_submit_event]
     for i, event in enumerate(session_event):
         session_event[i] = event.then(
-            fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page, reset_btn]
-        ).then(
-            fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
-        ).then(
-            fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
-        ).then(
-            fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-            outputs=[output_section, result_zip, inf_output_secion, pred_table, image_selector, image_viewer, tf_output_secion, folds_state, fold_dropdown, train_box, val_box, test_box, loss_image, test_evaluation,]
-        ).then(
-            fn=update_timer, inputs=[param_state], outputs=[timer]
-        )
+               fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
+        ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
+        ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
+        ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
+        ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
+            outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
         
-    ##############---input_section following job selection--------################
-    job_dropdown.select(
-        fn=on_job, inputs=[job_dropdown, param_state], outputs=[param_state]
-    ).then(
-        fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page, reset_btn]
-    ).then(
-        fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
-    ).then(
-        fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
-    ).then(
-        fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_selector, image_viewer, tf_output_secion, folds_state, fold_dropdown, train_box, val_box, test_box, loss_image, test_evaluation,]
-    ).then(
-        fn=update_timer, inputs=[param_state], outputs=[timer]
-    )
+    #############---input_section following job selection--------################
+    job_dropdown.select(fn=on_job, inputs=[job_dropdown, param_state], outputs=[param_state]
+    ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
+    ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
+    ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
+    ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
+    ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
 
     ###############---input_section following job selection--------################
-    submit_btn.click(
-        fn=on_submit, inputs=[], outputs=[submit_status]
-    ).then(
-        fn=update_input_param,
+    submit_btn.click(fn=update_input_param, outputs=[param_state, input_section, reset_btn, timer],
         inputs=[mode, inf_sav_txt, inf_sav_file, model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param_state, submit_status],
-        outputs=[param_state, input_section, reset_btn, timer],
-    ).then( ###############--------Submission event, send job---------################
-        fn=send_job, inputs=[param_state, jobs_folder_state], outputs=[param_state],
-    ).then(
-        fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page, reset_btn]
-    ).then(
-        fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
-    ).then(
-        fn=update_timer, inputs=[param_state], outputs=[timer]
-    )
-
-    # Stop timer after reset
-    reset_btn.click(fn=lambda: gr.update(active=False), inputs=[], outputs=timer
-    ).then(
-        fn=on_reset, inputs=[param_state], 
-        outputs=[input_page, param_state, job_dropdown, input_section, output_section, inf_sav_txt, inf_sav_file, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, submit_status, reset_btn, process_status,]
-    )
+    ).then(fn=send_job, inputs=[param_state, jobs_folder_state], outputs=[param_state],
+    ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
+    ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
+    ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
+    ).then(fn=update_timer, inputs=[param_state], outputs=[timer])
 
     # ###############--------Timer, report job status---------################
-    timer.tick(
-        fn=update_process_status, inputs=[param_state, gr.State(True)], outputs=[process_status, param_state]
-    ).then(
-        fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_selector, image_viewer, tf_output_secion, folds_state, fold_dropdown, train_box, val_box, test_box, loss_image, test_evaluation,]
-    ).then(
-        fn=update_timer, inputs=[param_state], outputs=[timer]
-    )
-    image_selector.change(fn=on_select_image, inputs=[image_selector, jobs_folder_state, param_state], outputs=[image_viewer],)
+    timer.tick(fn=update_process_status, inputs=[param_state, gr.State(True)], outputs=[process_status, param_state]
+    ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,]
+    ).then(fn=update_timer, inputs=[param_state], outputs=[timer])
+
+    # ###############--------View output examples---------################
+    # Store test parameters 
+    test_param_state = gr.State({})
+    inf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state], outputs=[test_param_state]
+    ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
+    ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
+    ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
+    ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
+    
+    tf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state], outputs=[test_param_state]
+    ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
+    ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
+    ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
+    ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
+    
+    pred_table.select(on_select_sav, inputs=[pred_table, param_state, jobs_folder_state], outputs=[image_viewer])
 
 if __name__ == "__main__":
 
@@ -182,7 +176,11 @@ if __name__ == "__main__":
                 home_tab(JOB_DIR)
             with gr.Tab(label="🗂️ Job Manager", id='job'):
                 manager_tab()
-
+            with gr.Tab(label="Q & A"):
+                qa_page = qa(MOUNT_POINT)
+            with gr.Tab(label="Tutorial"):
+                tutorial_page = tutorial(MOUNT_POINT)
+                
         footer_html = build_footer(MOUNT_POINT)
 
     demo.queue()

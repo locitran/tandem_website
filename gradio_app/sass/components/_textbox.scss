@@ -1,9 +1,10 @@
-#text-box textarea {
-    resize: none;
-    overflow-y: auto;
-    font-family: monospace;
-    font-size: 12px;
-    background-color: var(--background-fill-secondary);
-    color: var(--body-text-color);
+#gr-box textarea {
+    resize: both !important;
+    font-family: monospace !important;
+    white-space: nowrap !important;
+    font-size: 12px !important;
+    background-color: var(--background-fill-secondary) !important;
+    color: var(--body-text-color) !important;
     overflow-y: auto !important;
+    overflow-x: auto !important;
 }

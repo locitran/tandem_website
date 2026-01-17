@@ -4,36 +4,79 @@ $text-sm: 12px;
 $text-md: 14px;
 $text-lg: 16px;
 
+/* column widths */
+$col-index: 32%;
+$col-sav: 220%;
+$col-prob: 120%;
+$col-class: 140%;
 
 /* ===== Prediction table ===== */
 .pred-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: $text-md;
+  width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  font-size: $text-md !important;
 
-  background-color: var(--background-fill-secondary);
-  color: var(--body-text-color);
+  background-color: var(--background-fill-secondary) !important;
+  color: var(--body-text-color) !important;
+
+  /* ---- column sizing via colgroup ---- */
+  col.col-index { width: $col-index !important; }
+  col.col-sav   { width: $col-sav !important; }
+  col.col-prob  { width: $col-prob !important; }
+  col.col-class { width: $col-class !important; }
 
   th,
   td {
-    padding: 8px 14px;
-    text-align: center;
-    overflow-wrap: break-word;
-    border-bottom: 1px solid var(--border-color-primary);
+    padding: 6px 10px !important;
+    text-align: center !important;
+    border-bottom: 1px solid var(--border-color-primary) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   thead th {
-    background-color: var(--background-fill-primary);
-    color: var(--body-text-color);
-    font-weight: 600;
+    background-color: var(--background-fill-primary) !important;
+    color: var(--body-text-color) !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid var(--border-color-primary) !important;
   }
 
   tbody tr:nth-child(even) {
-    background-color: var(--background-fill-secondary);
+    background-color: var(--background-fill-secondary) !important;
   }
 
   tbody tr:nth-child(odd) {
-    background-color: var(--background-fill-primary);
+    background-color: var(--background-fill-primary) !important;
+  }
+
+  /* ===== Column-specific styling ===== */
+
+  /* Index */
+  .th-index,
+  .td-index {
+    font-size: $text-sm !important;
+    color: #666 !important;
+  }
+
+  /* SAV */
+  .td-sav {
+    text-align: left !important;
+    font-family: monospace !important;
+    font-size: $text-sm !important;
+    white-space: normal !important;
+  }
+
+  /* Probability */
+  .td-prob {
+    font-variant-numeric: tabular-nums !important;
+    font-size: $text-sm !important;
+  }
+
+  /* Classification */
+  .td-class {
+    font-weight: 500 !important;
+    font-size: $text-sm !important;
   }
 }

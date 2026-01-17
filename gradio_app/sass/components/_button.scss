@@ -4,3 +4,67 @@
   padding: 10px 18px;
   border-radius: 8px;
 }
+
+#tf_auto_fill,
+#tf_auto_view,
+#inf_auto_fill,
+#inf_auto_view,
+#inf_clear_btn,
+#tf_clear_btn {
+    display: none !important;
+}
+
+/* ---------- base style ---------- */
+.load-input-btn,
+.view-output-btn,
+.clear-input-btn {
+    background: none !important;
+    border: none !important;
+    padding: 4px 8px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    line-height: 1.2 !important;
+    border-radius: 6px !important;
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease;
+}
+
+/* ---------- Light mode (lighter pastels) ---------- */
+@media (prefers-color-scheme: light) {
+    .load-input-btn {
+        color: #1f47b4 !important;          /* dark blue */
+        background-color: #99b4e3 !important; /* very light blue */
+    }
+
+    .view-output-btn {
+        color: #732e12 !important;          /* dark orange */
+        background-color: #f0bba7 !important; /* very light orange */
+    }
+
+    .load-input-btn:hover,
+    .view-output-btn:hover,
+    .clear-input-btn:hover {
+        text-decoration: underline !important;
+    }
+}
+
+/* ---------- Dark mode (lighter but still dark-safe) ---------- */
+@media (prefers-color-scheme: dark) {
+    .load-input-btn {
+        color: #bfdbfe !important;          /* softer light blue */
+        background-color: #404e6c !important; /* lighter deep blue */
+    }
+
+    .view-output-btn {
+        color: #fed7aa !important;          /* softer light orange */
+        background-color: #8a563c !important; /* lighter deep orange */
+    }
+
+    .load-input-btn:hover,
+    .view-output-btn:hover,
+    .clear-input-btn:hover {
+        text-decoration: underline !important;
+    }
+}

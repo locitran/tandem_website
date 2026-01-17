@@ -1,0 +1,60 @@
+/* ---------- Tutorial container ---------- */
+.tutorial-container {
+  max-width: 960px;
+  margin: auto;
+  padding: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.9;
+
+  h2 {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    margin-top: 24px;
+  }
+
+  pre {
+    background: #f6f8fa;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    overflow-x: auto;
+  }
+
+  .note {
+    font-size: 0.9em;
+    color: #555;
+  }
+}
+
+/* ---------- Shared figure base ---------- */
+%figure-base {
+  text-align: center;
+  margin: 16px 0;
+
+  img {
+    height: auto;
+    display: inline-block;
+  }
+}
+
+/* ---------- Section-specific figures ---------- */
+.s1-figure {
+  @extend %figure-base;
+
+  img {
+    max-width: 80%;
+  }
+}
+
+.s2-figure,
+.s3-figure,
+.s4-figure {
+  @extend %figure-base;
+
+  img {
+    max-width: 50%;
+  }
+}
