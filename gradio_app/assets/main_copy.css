@@ -1,8 +1,0 @@
-@use "base/reset";
-@use "base/base";
-@use "base/typography";
-@use "components/textbox";
-@use "components/button";
-@use "components/header";
-@use "components/footer";
-@use "components/table";

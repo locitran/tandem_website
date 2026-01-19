@@ -28,20 +28,15 @@ def on_select_image(image_name, folder, param):
         folder, param["session_id"], param["job_name"], 'tandem_shap', image_name)
     return gr.update(value=path, visible=True)
 
-def on_select_sav(evt: gr.SelectData, df, param, folder):
+def on_select_sav(evt: gr.SelectData, df, job_folder):
     row_idx, col_idx = evt.index
     sav = df.iloc[row_idx]['SAV']
-
-    _session_id = param.get("session_id")
-    _job_name   = param.get("job_name")
-    job_folder = os.path.join(folder, _session_id, _job_name)
-
     shap_img = os.path.join(job_folder, "tandem_shap", f"{sav}.png")
     if os.path.exists(shap_img):
         return gr.update(value=shap_img)
     return gr.update(value=None)
 
-def render_finished_job(_mode, job_folder):
+def render_finished_job(_mode, job_folder, _job_name):
 
     # ----------- defaults (IMPORTANT) -----------
     output_section_udt = gr.update(visible=True)
@@ -53,10 +48,12 @@ def render_finished_job(_mode, job_folder):
 
     tf_output_secion_udt = gr.update(visible=False)
     folds_state_udt = None
-    fold_dropdown_udt = gr.update(visible=False)
-    SAV_textbox_udt = gr.update(visible=False)
-    loss_image_udt = gr.update(visible=False)
-    test_eval_udt = gr.update(visible=False)
+    fold_dropdown_udt = gr.update()
+    SAV_textbox_udt = gr.update()
+    loss_image_udt = gr.update()
+    test_eval_udt = gr.update()
+    model_saved_udt = gr.update()
+    job_folder_udt = job_folder
 
     # ----------- common outputs -----------
     zip_path = zip_folder(job_folder)
@@ -68,43 +65,6 @@ def render_finished_job(_mode, job_folder):
 
         pred_file = os.path.join(job_folder, "predictions.csv")
         df_pred = pd.read_csv(pred_file)
-        # ---- MultiIndex columns ----
-        df_pred.columns = pd.MultiIndex.from_tuples(
-            tuple(c.split("::", 1)) if "::" in c else (c, "")
-            for c in df_pred.columns
-        )
-
-        rows = df_pred.to_dict("records")
-        has_tf = ('TANDEM-DIMPLE', 'probability') in rows[0].keys()
-        
-        # ---- Merge probability + classification ----
-        if has_tf:
-            df_pred[("TANDEM", "prob_class")] = df_pred.apply(
-                lambda r: (
-                    f"{r[('TANDEM', 'probability')]:.3f} "
-                    f"({r[('TANDEM', 'classification')]}) "
-                    f"{r[('TANDEM-DIMPLE', 'probability')]:.3f} "
-                    f"({r[('TANDEM-DIMPLE', 'classification')]})"
-                ), axis=1)
-            # ---- Drop old columns ----
-            df_pred = df_pred.drop(
-                columns=[
-                    ("TANDEM", "probability"), ("TANDEM", "classification"),
-                    ("TANDEM-DIMPLE", "probability"), ("TANDEM-DIMPLE", "classification")
-                ])
-
-        else:
-            df_pred[("TANDEM", "prob_class")] = df_pred.apply(
-                lambda r: (
-                    f"{r[('TANDEM', 'probability')]:.3f} "
-                    f"({r[('TANDEM', 'classification')]}) "
-                ), axis=1)
-            df_pred = df_pred.drop(
-                columns=[("TANDEM", "probability"), ("TANDEM", "classification")]
-            )
-
-        # ---- Flatten column names ----
-        df_pred.columns = [a if b == "" else a for a, b in df_pred.columns]
 
         # ---- Add index column FIRST ----
         df_pred = df_pred.reset_index(drop=True)
@@ -120,7 +80,6 @@ def render_finished_job(_mode, job_folder):
             value=os.path.join(tandem_shap, list_images[0]) if list_images else None,
             visible=bool(list_images),
         )
-
     # ----------- Transfer Learning mode -----------
     elif _mode == "Transfer Learning":
         tf_output_secion_udt = gr.update(visible=True)
@@ -129,7 +88,6 @@ def render_finished_job(_mode, job_folder):
         with open(folds_path) as f:
             folds = json.load(f)
 
-        # ---------- Build dropdown choices ----------
         folds_state_udt = {}
         folds_state_udt['Test set'] = folds["1"]['test']
         for fold_id in sorted(k for k in folds.keys() if k != "test"):
@@ -138,7 +96,6 @@ def render_finished_job(_mode, job_folder):
             folds_state_udt[f"Fold {fold_num} - Validation set"] = folds[str(fold_num)]['val']
         choices = folds_state_udt.keys()
 
-        # ---------- Gradio updates ----------
         fold_dropdown_udt = gr.update(choices=choices, value='Test set', visible=True)
         SAV_textbox_udt = gr.update(value=folds_state_udt['Test set'], visible=True)
 
@@ -148,8 +105,7 @@ def render_finished_job(_mode, job_folder):
         test_eval = os.path.join(job_folder, "test_evaluation.csv")
         df_test_eval = pd.read_csv(test_eval)
         test_eval_udt = gr.update(value=df_test_eval, visible=True)
-
-    # ----------- return (SAFE) -----------
+        model_saved_udt = gr.update(value=f"Your models have been saved under name '{_job_name}'!", visible=True)
     return (
         output_section_udt,
         result_zip_udt,
@@ -166,6 +122,8 @@ def render_finished_job(_mode, job_folder):
 
         loss_image_udt,
         test_eval_udt,
+        model_saved_udt,
+        job_folder_udt
     )
 
 def update_finished_job(param, folder):
@@ -186,9 +144,9 @@ def update_finished_job(param, folder):
 
     if _job_status == "finished":
         job_folder = os.path.join(folder, _session_id, _job_name)
-        return render_finished_job(_mode, job_folder)
+        return render_finished_job(_mode, job_folder, _job_name)
     else:
-        return hide_all(11)
+        return hide_all(13)
     
 if __name__ == "__main__":
     pass

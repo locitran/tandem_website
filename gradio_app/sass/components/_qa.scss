@@ -1,8 +1,6 @@
 /* ---------- Variables ---------- */
 $max-width: 960px;
 $font-main: Arial, Helvetica, sans-serif;
-$text-color: #222;
-$caption-color: #555;
 
 /* ---------- Container ---------- */
 .qa-container {
@@ -31,7 +29,6 @@ $caption-color: #555;
 
   p {
     margin: 6px 0;
-    color: $text-color;
   }
 }
 
@@ -60,12 +57,14 @@ $caption-color: #555;
       max-width: 100%;
       padding: 6px;
       display: block;
+      background-color: #ffffff !important;
     }
 
     figcaption {
-      font-size: 0.9em;
-      color: $caption-color;
-      margin-top: 6px;
+        font-size: 0.9em;
+        margin-top: 6px;
+        color: var(--body-text-color);
+        background-color: transparent;
     }
   }
 }

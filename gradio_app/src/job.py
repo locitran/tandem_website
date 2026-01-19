@@ -91,9 +91,6 @@ def on_reset(_param):
     input_page_udt      = gr.update(visible=True)
     input_section_udt   = gr.update(visible=True)
     output_section_udt  = gr.update(visible=False)
-    submit_status_udt   = gr.update(visible=False)
-    process_status_udt  = gr.update(value='', visible=False)
-
     # Parameters
     (
         inf_sav_txt_udt, inf_sav_btn_udt, inf_sav_file_udt,
@@ -119,8 +116,6 @@ def on_reset(_param):
         str_file_udt,
         job_name_txt_udt,
         email_txt_udt,
-        submit_status_udt,
-        process_status_udt,
     )
 
 def update_sections(param):

@@ -36,3 +36,12 @@ h3 {
   padding-top: 4px;
   margin-bottom: 1px;
 }
+
+.gr-p {
+  background: none !important;          // remove any background
+  background-color: transparent !important;
+  margin: 0 !important;                 // optional: tighter layout
+  padding: 0 !important;                // optional: no padding
+  line-height: 1.5 !important;
+  color: var(--body-text-color) !important;
+}

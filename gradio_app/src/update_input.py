@@ -259,7 +259,6 @@ def update_input_param(
     _job_name_txt,
     _email_txt,
     param,
-    _submit_status,
 ):  
     """Validate user inputs after clicking Submit, normalize them into a job payload, 
     update UI states, and decide whether the job can enter the queue.

@@ -135,15 +135,14 @@ def on_auto_fill(mode, param):
 def on_auto_view(mode, jobs_folder):
     test_session = 'test'
     if mode == "Inferencing":
-        job_name = "inferencing_test"
+        job_name = "inference_test"
     elif mode == "Transfer Learning":
-        job_name = "transfer_learning_test"
+        job_name = "GJB2_test"
     else:
         raise InterruptedError()
     test_param_file = os.path.join(jobs_folder, test_session, job_name, 'params.json')
     with open(test_param_file, 'r') as f:
         test_param = json.load(f)
-    LOGGER.info(test_param)
     return test_param
 
 def on_mode(mode, param):
@@ -299,23 +298,23 @@ def tandem_output():
         
         with gr.Group(visible=False) as inf_output_secion:
             with gr.Row():
-                with gr.Column(scale=6):
+                with gr.Column():
                     pred_table = gr.Dataframe(interactive=False, max_height=340, show_label=False)
-                with gr.Column(scale=4):
-                    # image_viewer = gr.Image(height=340, show_download_button=False, show_label=False)
-                    image_viewer = gr.Image(height=340, show_label=False)
+                with gr.Column():
+                    image_viewer = gr.Image(height=340, show_download_button=False, show_label=False)
+                    # image_viewer = gr.Image(height=340, show_label=False)
         
         with gr.Group(visible=False) as tf_output_secion:
             with gr.Row():
                 with gr.Column():
                     folds_state = gr.State(value={})
-                    fold_dropdown = gr.Dropdown(info="View SAV set", choices=[], show_label=False, interactive=True, visible=False, elem_classes="gr-button", elem_id="sav_dropdown")
+                    fold_dropdown = gr.Dropdown(label="View SAV set", choices=[], interactive=True, elem_classes="gr-button", elem_id="sav_dropdown", show_label=False)
                     sav_textbox = gr.Textbox(lines=1, interactive=False, show_label=False, elem_classes="gr-textbox", elem_id="sav_textbox", autoscroll=False)
                     fold_dropdown.change(fn=on_sav_set_select, inputs=[fold_dropdown, folds_state], outputs=sav_textbox)
                     test_evaluation = gr.Dataframe(interactive=False, max_height=250, show_label=False)
-                # loss_image = gr.Image(label="", show_download_button=False, show_fullscreen_button=False, show_label=False)
-                loss_image = gr.Image(label="", show_label=False, height=390)
-            model_save = gr.Markdown("#### TANDEM-DIMPLE models have been saved!")
+                loss_image = gr.Image(label="", show_download_button=False, show_label=False, height=364)
+                # loss_image = gr.Image(label="", show_label=False, height=393)
+            model_save = gr.Markdown(elem_classes="gr-p")
         result_zip = gr.File(label="Download Results")
     return (
         output_section,
@@ -330,6 +329,7 @@ def tandem_output():
         sav_textbox,
         loss_image,
         test_evaluation,
+        model_save,
 
         result_zip,
     )

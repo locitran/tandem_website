@@ -38,6 +38,7 @@ with open(os.path.join(ASSETS_DIR, "main.css")) as f:
 def home_tab(folder):
 
     timer = gr.Timer(value=1, active=True) # Timer to check result
+    job_folder = gr.State()
 
     with gr.Row() as input_page:
         with gr.Column(scale=1):
@@ -94,6 +95,7 @@ def home_tab(folder):
             sav_textbox,
             loss_image,
             test_evaluation,
+            model_save,
 
             result_zip,
 
@@ -103,7 +105,7 @@ def home_tab(folder):
     # Stop timer after reset
     reset_btn.click(fn=lambda: gr.update(active=False), inputs=[], outputs=timer
     ).then(fn=on_reset, inputs=[param_state], 
-        outputs=[input_page, param_state, job_dropdown, input_section, output_section, inf_sav_txt, inf_sav_btn, inf_sav_file, tf_sav_txt, tf_sav_btn, tf_sav_file, str_txt, str_btn, str_file, job_name_txt, email_txt, submit_status, process_status,])
+        outputs=[input_page, param_state, job_dropdown, input_section, output_page, inf_sav_txt, inf_sav_btn, inf_sav_file, tf_sav_txt, tf_sav_btn, tf_sav_file, str_txt, str_btn, str_file, job_name_txt, email_txt])
     
     ################-------------Simulate session event----------------################
     # Generate/resume session
@@ -119,20 +121,21 @@ def home_tab(folder):
         ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
         ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
         ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-            outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
+            outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
         
     #############---input_section following job selection--------################
-    job_dropdown.select(fn=on_job, inputs=[job_dropdown, param_state], outputs=[param_state]
+    job_dropdown.select(
+           fn=on_job, inputs=[job_dropdown, param_state], outputs=[param_state]
     ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
     ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
     ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
 
     ###############---input_section following job selection--------################
-    submit_btn.click(fn=update_input_param, outputs=[param_state, input_section, reset_btn, timer],
-        inputs=[mode, inf_sav_txt, inf_sav_file, model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param_state, submit_status],
+    submit_btn.click(inputs=[mode, inf_sav_txt, inf_sav_file, model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param_state],
+           fn=update_input_param, outputs=[param_state, input_section, reset_btn, timer],
     ).then(fn=send_job, inputs=[param_state, jobs_folder_state], outputs=[param_state],
     ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
@@ -142,7 +145,7 @@ def home_tab(folder):
     # ###############--------Timer, report job status---------################
     timer.tick(fn=update_process_status, inputs=[param_state, gr.State(True)], outputs=[process_status, param_state]
     ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,]
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
     ).then(fn=update_timer, inputs=[param_state], outputs=[timer])
 
     # ###############--------View output examples---------################
@@ -153,16 +156,16 @@ def home_tab(folder):
     ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
     
     tf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state], outputs=[test_param_state]
     ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation,])
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
     
-    pred_table.select(on_select_sav, inputs=[pred_table, param_state, jobs_folder_state], outputs=[image_viewer])
+    pred_table.select(on_select_sav, inputs=[pred_table, job_folder], outputs=[image_viewer])
 
 if __name__ == "__main__":
 
