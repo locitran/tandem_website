@@ -39,10 +39,11 @@ def session():
         session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder,  interactive=True, show_copy_button=True, elem_classes="gr-textbox")
         # session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder,  interactive=True, buttons=['copy'], elem_classes="gr-textbox")
         session_btn = gr.Button("▶️ Start / Resume Session", elem_classes="gr-button")
+        session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start / Resume a Session'")
         session_status = gr.Markdown("")
         job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
     
-    return session_id, session_btn, session_status, job_dropdown
+    return session_id, session_btn, session_mkd, session_status, job_dropdown
 
 def on_auto_fill(mode, param):
     

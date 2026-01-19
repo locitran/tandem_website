@@ -48,18 +48,21 @@ def on_session(_session_id, param):
                 session_id_udt = gr.update(value=new_id, interactive=False)
                 session_status_udt = f"🔄 New session ID has been generated. <br>ℹ️ Please save the session ID for future reference."
                 param_udt["session_id"] = new_id
+                session_mkd_udt = gr.update(visible=False)
                 break
     # Case 2: User-provided input, check validity
     elif _session_id not in old_session_ids:
         session_id_udt = gr.update(value="", interactive=True)
         session_status_udt = f"Please generate or paste a valid one."
         session_btn_udt = gr.update(interactive=True)
+        session_mkd_udt = gr.update(visible=True)
         gr.Warning(session_status_udt)
     # Case 3: Valid existing session
     else:
         param_udt["session_id"] = _session_id
         session_id_udt = gr.update(value=_session_id, interactive=False)
         session_status_udt = f"✅ Session resumed."
+        session_mkd_udt = gr.update(visible=False)
 
         # List out existing jobs of this _session_id and status not None
         existing_jobs = collections.distinct(
@@ -96,7 +99,7 @@ def on_session(_session_id, param):
             model_choices += pre_trained_models
             model_dropdown_udt = gr.update(choices=model_choices)
 
-    return session_id_udt, session_btn_udt, session_status_udt, job_dropdown_upt, param_udt, model_dropdown_udt
+    return session_id_udt, session_btn_udt, session_mkd_udt, session_status_udt, job_dropdown_upt, param_udt, model_dropdown_udt
 
 if __name__ == "__main__":
     pass

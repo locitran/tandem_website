@@ -48,7 +48,7 @@ def home_tab(folder):
             jobs_folder_state = gr.State(folder)
 
             # Session UI
-            (session_id, session_btn, session_status, job_dropdown) = session()
+            (session_id, session_btn, session_mkd, session_status, job_dropdown) = session()
             
             # Input UI
             (
@@ -107,10 +107,10 @@ def home_tab(folder):
     ).then(fn=on_reset, inputs=[param_state], 
         outputs=[input_page, param_state, job_dropdown, input_section, output_page, inf_sav_txt, inf_sav_btn, inf_sav_file, tf_sav_txt, tf_sav_btn, tf_sav_file, str_txt, str_btn, str_file, job_name_txt, email_txt])
     
-    ################-------------Simulate session event----------------################
+    ################-------------Simulate session event----------------################ 
     # Generate/resume session
-    session_click_event = session_btn.click(fn=on_session, inputs=[session_id, param_state], outputs=[session_id, session_btn, session_status, job_dropdown, param_state, model_dropdown])
-    session_submit_event = session_id.submit(fn=on_session, inputs=[session_id, param_state], outputs=[session_id, session_btn, session_status, job_dropdown, param_state, model_dropdown])
+    session_click_event = session_btn.click(fn=on_session, inputs=[session_id, param_state], outputs=[session_id, session_btn, session_mkd, session_status, job_dropdown, param_state, model_dropdown])
+    session_submit_event = session_id.submit(fn=on_session, inputs=[session_id, param_state], outputs=[session_id, session_btn, session_mkd, session_status, job_dropdown, param_state, model_dropdown])
 
     # Visualize input section
     session_event = [session_click_event, session_submit_event]
