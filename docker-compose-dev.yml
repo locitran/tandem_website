@@ -50,8 +50,8 @@ services:
   mongodb:
     image: mongo:8
     container_name: mongodb_dev
-    ports:
-      - "27017:27017"
+    # ports:
+      # - "27017:27017"
     restart: always
     labels:
       owner: "yang_loci"

@@ -6,7 +6,7 @@ services:
   gradio_app:
     # platform: linux/amd64
     build: ./gradio_app
-    # container_name: gradio_app
+    container_name: gradio_app
     ports:
       - "7861:7861"
     volumes:
@@ -23,7 +23,7 @@ services:
   tandem:
     platform: linux/amd64
     build: ./tandem
-    # container_name: tandem
+    container_name: tandem
     expose:
       - "5000"   # internal only; not mapped to host
     depends_on:

@@ -179,5 +179,4 @@ note.md
 .gitignore
 .gitmodules
 
-./gradio_app/test.html
-./docker-compose-dev.yml
+docker-compose-dev.yml
