@@ -4,9 +4,10 @@ import gradio as gr
 from pymongo import MongoClient
 
 from src.web_interface import session, tandem_input, tandem_output, build_header, left_column, build_footer, on_auto_view
+from src.web_interface import render_job_html, render_session_html
 from src.update_session import on_session
 from src.update_input import update_input_param
-from src.job import on_submit, on_job, on_reset, send_job, update_sections, update_timer, update_process_status, update_submit_status
+from src.job import on_job, on_reset, send_job, update_sections, update_timer, update_process_status, update_submit_status
 from src.update_output import update_finished_job, on_select_sav
 from src.job_manager import manager_tab
 from src.QA import qa
@@ -77,9 +78,37 @@ def home_tab(folder):
 
     ##### Result page
     with gr.Group(visible=False) as output_page:    
-        with gr.Row():
-            submit_status = gr.Textbox(label="Submission Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
-            process_status = gr.Textbox(label="Processing Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
+        with gr.Row(elem_classes="bg-row-column"):
+            with gr.Column(scale=4):
+                submit_status = gr.Textbox(label="Submission Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
+            with gr.Column(scale=4):
+                process_status = gr.Textbox(label="Processing Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
+            with gr.Column(scale=2):
+                session_box = gr.HTML(render_session_html(session_id))
+                job_box = gr.HTML(render_job_html(job_name_txt))
+                with gr.Row():
+                    back_btn = gr.Button(elem_id="going_back_btn")
+                    
+                    gr.HTML("""
+                    <button class="going-back-btn"
+                        onclick="document.getElementById('going_back_btn').click()">
+                        ← Going back
+                    </button>
+                    """)
+            session_box_js = """
+            () => {
+                const el = document.getElementById("session-id");
+                if (!el) return;
+
+                const text = el.innerText.trim();
+                navigator.clipboard.writeText(text);
+
+                // Optional visual feedback
+                el.style.background = "#d1fae5";
+                setTimeout(() => {el.style.background = "";}, 600);
+            }
+            """
+            session_box.click(None, js=session_box_js) # Click = copy to clipboard
 
         # Result UI
         (
@@ -121,7 +150,9 @@ def home_tab(folder):
         ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
         ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
         ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-            outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
+            outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
+        ).then(fn=render_session_html, inputs=[session_id], outputs=[session_box]
+        ).then(fn=render_job_html, inputs=[job_name_txt], outputs=[job_box])
         
     #############---input_section following job selection--------################
     job_dropdown.select(
@@ -156,14 +187,18 @@ def home_tab(folder):
     ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
+    ).then(fn=render_session_html, inputs=[test_param_state], outputs=[session_box]
+    ).then(fn=render_job_html, inputs=[test_param_state], outputs=[job_box])
     
     tf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state], outputs=[test_param_state]
     ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
+    ).then(fn=render_session_html, inputs=[test_param_state], outputs=[session_box]
+    ).then(fn=render_job_html, inputs=[test_param_state], outputs=[job_box])
     
     pred_table.select(on_select_sav, inputs=[pred_table, job_folder], outputs=[image_viewer])
 

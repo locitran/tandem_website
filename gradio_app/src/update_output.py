@@ -13,12 +13,23 @@ def on_sav_set_select(selection, folds):
     return folds[selection]
 
 def zip_folder(folder):
-    zip_path = os.path.join(folder, 'result.zip')
-    zip_base = os.path.join(folder, 'result')
-    if not os.path.exists(zip_path):
-        shutil.make_archive(zip_base, "zip")
-        LOGGER.info(f"Creating Zip {zip_path}")
-    return zip_path
+    folder = os.path.abspath(folder)
+
+    base_dir = os.path.basename(folder)
+    root_dir = os.path.dirname(folder)
+
+    # 1️⃣ Create zip NEXT TO the folder (safe)
+    temp_base_name = os.path.join(root_dir, base_dir)
+    temp_zip_path = temp_base_name + ".zip"
+
+    if not os.path.exists(temp_zip_path):
+        shutil.make_archive(base_name=temp_base_name, format="zip",
+            root_dir=root_dir, base_dir=base_dir)
+
+    # 2️⃣ Move zip INTO the folder
+    final_zip_path = os.path.join(folder, "result.zip")
+    shutil.move(temp_zip_path, final_zip_path)
+    return final_zip_path
 
 def on_select_image(image_name, folder, param):
     if not image_name:

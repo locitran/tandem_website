@@ -10,37 +10,96 @@ collections = db["input_queue"]
 ADMIN_PASSWORD = "yanglab"
 JOBS_ROOT = "/tandem/jobs"
 
-def on_save_job(session_id, job_name, json_text, df_jobs):
+def on_save_job(json_text, df_jobs):
     df_jobs_udt = gr.update()
-    status_msg_udt = "⚠️ No job selected."
-    if not session_id or not job_name:
-        return status_msg_udt, df_jobs_udt
 
     try:
-        data = json.loads(json_text) # Parse JSON
-        collections.update_one( # Update MongoDB
+        # ---- Parse JSON ----
+        data = json.loads(json_text)
+
+        # ---- Extract identifiers from JSON ----
+        session_id = data.get("session_id")
+        job_name = data.get("job_name")
+
+        if not session_id or not job_name:
+            return "❌ JSON must contain 'session_id' and 'job_name'", df_jobs_udt
+
+        # ---- MongoDB upsert ----
+        collections.update_one(
             {"session_id": session_id, "job_name": job_name},
-            {"$set": data}
+            {"$set": data},
+            upsert=True
         )
 
-        headers = ["session_id","job_name","mode","status",]
-        saved_idx = df_jobs[(df_jobs['session_id'] == session_id) & (df_jobs['job_name'] == job_name)].index
-        df_jobs_udt = df_jobs.copy()
-        for h in headers:
-            df_jobs_udt.loc[saved_idx, h] = data.get(h)
+        # ---- Update dataframe (append or update) ----
+        df_jobs_copy = df_jobs.copy()
+        headers = ["session_id", "job_name", "mode", "status"]
+
+        saved_idx = df_jobs_copy[
+            (df_jobs_copy["session_id"] == session_id) &
+            (df_jobs_copy["job_name"] == job_name)
+        ].index
+
+        if len(saved_idx) > 0:
+            # Existing job → update
+            for h in headers:
+                df_jobs_copy.loc[saved_idx, h] = data.get(h, "")
+        else:
+            # New job → append
+            new_row = {
+                "session_id": session_id,
+                "job_name": job_name,
+                "mode": data.get("mode", ""),
+                "status": data.get("status", ""),
+            }
+            df_jobs_copy = df_jobs_copy._append(new_row, ignore_index=True)
 
         # ---- Write params.json ----
         path = f"{JOBS_ROOT}/{session_id}/{job_name}/params.json"
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:
             json.dump(data, f, indent=4)
-        status_msg_udt = "✅ Job updated successfully"
 
-        return status_msg_udt, df_jobs_udt
+        return "✅ Job saved successfully", df_jobs_copy
+
+    except json.JSONDecodeError as e:
+        return f"❌ Invalid JSON: {e}", df_jobs_udt
 
     except Exception as e:
-        status_msg_udt = f"❌ Error: {e}"
-        return status_msg_udt, df_jobs_udt
+        return f"❌ Error: {e}", df_jobs_udt
+    
+# def on_save_job(session_id, job_name, json_text, df_jobs):
+#     df_jobs_udt = gr.update()
+#     status_msg_udt = "⚠️ No job selected."
+#     if not session_id or not job_name:
+#         return status_msg_udt, df_jobs_udt
+
+#     try:
+#         data = json.loads(json_text) # Parse JSON
+#         collections.update_one( # Update MongoDB
+#             {"session_id": session_id, "job_name": job_name},
+#             {"$set": data}, 
+#             upsert=True
+#         )
+
+#         headers = ["session_id","job_name","mode","status",]
+#         saved_idx = df_jobs[(df_jobs['session_id'] == session_id) & (df_jobs['job_name'] == job_name)].index
+#         df_jobs_udt = df_jobs.copy()
+#         for h in headers:
+#             df_jobs_udt.loc[saved_idx, h] = data.get(h)
+
+#         # ---- Write params.json ----
+#         path = f"{JOBS_ROOT}/{session_id}/{job_name}/params.json"
+#         os.makedirs(os.path.dirname(path), exist_ok=True)
+#         with open(path, "w") as f:
+#             json.dump(data, f, indent=4)
+#         status_msg_udt = "✅ Job updated successfully"
+
+#         return status_msg_udt, df_jobs_udt
+
+#     except Exception as e:
+#         status_msg_udt = f"❌ Error: {e}"
+#         return status_msg_udt, df_jobs_udt
 
 def on_delete_job(session_id, job_name, df_jobs):
     df_jobs_udt = gr.update()
@@ -136,6 +195,12 @@ def on_authentication(pw):
         login_msg_udt = "❌ Incorrect password"
     return authenticated_udt, password_gate_udt, job_manager_ui, login_msg_udt
 
+def on_new_job():
+    msg = "🆕 New job: please enter parameters, then click Save"
+    params_box_udt = gr.update(value="{}", lines=8) # Blank, editable JSON
+    status_msg_udt = gr.update(value=msg)
+    return params_box_udt, status_msg_udt
+
 def manager_tab():
     authenticated = gr.State(False)
     with gr.Group(visible=True) as password_gate:
@@ -153,6 +218,7 @@ def manager_tab():
             choices = ["All", "pending", "processing", "finished"]
             search = gr.Textbox(label=label, placeholder=placeholder, scale=2)
             status_filter = gr.Dropdown(choices=choices, value="All", label="Status", scale=1)
+            new_job_btn = gr.Button("➕ New Job")
 
         # ---- Job Table ----
         headers = ["session_id","job_name","mode","status",]
@@ -173,8 +239,9 @@ def manager_tab():
         search.change(on_refresh,        inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
         status_filter.change(on_refresh, inputs=[status_filter, search], outputs=[df_jobs, params_box, status_msg])
         df_jobs.select(on_select_job,    inputs=[df_jobs],  outputs=[selected_session, selected_job, params_box, status_msg])
-        save_btn.click(on_save_job,      inputs=[selected_session, selected_job, params_box, df_jobs], outputs=[status_msg, df_jobs])
+        save_btn.click(on_save_job,      inputs=[params_box, df_jobs], outputs=[status_msg, df_jobs])
         delete_btn.click(on_delete_job,  inputs=[selected_session, selected_job, df_jobs], outputs=[status_msg, df_jobs])
+        new_job_btn.click(on_new_job,    inputs=[],outputs=[params_box, status_msg])
     
     event_1 = password_box.submit(on_authentication,  inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])
     event_2 = login_btn.click(on_authentication,      inputs=password_box, outputs=[authenticated, password_gate, job_manager_ui, login_msg])

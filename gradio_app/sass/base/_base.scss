@@ -16,6 +16,11 @@
   flex-direction: column;
 }
 
+.bg-row-column {
+    background-color: var(--input-background-fill) !important;
+    border: 1px solid var(--input-border-color) !important;
+    border-radius: var(--radius-md) !important;
+}
 
 // .gradio-container {
 //   min-height: 100vh;

@@ -17,6 +17,12 @@ html, body {
   flex-direction: column;
 }
 
+.bg-row-column {
+  background-color: var(--input-background-fill) !important;
+  border: 1px solid var(--input-border-color) !important;
+  border-radius: var(--radius-md) !important;
+}
+
 /* ===============================
    HOME / LANDING SECTION
    =============================== */
@@ -51,15 +57,27 @@ h3 {
   color: var(--body-text-color) !important;
 }
 
-#gr-box textarea {
+#gr-textbox textarea {
   resize: both !important;
-  font-family: monospace !important;
   white-space: nowrap !important;
   font-size: 12px !important;
   background-color: var(--background-fill-secondary) !important;
   color: var(--body-text-color) !important;
   overflow-y: auto !important;
   overflow-x: auto !important;
+}
+
+textarea {
+  overflow-y: auto !important;
+}
+
+.session-label,
+.session-id,
+.job-label,
+.job-name {
+  font-size: var(--block-title-text-size) !important;
+  font-weight: var(--block-title-text-weight) !important;
+  color: var(--block-title-text-color) !important;
 }
 
 .gr-button {
@@ -69,6 +87,7 @@ h3 {
   border-radius: 8px;
 }
 
+#going_back_btn,
 #tf_auto_fill,
 #tf_auto_view,
 #inf_auto_fill,
@@ -133,6 +152,35 @@ h3 {
 .clear-input-btn:hover {
     text-decoration: underline !important;
   }
+}
+
+.going-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--button-small-padding);
+  border-radius: var(--button-small-radius);
+  font-size: var(--button-small-text-size);
+  font-weight: var(--button-small-text-weight);
+  color: var(--button-secondary-text-color);
+  background-color: var(--button-secondary-background-fill);
+  border: 1px solid var(--button-secondary-border-color);
+  cursor: pointer;
+  transition: var(--button-transition);
+}
+
+.going-back-btn:hover {
+  background-color: var(--button-secondary-background-fill-hover);
+  border-color: var(--button-secondary-border-color-hover);
+}
+
+.going-back-btn:active {
+  transform: translateY(1px);
+}
+
+.going-back-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
 }
 
 /* =============== Header =============== */

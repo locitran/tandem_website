@@ -383,5 +383,27 @@ def build_footer(mount_point):
     footer = gr.HTML(footer_html, elem_classes="footer")
     return footer
 
+def render_job_html(name):
+    if isinstance(name, dict):
+        name = name.get("job_name", "")
+    return f"""
+    <div class="job-row">
+        <span class="job-label">Job:</span>
+        <span class="job-name" id="job-name">{name}</span>
+    </div>
+    """
+
+def render_session_html(id):
+    if isinstance(id, dict):
+        id = id.get("session_id", "")
+
+    return f"""
+    <div class="session-row">
+        <span class="session-label">Session:</span>
+        <span class="session-id" id="session-id" style="padding:4px 6px; border-radius:4px;">{id}</span>
+        <span style="font-size:12px; color:var(--body-text-color-subdued);">(click to copy)</span>
+    </div>
+    """
+
 if __name__ == "__main__":
     pass
