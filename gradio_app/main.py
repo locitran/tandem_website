@@ -20,7 +20,7 @@ db = client["app_db"]
 collections = db["input_queue"]
 
 MOUNT_POINT = '/TANDEM-dev' # https://dyn.life.nthu.edu.tw/TANDEM-dev
-
+TITLE = 'TANDEM-DIMPLE-DEV'
 ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
 
 TANDEM_DIR = os.path.join(ROOT, 'tandem')
@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     with gr.Blocks(css=custom_css,) as demo:
         # ---------- HEADER ---------- uXXF0nC3qJ QVP4GRh26k
-        header = build_header()
+        header = build_header(TITLE)
 
         # ---------- MAIN CONTENT (with tabs) ----------
         with gr.Column(elem_id="main-content"):

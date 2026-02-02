@@ -339,14 +339,14 @@ def tandem_output():
         result_zip,
     )
 
-def build_header():
-    header_html =  """
+def build_header(title):
+    header_html = f"""
     <div class="header">
         <div class="header-bg"></div>
 
         <div class="header-content">
             <div class="header-text">
-                <div class="header-title">TANDEM-DIMPLE-DEV</div>
+                <div class="header-title">{title}</div>
                 <div class="header-subtitle">Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Estimation</div>
             </div>
         </div>
