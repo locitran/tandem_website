@@ -7,7 +7,8 @@ from src.web_interface import session, tandem_input, tandem_output, build_header
 from src.web_interface import render_job_html, render_session_html
 from src.update_session import on_session
 from src.update_input import update_input_param
-from src.job import on_job, on_reset, send_job, update_sections, update_timer, update_process_status, update_submit_status
+from src.job import on_job, on_reset, send_job, update_sections, update_timer
+from src.job import update_process_status, update_submit_status, on_going_back
 from src.update_output import update_finished_job, on_select_sav
 from src.job_manager import manager_tab
 from src.QA import qa
@@ -67,6 +68,8 @@ def home_tab(folder):
                 tf_sav_btn,
                 tf_sav_file,
                 tf_auto_view,
+                structure_section,
+                str_check,
                 str_txt,
                 str_btn,
                 str_file,
@@ -95,6 +98,7 @@ def home_tab(folder):
                         ← Going back
                     </button>
                     """)
+            
             session_box_js = """
             () => {
                 const el = document.getElementById("session-id");
@@ -109,6 +113,9 @@ def home_tab(folder):
             }
             """
             session_box.click(None, js=session_box_js) # Click = copy to clipboard
+            back_btn.click(
+                fn=on_going_back, inputs=[param_state], 
+                outputs=[input_section, input_page, output_page, inf_sav_txt, tf_sav_txt, structure_section, str_check, str_txt, str_btn, str_file, mode, job_name_txt])
 
         # Result UI
         (
@@ -151,8 +158,8 @@ def home_tab(folder):
         ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
         ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
             outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-        ).then(fn=render_session_html, inputs=[session_id], outputs=[session_box]
-        ).then(fn=render_job_html, inputs=[job_name_txt], outputs=[job_box])
+        ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
+        ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
         
     #############---input_section following job selection--------################
     job_dropdown.select(
@@ -162,7 +169,9 @@ def home_tab(folder):
     ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
     ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
     ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder])
+        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
+    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
 
     ###############---input_section following job selection--------################
     submit_btn.click(inputs=[mode, inf_sav_txt, inf_sav_file, model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param_state],
@@ -171,7 +180,9 @@ def home_tab(folder):
     ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
-    ).then(fn=update_timer, inputs=[param_state], outputs=[timer])
+    ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
+    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
 
     # ###############--------Timer, report job status---------################
     timer.tick(fn=update_process_status, inputs=[param_state, gr.State(True)], outputs=[process_status, param_state]
@@ -182,23 +193,23 @@ def home_tab(folder):
     # ###############--------View output examples---------################
     # Store test parameters 
     test_param_state = gr.State({})
-    inf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state], outputs=[test_param_state]
+    inf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state, param_state], outputs=[test_param_state, param_state]
     ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
         outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-    ).then(fn=render_session_html, inputs=[test_param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[test_param_state], outputs=[job_box])
+    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
     
-    tf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state], outputs=[test_param_state]
+    tf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state, param_state], outputs=[test_param_state, param_state]
     ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
         outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-    ).then(fn=render_session_html, inputs=[test_param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[test_param_state], outputs=[job_box])
+    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
     
     pred_table.select(on_select_sav, inputs=[pred_table, job_folder], outputs=[image_viewer])
 

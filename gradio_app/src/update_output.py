@@ -21,14 +21,12 @@ def zip_folder(folder):
     # 1️⃣ Create zip NEXT TO the folder (safe)
     temp_base_name = os.path.join(root_dir, base_dir)
     temp_zip_path = temp_base_name + ".zip"
-
-    if not os.path.exists(temp_zip_path):
-        shutil.make_archive(base_name=temp_base_name, format="zip",
-            root_dir=root_dir, base_dir=base_dir)
-
     # 2️⃣ Move zip INTO the folder
     final_zip_path = os.path.join(folder, "result.zip")
-    shutil.move(temp_zip_path, final_zip_path)
+
+    if not os.path.exists(final_zip_path):
+        shutil.make_archive(base_name=temp_base_name, format="zip", root_dir=root_dir, base_dir=base_dir)
+        shutil.move(temp_zip_path, final_zip_path)
     return final_zip_path
 
 def on_select_image(image_name, folder, param):

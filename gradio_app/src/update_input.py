@@ -301,7 +301,7 @@ def update_input_param(
         param_udt['label'] = label
         param_udt['model'] = _model_dropdown
         param_udt['job_name'] = _job_name_txt
-        # param_udt['email'] = _email_txt
+        param_udt['email'] = _email_txt
     else:
         param_udt['status'] = None
 

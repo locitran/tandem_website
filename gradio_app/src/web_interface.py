@@ -133,7 +133,7 @@ def on_auto_fill(mode, param):
 
     return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt, param_udt
 
-def on_auto_view(mode, jobs_folder):
+def on_auto_view(mode, jobs_folder, param):
     test_session = 'test'
     if mode == "Inferencing":
         job_name = "inference_test"
@@ -144,7 +144,11 @@ def on_auto_view(mode, jobs_folder):
     test_param_file = os.path.join(jobs_folder, test_session, job_name, 'params.json')
     with open(test_param_file, 'r') as f:
         test_param = json.load(f)
-    return test_param
+    
+    # Copy test_param to main_param
+    param_udt = test_param.copy()
+    param_udt['session_id'] = param['session_id']
+    return test_param, param_udt
 
 def on_mode(mode, param):
     param_udt = param.copy()
@@ -246,8 +250,6 @@ def tandem_input(param):
         email_txt = gr.Textbox(value=None, label="Email (Optional)", placeholder="Enter your email", interactive=True, visible=False, type='email', elem_classes="gr-textbox")
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
 
-    
-
     # Fill test case
     inf_auto_fill.click(fn=on_auto_fill, inputs=[mode, param], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt, param])
     tf_auto_fill.click(fn=on_auto_fill, inputs=[mode, param], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt, param])
@@ -283,6 +285,8 @@ def tandem_input(param):
         tf_sav_btn,
         tf_sav_file,
         tf_auto_view,
+        structure_section,
+        str_check,
         str_txt,
         str_btn,
         str_file,

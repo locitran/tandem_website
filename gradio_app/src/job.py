@@ -9,7 +9,7 @@ from pymongo import MongoClient
 
 from .logger import LOGGER
 from .settings import time_zone
-from .update_input import on_clear_param
+from .update_input import on_clear_param, on_clear_file
 
 GRADIO_APP_ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
 
@@ -118,6 +118,53 @@ def on_reset(_param):
         email_txt_udt,
     )
 
+def on_going_back(param_state):
+    input_section_udt   = gr.update(visible=True)   
+    input_page_udt      = gr.update(visible=True)   
+    output_page_udt     = gr.update(visible=False)
+    structure_section_udt = gr.update(visible=True)   
+    
+    SAV = param_state['SAV']
+    label = param_state['label']
+    mode = param_state['mode']
+    if mode == 'Inferencing':
+        sav_text = '\n'.join(SAV)
+        inf_sav_txt_udt     = gr.update(value=sav_text)
+        tf_sav_txt_udt      = gr.update(value='')
+    elif mode == 'Transfer Learning':
+        if label is None:
+            raise ValueError("Transfer Learning mode requires labels")
+        # Combine SAV + label line by line
+        # Example: O00189 R271H\t1
+        lines = [f"{sav} {lab}" for sav, lab in zip(SAV, label)]
+        sav_text = "\n".join(lines)
+        inf_sav_txt_udt     = gr.update(value='')
+        tf_sav_txt_udt      = gr.update(value=sav_text)
+    else:   
+        raise ValueError(f"Unknown mode: {mode}")
+
+    STR = param_state['STR']
+    str_check_udt = gr.update(value=True)
+    str_txt_udt = gr.update(value="")
+    if STR is None: # Case 1: No structure provided
+        str_btn_udt, str_file_udt = on_clear_file()
+    elif isinstance(STR, str) and os.path.isfile(STR): # Case 2: File-based STR
+        # IMPORTANT: Gradio file input expects a list
+        str_file_udt = gr.update(value=[STR], visible=True)
+        str_btn_udt  = gr.update(visible=False)
+    else: # Case 3: Text-based STR
+        str_txt_udt = gr.update(value=STR)
+        str_btn_udt, str_file_udt = on_clear_file()
+
+    mode_udt = gr.update(value=mode)
+    job_name_txt_udt = gr.update(value=param_state['job_name'])
+
+    return (input_section_udt, input_page_udt, output_page_udt, 
+        inf_sav_txt_udt, tf_sav_txt_udt, 
+        structure_section_udt, str_check_udt, str_txt_udt, str_btn_udt, str_file_udt, 
+        mode_udt, job_name_txt_udt
+    )
+
 def update_sections(param):
     _session_id = param.get("session_id")
     _job_status = param.get("status", None)
@@ -137,7 +184,7 @@ def update_sections(param):
         output_page_udt     = gr.update(visible=True)
 
     return input_section_udt, input_page_udt, output_page_udt
-# OOcKQKegjV
+
 def update_submit_status(param):
     _session_id = param.get("session_id")
     _job_status = param.get("status", None)
@@ -146,7 +193,7 @@ def update_submit_status(param):
         submit_status_udt  = gr.update()
     else:
         msg = ""
-        for k in ["SAV", "label", "model", "job_name", "STR"]:
+        for k in ["SAV", "label", "model", "STR"]:
             v = param.get(k, None)
             if v is not None:
                 msg += f"{k}: {v}"
