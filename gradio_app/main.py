@@ -37,6 +37,19 @@ sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
 with open(os.path.join(ASSETS_DIR, "main.css")) as f:
     custom_css = f.read()
 
+def getip(request: gr.Request, param_state):
+    # Direct client IP
+    ip = request.client.host
+
+    # If behind proxy (nginx / cloudflare)
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        ip = forwarded.split(",")[0].strip()
+
+    param_state_udt = param_state.copy()
+    param_state_udt['IP'] = ip
+    return param_state_udt
+
 def home_tab(folder):
 
     timer = gr.Timer(value=1, active=True) # Timer to check result
@@ -159,7 +172,8 @@ def home_tab(folder):
         ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
             outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
         ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-        ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
+        ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
+        )
         
     #############---input_section following job selection--------################
     job_dropdown.select(
@@ -176,13 +190,16 @@ def home_tab(folder):
     ###############---input_section following job selection--------################
     submit_btn.click(inputs=[mode, inf_sav_txt, inf_sav_file, model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param_state],
            fn=update_input_param, outputs=[param_state, input_section, reset_btn, timer],
+    ).then(fn=getip, inputs=[param_state], outputs=[param_state]
     ).then(fn=send_job, inputs=[param_state, jobs_folder_state], outputs=[param_state],
     ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
     ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
     ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
     ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
     ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
+    ).then(fn=getip, inputs=[param_state], outputs=[param_state]
+    )
 
     # ###############--------Timer, report job status---------################
     timer.tick(fn=update_process_status, inputs=[param_state, gr.State(True)], outputs=[process_status, param_state]

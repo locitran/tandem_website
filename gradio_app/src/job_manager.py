@@ -33,7 +33,7 @@ def on_save_job(json_text, df_jobs):
 
         # ---- Update dataframe (append or update) ----
         df_jobs_copy = df_jobs.copy()
-        headers = ["session_id", "job_name", "mode", "status"]
+        headers = ["IP", "session_id", "job_name", "mode", "status"]
 
         saved_idx = df_jobs_copy[
             (df_jobs_copy["session_id"] == session_id) &
@@ -47,6 +47,7 @@ def on_save_job(json_text, df_jobs):
         else:
             # New job → append
             new_row = {
+                "IP": data.get("IP", ""),
                 "session_id": session_id,
                 "job_name": job_name,
                 "mode": data.get("mode", ""),
@@ -68,38 +69,6 @@ def on_save_job(json_text, df_jobs):
     except Exception as e:
         return f"❌ Error: {e}", df_jobs_udt
     
-# def on_save_job(session_id, job_name, json_text, df_jobs):
-#     df_jobs_udt = gr.update()
-#     status_msg_udt = "⚠️ No job selected."
-#     if not session_id or not job_name:
-#         return status_msg_udt, df_jobs_udt
-
-#     try:
-#         data = json.loads(json_text) # Parse JSON
-#         collections.update_one( # Update MongoDB
-#             {"session_id": session_id, "job_name": job_name},
-#             {"$set": data}, 
-#             upsert=True
-#         )
-
-#         headers = ["session_id","job_name","mode","status",]
-#         saved_idx = df_jobs[(df_jobs['session_id'] == session_id) & (df_jobs['job_name'] == job_name)].index
-#         df_jobs_udt = df_jobs.copy()
-#         for h in headers:
-#             df_jobs_udt.loc[saved_idx, h] = data.get(h)
-
-#         # ---- Write params.json ----
-#         path = f"{JOBS_ROOT}/{session_id}/{job_name}/params.json"
-#         os.makedirs(os.path.dirname(path), exist_ok=True)
-#         with open(path, "w") as f:
-#             json.dump(data, f, indent=4)
-#         status_msg_udt = "✅ Job updated successfully"
-
-#         return status_msg_udt, df_jobs_udt
-
-#     except Exception as e:
-#         status_msg_udt = f"❌ Error: {e}"
-#         return status_msg_udt, df_jobs_udt
 
 def on_delete_job(session_id, job_name, df_jobs):
     df_jobs_udt = gr.update()
@@ -148,6 +117,7 @@ def on_refresh(status, keyword):
             
     unique_jobs = [
         [
+            j.get("IP", ""),
             j.get("session_id", ""),
             j.get("job_name", ""),
             j.get("mode", ""),
@@ -221,7 +191,7 @@ def manager_tab():
             new_job_btn = gr.Button("➕ New Job")
 
         # ---- Job Table ----
-        headers = ["session_id","job_name","mode","status",]
+        headers = ["IP", "session_id","job_name","mode","status",]
         df_jobs = gr.Dataframe(headers=headers, interactive=False, wrap=True)
         # ---- State: selected job ----
         selected_session = gr.State(None)
