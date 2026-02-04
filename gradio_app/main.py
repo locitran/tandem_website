@@ -10,7 +10,7 @@ from src.update_input import update_input_param
 from src.job import on_job, on_reset, send_job, update_sections, update_timer
 from src.job import update_process_status, update_submit_status, on_going_back
 from src.update_output import update_finished_job, on_select_sav
-from src.job_manager import manager_tab
+from src.job_manager import manager_tab, getip
 from src.QA import qa
 from src.tutorial import tutorial
 from src.logger import LOGGER
@@ -19,7 +19,7 @@ client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
 
-MOUNT_POINT = '/TANDEM-dev' # https://dyn.life.nthu.edu.tw/TANDEM-dev
+MOUNT_POINT = '/TANDEM-DEV' # https://dyn.life.nthu.edu.tw/TANDEM-dev
 TITLE = 'TANDEM-DIMPLE-DEV'
 ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
 
@@ -37,221 +37,237 @@ sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
 with open(os.path.join(ASSETS_DIR, "main.css")) as f:
     custom_css = f.read()
 
-def getip(request: gr.Request, param_state):
-    # Direct client IP
-    ip = request.client.host
+class HomeTab:
+    def __init__(self, folder):
+        self.folder = folder
 
-    # If behind proxy (nginx / cloudflare)
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        ip = forwarded.split(",")[0].strip()
+    def build(self):
+        self.timer = gr.Timer(value=1, active=True) # Timer to check result
+        self.job_folder = gr.State()
 
-    param_state_udt = param_state.copy()
-    param_state_udt['IP'] = ip
-    return param_state_udt
+        with gr.Row() as self.input_page:
+            with gr.Column(scale=1):
+                left_column()
+            with gr.Column(scale=1):
+                self.param_state = gr.State({})
+                self.jobs_folder_state = gr.State(self.folder)
 
-def home_tab(folder):
-
-    timer = gr.Timer(value=1, active=True) # Timer to check result
-    job_folder = gr.State()
-
-    with gr.Row() as input_page:
-        with gr.Column(scale=1):
-            left_column()
-        with gr.Column(scale=1):
-            param_state = gr.State({})
-            jobs_folder_state = gr.State(folder)
-
-            # Session UI
-            (session_id, session_btn, session_mkd, session_status, job_dropdown) = session()
-            
-            # Input UI
-            (
-                param_state,
-                input_section,
-                mode,
-                inf_sav_txt,
-                inf_sav_btn,
-                inf_sav_file,
-                inf_auto_view,
-
-                model_dropdown,
+                # Session UI
+                (
+                    self.session_id,
+                    self.session_btn,
+                    self.session_mkd,
+                    self.session_status,
+                    self.job_dropdown,
+                ) = session()
                 
-                tf_sav_txt,
-                tf_sav_btn,
-                tf_sav_file,
-                tf_auto_view,
-                structure_section,
-                str_check,
-                str_txt,
-                str_btn,
-                str_file,
+                # Input UI
+                (
+                    self.param_state,
+                    self.input_section,
+                    self.mode,
+                    self.inf_sav_txt,
+                    self.inf_sav_btn,
+                    self.inf_sav_file,
+                    self.inf_auto_view,
 
-                job_name_txt,
-                email_txt,
-                submit_btn,
-            ) = tandem_input(param_state)
-
-    ##### Result page
-    with gr.Group(visible=False) as output_page:    
-        with gr.Row(elem_classes="bg-row-column"):
-            with gr.Column(scale=4):
-                submit_status = gr.Textbox(label="Submission Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
-            with gr.Column(scale=4):
-                process_status = gr.Textbox(label="Processing Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
-            with gr.Column(scale=2):
-                session_box = gr.HTML(render_session_html(session_id))
-                job_box = gr.HTML(render_job_html(job_name_txt))
-                with gr.Row():
-                    back_btn = gr.Button(elem_id="going_back_btn")
+                    self.model_dropdown,
                     
-                    gr.HTML("""
-                    <button class="going-back-btn"
-                        onclick="document.getElementById('going_back_btn').click()">
-                        ← Going back
-                    </button>
-                    """)
+                    self.tf_sav_txt,
+                    self.tf_sav_btn,
+                    self.tf_sav_file,
+                    self.tf_auto_view,
+                    self.structure_section,
+                    self.str_check,
+                    self.str_txt,
+                    self.str_btn,
+                    self.str_file,
+
+                    self.job_name_txt,
+                    self.email_txt,
+                    self.submit_btn,
+                ) = tandem_input(self.param_state)
+
+        ##### Result page
+        with gr.Group(visible=False) as self.output_page:    
+            with gr.Row(elem_classes="bg-row-column"):
+                with gr.Column(scale=4):
+                    self.submit_status = gr.Textbox(label="Submission Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
+                with gr.Column(scale=4):
+                    self.process_status = gr.Textbox(label="Processing Status", lines=2, interactive=False, elem_classes="gr-textbox", autoscroll=False)
+                with gr.Column(scale=2):
+                    self.session_box = gr.HTML(render_session_html(self.session_id))
+                    self.job_box = gr.HTML(render_job_html(self.job_name_txt))
+                    with gr.Row():
+                        self.back_btn = gr.Button(elem_id="going_back_btn")
+                        
+                        gr.HTML("""
+                        <button class="going-back-btn"
+                            onclick="document.getElementById('going_back_btn').click()">
+                            ← Going back
+                        </button>
+                        """)
+                
+                session_box_js = """
+                () => {
+                    const el = document.getElementById("session-id");
+                    if (!el) return;
+
+                    const text = el.innerText.trim();
+                    navigator.clipboard.writeText(text);
+
+                    // Optional visual feedback
+                    el.style.background = "#d1fae5";
+                    setTimeout(() => {el.style.background = "";}, 600);
+                }
+                """
+                self.session_box.click(None, js=session_box_js) # Click = copy to clipboard
+                self.back_btn.click(
+                    fn=on_going_back, inputs=[self.param_state], 
+                    outputs=[self.input_section, self.input_page, self.output_page, self.inf_sav_txt, self.tf_sav_txt, self.structure_section, self.str_check, self.str_txt, self.str_btn, self.str_file, self.mode, self.job_name_txt, self.job_dropdown])
+
+            # Result UI
+            (
+                self.output_section,
+                self.inf_output_secion,
+                self.tf_output_secion,
+
+                self.pred_table,
+                self.image_viewer,
+
+                self.folds_state,
+                self.fold_dropdown,
+                self.sav_textbox,
+                self.loss_image,
+                self.test_evaluation,
+                self.model_save,
+
+                self.result_zip,
+
+            ) = tandem_output()
+            self.reset_btn = gr.Button("New job", elem_classes="gr-button")
+
+        self._bind_events()
+        return self
+
+    def _bind_events(self):
+        # Stop timer after reset
+        self.reset_btn.click(fn=lambda: gr.update(active=False), inputs=[], outputs=self.timer
+        ).then(fn=on_reset, inputs=[self.param_state], 
+            outputs=[self.input_page, self.param_state, self.job_dropdown, self.input_section, self.output_page, self.inf_sav_txt, self.inf_sav_btn, self.inf_sav_file, self.tf_sav_txt, self.tf_sav_btn, self.tf_sav_file, self.str_txt, self.str_btn, self.str_file, self.job_name_txt, self.email_txt])
+        
+        ################-------------Simulate session event----------------################ 
+        # Generate/resume session
+        session_click_event = self.session_btn.click(fn=on_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.session_btn, self.session_mkd, self.session_status, self.job_dropdown, self.param_state, self.model_dropdown])
+        session_submit_event = self.session_id.submit(fn=on_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.session_btn, self.session_mkd, self.session_status, self.job_dropdown, self.param_state, self.model_dropdown])
+
+        # Visualize input section
+        session_event = [session_click_event, session_submit_event]
+        for i, event in enumerate(session_event):
+            session_event[i] = event.then(
+                   fn=update_sections, inputs=[self.param_state], outputs=[self.input_section, self.input_page, self.output_page]
+            ).then(fn=update_submit_status, inputs=[self.param_state], outputs=[self.submit_status]
+            ).then(fn=update_process_status, inputs=[self.param_state, gr.State(False)], outputs=[self.process_status, self.param_state]
+            ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer]
+            ).then(fn=update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
+                outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
+            ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
+            ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
+            )
             
-            session_box_js = """
-            () => {
-                const el = document.getElementById("session-id");
-                if (!el) return;
+        #############---input_section following job selection--------################
+        self.job_dropdown.select(
+               fn=on_job, inputs=[self.job_dropdown, self.param_state], outputs=[self.param_state]
+        ).then(fn=update_sections, inputs=[self.param_state], outputs=[self.input_section, self.input_page, self.output_page]
+        ).then(fn=update_submit_status, inputs=[self.param_state], outputs=[self.submit_status]
+        ).then(fn=update_process_status, inputs=[self.param_state, gr.State(False)], outputs=[self.process_status, self.param_state]
+        ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer]
+        ).then(fn=update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
+            outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
+        ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
+        ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
+        )
 
-                const text = el.innerText.trim();
-                navigator.clipboard.writeText(text);
+        ###############---input_section following job selection--------################
+        self.submit_btn.click(inputs=[self.mode, self.inf_sav_txt, self.inf_sav_file, self.model_dropdown, self.tf_sav_txt, self.tf_sav_file, self.str_txt, self.str_file, self.job_name_txt, self.email_txt, self.param_state],
+               fn=update_input_param, outputs=[self.param_state, self.input_section, self.reset_btn, self.timer],
+        ).then(fn=getip, inputs=[self.param_state], outputs=[self.param_state]
+        ).then(fn=send_job, inputs=[self.param_state, self.jobs_folder_state], outputs=[self.param_state],
+        ).then(fn=update_sections, inputs=[self.param_state], outputs=[self.input_section, self.input_page, self.output_page]
+        ).then(fn=update_submit_status, inputs=[self.param_state], outputs=[self.submit_status]
+        ).then(fn=update_process_status, inputs=[self.param_state, gr.State(False)], outputs=[self.process_status, self.param_state]
+        ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer]
+        ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
+        ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
+        ).then(fn=getip, inputs=[self.param_state], outputs=[self.param_state]
+        )
 
-                // Optional visual feedback
-                el.style.background = "#d1fae5";
-                setTimeout(() => {el.style.background = "";}, 600);
-            }
-            """
-            session_box.click(None, js=session_box_js) # Click = copy to clipboard
-            back_btn.click(
-                fn=on_going_back, inputs=[param_state], 
-                outputs=[input_section, input_page, output_page, inf_sav_txt, tf_sav_txt, structure_section, str_check, str_txt, str_btn, str_file, mode, job_name_txt, job_dropdown])
+        # ###############--------Timer, report job status---------################
+        self.timer.tick(fn=update_process_status, inputs=[self.param_state, gr.State(True)], outputs=[self.process_status, self.param_state]
+        ).then(fn=update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
+            outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
+        ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer])
 
-        # Result UI
-        (
-            output_section,
-            inf_output_secion,
-            tf_output_secion,
-
-            pred_table,
-            image_viewer,
-
-            folds_state,
-            fold_dropdown,
-            sav_textbox,
-            loss_image,
-            test_evaluation,
-            model_save,
-
-            result_zip,
-
-        ) = tandem_output()
-        reset_btn = gr.Button("New job", elem_classes="gr-button")
-
-    # Stop timer after reset
-    reset_btn.click(fn=lambda: gr.update(active=False), inputs=[], outputs=timer
-    ).then(fn=on_reset, inputs=[param_state], 
-        outputs=[input_page, param_state, job_dropdown, input_section, output_page, inf_sav_txt, inf_sav_btn, inf_sav_file, tf_sav_txt, tf_sav_btn, tf_sav_file, str_txt, str_btn, str_file, job_name_txt, email_txt])
-    
-    ################-------------Simulate session event----------------################ 
-    # Generate/resume session
-    session_click_event = session_btn.click(fn=on_session, inputs=[session_id, param_state], outputs=[session_id, session_btn, session_mkd, session_status, job_dropdown, param_state, model_dropdown])
-    session_submit_event = session_id.submit(fn=on_session, inputs=[session_id, param_state], outputs=[session_id, session_btn, session_mkd, session_status, job_dropdown, param_state, model_dropdown])
-
-    # Visualize input section
-    session_event = [session_click_event, session_submit_event]
-    for i, event in enumerate(session_event):
-        session_event[i] = event.then(
-               fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
-        ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
-        ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
-        ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
-        ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-            outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-        ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-        ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
+        # ###############--------View output examples---------################
+        # Store test parameters 
+        self.test_param_state = gr.State({})
+        self.inf_auto_view.click(fn=on_auto_view, inputs=[self.mode, self.jobs_folder_state, self.param_state], outputs=[self.test_param_state, self.param_state]
+        ).then(fn=update_sections, inputs=[self.test_param_state], outputs=[self.input_section, self.input_page, self.output_page]
+        ).then(fn=update_submit_status, inputs=[self.test_param_state], outputs=[self.submit_status]
+        ).then(fn=update_process_status, inputs=[self.test_param_state, gr.State(False)], outputs=[self.process_status, self.test_param_state]
+        ).then(fn=update_finished_job, inputs=[self.test_param_state, self.jobs_folder_state],
+            outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
+        ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
+        ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
         )
         
-    #############---input_section following job selection--------################
-    job_dropdown.select(
-           fn=on_job, inputs=[job_dropdown, param_state], outputs=[param_state]
-    ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
-    ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
-    ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
-    ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
-    ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
-    )
+        self.tf_auto_view.click(fn=on_auto_view, inputs=[self.mode, self.jobs_folder_state, self.param_state], outputs=[self.test_param_state, self.param_state]
+        ).then(fn=update_sections, inputs=[self.test_param_state], outputs=[self.input_section, self.input_page, self.output_page]
+        ).then(fn=update_submit_status, inputs=[self.test_param_state], outputs=[self.submit_status]
+        ).then(fn=update_process_status, inputs=[self.test_param_state, gr.State(False)], outputs=[self.process_status, self.test_param_state]
+        ).then(fn=update_finished_job, inputs=[self.test_param_state, self.jobs_folder_state],
+            outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
+        ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
+        ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
+        )
+        
+        self.pred_table.select(on_select_sav, inputs=[self.pred_table, self.job_folder], outputs=[self.image_viewer])
 
-    ###############---input_section following job selection--------################
-    submit_btn.click(inputs=[mode, inf_sav_txt, inf_sav_file, model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param_state],
-           fn=update_input_param, outputs=[param_state, input_section, reset_btn, timer],
-    ).then(fn=getip, inputs=[param_state], outputs=[param_state]
-    ).then(fn=send_job, inputs=[param_state, jobs_folder_state], outputs=[param_state],
-    ).then(fn=update_sections, inputs=[param_state], outputs=[input_section, input_page, output_page]
-    ).then(fn=update_submit_status, inputs=[param_state], outputs=[submit_status]
-    ).then(fn=update_process_status, inputs=[param_state, gr.State(False)], outputs=[process_status, param_state]
-    ).then(fn=update_timer, inputs=[param_state], outputs=[timer]
-    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
-    ).then(fn=getip, inputs=[param_state], outputs=[param_state]
-    )
+class TandemApp:
+    def __init__(self, css, job_dir, mount_point, title):
+        self.css = css
+        self.job_dir = job_dir
+        self.mount_point = mount_point
+        self.title = title
 
-    # ###############--------Timer, report job status---------################
-    timer.tick(fn=update_process_status, inputs=[param_state, gr.State(True)], outputs=[process_status, param_state]
-    ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-    ).then(fn=update_timer, inputs=[param_state], outputs=[timer])
+    def build(self):
+        with gr.Blocks(css=self.css,) as self.demo:
+            # ---------- HEADER ---------- uXXF0nC3qJ QVP4GRh26k
+            build_header(self.title)
 
-    # ###############--------View output examples---------################
-    # Store test parameters 
-    test_param_state = gr.State({})
-    inf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state, param_state], outputs=[test_param_state, param_state]
-    ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
-    ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
-    ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
-    ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
-    )
-    
-    tf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state, param_state], outputs=[test_param_state, param_state]
-    ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
-    ).then(fn=update_submit_status, inputs=[test_param_state], outputs=[submit_status]
-    ).then(fn=update_process_status, inputs=[test_param_state, gr.State(False)], outputs=[process_status, test_param_state]
-    ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
-        outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
-    ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
-    )
-    
-    pred_table.select(on_select_sav, inputs=[pred_table, job_folder], outputs=[image_viewer])
+            # ---------- MAIN CONTENT (with tabs) ----------
+            with gr.Column(elem_id="main-content"):
+                with gr.Tab("Home"):
+                    self.home_tab = HomeTab(self.job_dir).build()
+                with gr.Tab(label="🗂️ Job Manager", id='job'):
+                    manager_tab()
+                with gr.Tab(label="Q & A"):
+                    qa(self.mount_point)
+                with gr.Tab(label="Tutorial"):
+                    tutorial(self.mount_point)
+                    
+            build_footer(self.mount_point)
+
+        return self.demo
 
 if __name__ == "__main__":
-
-    with gr.Blocks(css=custom_css,) as demo:
-        # ---------- HEADER ---------- uXXF0nC3qJ QVP4GRh26k
-        header = build_header(TITLE)
-
-        # ---------- MAIN CONTENT (with tabs) ----------
-        with gr.Column(elem_id="main-content"):
-            with gr.Tab("Home"):
-                home_tab(JOB_DIR)
-            with gr.Tab(label="🗂️ Job Manager", id='job'):
-                manager_tab()
-            with gr.Tab(label="Q & A"):
-                qa_page = qa(MOUNT_POINT)
-            with gr.Tab(label="Tutorial"):
-                tutorial_page = tutorial(MOUNT_POINT)
-                
-        footer_html = build_footer(MOUNT_POINT)
-
+    app = TandemApp(
+        css=custom_css,
+        job_dir=JOB_DIR,
+        mount_point=MOUNT_POINT,
+        title=TITLE,
+    )
+    demo = app.build()
     demo.queue()
     demo.launch(
         server_name="0.0.0.0",

@@ -171,6 +171,19 @@ def on_new_job():
     status_msg_udt = gr.update(value=msg)
     return params_box_udt, status_msg_udt
 
+def getip(request: gr.Request, param_state):
+    # Direct client IP
+    ip = request.client.host
+
+    # If behind proxy (nginx / cloudflare)
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        ip = forwarded.split(",")[0].strip()
+
+    param_state_udt = param_state.copy()
+    param_state_udt['IP'] = ip
+    return param_state_udt
+
 def manager_tab():
     authenticated = gr.State(False)
     with gr.Group(visible=True) as password_gate:
