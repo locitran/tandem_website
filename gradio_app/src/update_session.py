@@ -74,19 +74,9 @@ def on_session(_session_id, param):
         )
 
         if len(existing_jobs) == 0:
-            job_dropdown_upt = gr.update(visible=False, value=None, choices=[], 
-                interactive=False,label="No jobs in this session yet",)
+            job_dropdown_upt = gr.update(visible=False, value=None, choices=[])
         else:
-            # first_job = existing_jobs[0]
-            # param_udt = collections.find_one(
-            #     {'session_id': _session_id,'job_name'  : first_job,}, {"_id": 0}
-            # )
-            # job_dropdown_upt = gr.update(
-            #     visible=True, value=first_job, choices=existing_jobs, interactive=True, label='Old jobs',)
-
-            job_dropdown_upt = gr.update(
-                visible=True, choices=existing_jobs, interactive=True, label='Old jobs',)
-
+            job_dropdown_upt = gr.update(visible=True, value=None, choices=existing_jobs, interactive=True)
             # List out pretrained model saved from job_name, status, and mode 
             pre_trained_models = collections.distinct(
                 "job_name",

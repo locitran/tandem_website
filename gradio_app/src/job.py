@@ -63,10 +63,7 @@ def on_submit():
     submit_status_udt = gr.update(value="✅ Your job is just submitted.", visible=True)
     return submit_status_udt
 
-def on_reset(_param):
-    job_name_udt = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
-    _session_id = _param.get('session_id', None)
-
+def load_jobs(_session_id):
     # List out existing jobs of this _session_id and status not None
     if _session_id is not None:
         existing_jobs = collections.distinct(
@@ -81,7 +78,13 @@ def on_reset(_param):
             visible=bool(existing_jobs), value=None, choices=existing_jobs, interactive=True,)
     else:
         job_dropdown_upt = gr.update()
+    return job_dropdown_upt
 
+def on_reset(_param):
+    job_name_udt = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
+    _session_id = _param.get('session_id', None)
+    job_dropdown_upt = load_jobs(_session_id)
+    
     param_udt = {
         'session_id': _session_id,
         'job_name': job_name_udt,
@@ -158,11 +161,13 @@ def on_going_back(param_state):
 
     mode_udt = gr.update(value=mode)
     job_name_txt_udt = gr.update(value=param_state['job_name'])
+    _session_id = param_state.get('session_id', None)
+    job_dropdown_upt = load_jobs(_session_id)
 
     return (input_section_udt, input_page_udt, output_page_udt, 
         inf_sav_txt_udt, tf_sav_txt_udt, 
         structure_section_udt, str_check_udt, str_txt_udt, str_btn_udt, str_file_udt, 
-        mode_udt, job_name_txt_udt
+        mode_udt, job_name_txt_udt, job_dropdown_upt
     )
 
 def update_sections(param):

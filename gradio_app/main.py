@@ -128,7 +128,7 @@ def home_tab(folder):
             session_box.click(None, js=session_box_js) # Click = copy to clipboard
             back_btn.click(
                 fn=on_going_back, inputs=[param_state], 
-                outputs=[input_section, input_page, output_page, inf_sav_txt, tf_sav_txt, structure_section, str_check, str_txt, str_btn, str_file, mode, job_name_txt])
+                outputs=[input_section, input_page, output_page, inf_sav_txt, tf_sav_txt, structure_section, str_check, str_txt, str_btn, str_file, mode, job_name_txt, job_dropdown])
 
         # Result UI
         (
@@ -185,7 +185,8 @@ def home_tab(folder):
     ).then(fn=update_finished_job, inputs=[param_state, jobs_folder_state],
         outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
     ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
+    )
 
     ###############---input_section following job selection--------################
     submit_btn.click(inputs=[mode, inf_sav_txt, inf_sav_file, model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param_state],
@@ -217,7 +218,8 @@ def home_tab(folder):
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
         outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
     ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
+    )
     
     tf_auto_view.click(fn=on_auto_view, inputs=[mode, jobs_folder_state, param_state], outputs=[test_param_state, param_state]
     ).then(fn=update_sections, inputs=[test_param_state], outputs=[input_section, input_page, output_page]
@@ -226,7 +228,8 @@ def home_tab(folder):
     ).then(fn=update_finished_job, inputs=[test_param_state, jobs_folder_state],
         outputs=[output_section, result_zip, inf_output_secion, pred_table, image_viewer, tf_output_secion, folds_state, fold_dropdown, sav_textbox, loss_image, test_evaluation, model_save, job_folder]
     ).then(fn=render_session_html, inputs=[param_state], outputs=[session_box]
-    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box])
+    ).then(fn=render_job_html, inputs=[param_state], outputs=[job_box]
+    )
     
     pred_table.select(on_select_sav, inputs=[pred_table, job_folder], outputs=[image_viewer])
 
