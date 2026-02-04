@@ -7,12 +7,16 @@ import gradio as gr
 import numpy as np
 from io import StringIO
 from datetime import datetime
+from pymongo import MongoClient
 from .logger import LOGGER
 from .settings import time_zone
 
 TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # ./tandem_website
 jobs_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'tandem/jobs')
 tmp_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'gradio_app/tmp')
+client = MongoClient("mongodb://mongodb:27017/")
+db = client["app_db"]
+collections = db["input_queue"]
 
 VALID_AA = set("ACDEFGHIKLMNPQRSTVWY")
 INF_PATTERN = re.compile(r"^(?P<acc>\S+)\s+(?P<wt>[ACDEFGHIKLMNPQRSTVWY])(?P<resid>[0-9]+)(?P<mt>[ACDEFGHIKLMNPQRSTVWY])$")
@@ -259,6 +263,7 @@ def update_input_param(
     _job_name_txt,
     _email_txt,
     param,
+    request: gr.Request,
 ):  
     """Validate user inputs after clicking Submit, normalize them into a job payload, 
     update UI states, and decide whether the job can enter the queue.
@@ -279,62 +284,84 @@ def update_input_param(
     | Status message    | Payload preview    | Error message      |
     | Polling timer     | Activated          | Deactivated        |
     """
-    param_udt = param.copy()
+    def _fail():
+        param_udt = param.copy()
+        param_udt["status"] = None
+        input_section_udt = gr.update(visible=True)
+        reset_btn_udt = gr.update(visible=False)
+        timer_udt = gr.update(active=False)
+        return param_udt, input_section_udt, reset_btn_udt, timer_udt
 
-    # 1) Pick SAV input (file > text)
+    param_udt = param.copy()
+    session_id = param_udt.get("session_id")
+    job_name = (_job_name_txt or "").strip()
+
+    # 1) Validate job name first
+    if not job_name:
+        gr.Warning("Job name cannot be empty.")
+        return _fail()
+    if session_id:
+        existed_job = collections.find_one(
+            {"session_id": session_id, "job_name": job_name},
+            {"_id": 1},
+        )
+        if existed_job is not None:
+            gr.Warning(f'Job name "{job_name}" already exists in this session. Please use a different job name.')
+            return _fail()
+
+    # 2) Validate SAV
     if _mode == "Inferencing":
         SAV_input = _inf_sav_file if (_inf_sav_file and os.path.isfile(_inf_sav_file)) else (_inf_sav_txt or "")
     elif _mode == "Transfer Learning":
         SAV_input = _tf_sav_file if (_tf_sav_file and os.path.isfile(_tf_sav_file)) else (_tf_sav_txt or "")
     else:
-        raise KeyError(f"Unknown mode: {_mode}")
+        gr.Warning(f"Unknown mode: {_mode}")
+        return _fail()
 
-    # 2) Validate SAVs
     SAV_data = handle_SAV(_mode, SAV_input)
-    if (SAV_data is not None):
-        SAV = [f"{ele['acc']} {ele['wt_resid_mt']}" for ele in SAV_data]
-        label = None if _mode == 'Inferencing' else SAV_data['label'].tolist()
-        
-        param_udt['status'] = 'pending'
-        param_udt['mode'] = _mode
-        param_udt['SAV'] = SAV
-        param_udt['label'] = label
-        param_udt['model'] = _model_dropdown
-        param_udt['job_name'] = _job_name_txt
-        param_udt['email'] = _email_txt
-    else:
-        param_udt['status'] = None
+    if SAV_data is None:
+        return _fail()
+
+    SAV = [f"{ele['acc']} {ele['wt_resid_mt']}" for ele in SAV_data]
+    label = None if _mode == "Inferencing" else SAV_data["label"].tolist()
 
     # 3) Validate STR
-    # If user uploaded a file
     if _str_file and os.path.isfile(_str_file):
-        # basename of uploaded file
         basename = os.path.basename(_str_file)
         tmpfile = os.path.join(tmp_folder, basename)
         shutil.copy2(_str_file, tmpfile)
-        param_udt['STR'] = tmpfile
-    # If nothing provided, allow None
+        STR_value = tmpfile
     elif str_txt is None or str_txt.strip() == "":
-        param_udt['STR'] = None
+        STR_value = None
     else:
-        STR_input = handle_STR(str_txt)
-        if STR_input is None:
-            param_udt['status'] = None
-        else:
-            param_udt['STR'] = STR_input
+        STR_value = handle_STR(str_txt)
+        if STR_value is None:
+            return _fail()
 
-    # status is False meaning that either STR_input or SAV_data are fail
-    if param_udt['status'] is not None:
-        input_section_udt  = gr.update(visible=False)   
-        reset_btn_udt = gr.update(visible=True, interactive=True) # turn on
-        timer_udt = gr.update(active=True) # turn on
-    else:
-        param_udt = param.copy()
-        input_section_udt  = gr.update(visible=True)   
-        reset_btn_udt = gr.update(visible=False) # turn off
-        timer_udt = gr.update(active=False) # turn on
-    
-    return param_udt, input_section_udt, reset_btn_udt, timer_udt
+    # 4) Attach IP (from previous getip flow)
+    ip = None
+    if request is not None:
+        ip = request.client.host if request.client else None
+        forwarded = request.headers.get("x-forwarded-for") if request.headers else None
+        if forwarded:
+            ip = forwarded.split(",")[0].strip()
+
+    param_udt["status"] = "pending"
+    param_udt["mode"] = _mode
+    param_udt["SAV"] = SAV
+    param_udt["label"] = label
+    param_udt["model"] = _model_dropdown
+    param_udt["job_name"] = job_name
+    param_udt["email"] = _email_txt
+    param_udt["STR"] = STR_value
+    param_udt["IP"] = ip
+
+    return (
+        param_udt,
+        gr.update(visible=False),
+        gr.update(visible=True, interactive=True),
+        gr.update(active=True),
+    )
 
 if __name__ == "__main__":
     pass

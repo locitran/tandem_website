@@ -10,7 +10,7 @@ from src.update_input import update_input_param
 from src.job import on_job, on_reset, send_job, update_sections, update_timer
 from src.job import update_process_status, update_submit_status, on_going_back
 from src.update_output import update_finished_job, on_select_sav
-from src.job_manager import manager_tab, getip
+from src.job_manager import manager_tab
 from src.QA import qa
 from src.tutorial import tutorial
 from src.logger import LOGGER
@@ -191,7 +191,6 @@ class HomeTab:
         ###############---input_section following job selection--------################
         self.submit_btn.click(inputs=[self.mode, self.inf_sav_txt, self.inf_sav_file, self.model_dropdown, self.tf_sav_txt, self.tf_sav_file, self.str_txt, self.str_file, self.job_name_txt, self.email_txt, self.param_state],
                fn=update_input_param, outputs=[self.param_state, self.input_section, self.reset_btn, self.timer],
-        ).then(fn=getip, inputs=[self.param_state], outputs=[self.param_state]
         ).then(fn=send_job, inputs=[self.param_state, self.jobs_folder_state], outputs=[self.param_state],
         ).then(fn=update_sections, inputs=[self.param_state], outputs=[self.input_section, self.input_page, self.output_page]
         ).then(fn=update_submit_status, inputs=[self.param_state], outputs=[self.submit_status]
@@ -199,7 +198,6 @@ class HomeTab:
         ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer]
         ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
         ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
-        ).then(fn=getip, inputs=[self.param_state], outputs=[self.param_state]
         )
 
         # ###############--------Timer, report job status---------################
