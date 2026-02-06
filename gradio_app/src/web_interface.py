@@ -36,8 +36,14 @@ def session():
     with gr.Group():
         gr.Markdown("### User session", elem_classes="h3")
         placeholder = "Start a new session or paste an existing session ID"
-        session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder,  interactive=True, show_copy_button=True, elem_classes="gr-textbox")
-        # session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder,  interactive=True, buttons=['copy'], elem_classes="gr-textbox")
+        session_id = gr.Textbox(
+            label=" ",
+            show_label=True,
+            placeholder=placeholder,
+            interactive=True,
+            buttons=["copy"],
+            elem_classes="gr-textbox",
+        )
         session_btn = gr.Button("▶️ Start / Resume Session", elem_classes="gr-button")
         session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start / Resume a Session'")
         session_status = gr.Markdown("")
@@ -306,7 +312,7 @@ def tandem_output():
                 with gr.Column():
                     pred_table = gr.Dataframe(interactive=False, max_height=340, show_label=False)
                 with gr.Column():
-                    image_viewer = gr.Image(height=340, show_download_button=False, show_label=False)
+                    image_viewer = gr.Image(height=340, show_label=False, buttons=["fullscreen"])
                     # image_viewer = gr.Image(height=340, show_label=False)
         
         with gr.Group(visible=False) as tf_output_secion:
@@ -317,7 +323,7 @@ def tandem_output():
                     sav_textbox = gr.Textbox(lines=1, interactive=False, show_label=False, elem_classes="gr-textbox", elem_id="sav_textbox", autoscroll=False)
                     fold_dropdown.change(fn=on_sav_set_select, inputs=[fold_dropdown, folds_state], outputs=sav_textbox)
                     test_evaluation = gr.Dataframe(interactive=False, max_height=250, show_label=False)
-                loss_image = gr.Image(label="", show_download_button=False, show_label=False, height=364)
+                loss_image = gr.Image(label="", show_label=False, height=364, buttons=["fullscreen"])
                 # loss_image = gr.Image(label="", show_label=False, height=393)
             model_save = gr.Markdown(elem_classes="gr-p")
         result_zip = gr.File(label="Download Results")

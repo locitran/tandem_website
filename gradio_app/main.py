@@ -239,7 +239,7 @@ class TandemApp:
         self.title = title
 
     def build(self):
-        with gr.Blocks(css=self.css,) as self.demo:
+        with gr.Blocks(title=self.title) as self.demo:
             # ---------- HEADER ---------- uXXF0nC3qJ QVP4GRh26k
             build_header(self.title)
 
@@ -270,11 +270,11 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=7861,
+        css=custom_css,
         allowed_paths=[
             "/tandem/jobs", 
             "assets/images",
         ],
         root_path=MOUNT_POINT,
+        favicon_path=os.path.join(ASSETS_DIR, "images", "nthu_favicon.png")
     )
-    # QVP4GRh26k
-    # TANDEM-dev
