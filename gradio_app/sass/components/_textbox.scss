@@ -1,17 +1,8 @@
-#gr-textbox textarea {
+.gr-textbox textarea {
     resize: both !important;
-    // font-family: monospace !important;
-    white-space: nowrap !important;
-    font-size: 12px !important;
-    background-color: var(--background-fill-secondary) !important;
-    color: var(--body-text-color) !important;
+    white-space: pre-wrap !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
-}
-
-textarea {
-    // font-size: 12px !important;
-    overflow-y: auto !important;
 }
 
 .session-label,

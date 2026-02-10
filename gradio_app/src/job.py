@@ -121,53 +121,86 @@ def on_reset(_param):
         email_txt_udt,
     )
 
-def on_going_back(param_state):
-    input_section_udt   = gr.update(visible=True)   
-    input_page_udt      = gr.update(visible=True)   
-    output_page_udt     = gr.update(visible=False)
-    structure_section_udt = gr.update(visible=True)   
-    
+def _prepare_back_sav(param_state):
+    input_section_udt = gr.update(visible=True)
+    input_page_udt = gr.update(visible=True)
+    output_page_udt = gr.update(visible=False)
+
     SAV = param_state['SAV']
     label = param_state['label']
     mode = param_state['mode']
     if mode == 'Inferencing':
+        inf_section_udt = gr.update(visible=True)
+        tf_section_udt = gr.update(visible=False)
         sav_text = '\n'.join(SAV)
-        inf_sav_txt_udt     = gr.update(value=sav_text)
-        tf_sav_txt_udt      = gr.update(value='')
+        inf_sav_txt_udt = gr.update(value=sav_text)
+        tf_sav_txt_udt = gr.update(value='')
     elif mode == 'Transfer Learning':
+        inf_section_udt = gr.update(visible=False)
+        tf_section_udt = gr.update(visible=True)
         if label is None:
             raise ValueError("Transfer Learning mode requires labels")
-        # Combine SAV + label line by line
-        # Example: O00189 R271H\t1
         lines = [f"{sav} {lab}" for sav, lab in zip(SAV, label)]
         sav_text = "\n".join(lines)
-        inf_sav_txt_udt     = gr.update(value='')
-        tf_sav_txt_udt      = gr.update(value=sav_text)
-    else:   
+        inf_sav_txt_udt = gr.update(value='')
+        tf_sav_txt_udt = gr.update(value=sav_text)
+    else:
         raise ValueError(f"Unknown mode: {mode}")
-
-    STR = param_state['STR']
-    str_check_udt = gr.update(value=True)
-    str_txt_udt = gr.update(value="")
-    if STR is None: # Case 1: No structure provided
-        str_btn_udt, str_file_udt = on_clear_file()
-    elif isinstance(STR, str) and os.path.isfile(STR): # Case 2: File-based STR
-        # IMPORTANT: Gradio file input expects a list
-        str_file_udt = gr.update(value=[STR], visible=True)
-        str_btn_udt  = gr.update(visible=False)
-    else: # Case 3: Text-based STR
-        str_txt_udt = gr.update(value=STR)
-        str_btn_udt, str_file_udt = on_clear_file()
 
     mode_udt = gr.update(value=mode)
     job_name_txt_udt = gr.update(value=param_state['job_name'])
     _session_id = param_state.get('session_id', None)
     job_dropdown_upt = load_jobs(_session_id)
 
-    return (input_section_udt, input_page_udt, output_page_udt, 
-        inf_sav_txt_udt, tf_sav_txt_udt, 
-        structure_section_udt, str_check_udt, str_txt_udt, str_btn_udt, str_file_udt, 
-        mode_udt, job_name_txt_udt, job_dropdown_upt
+    return (
+        input_section_udt,
+        input_page_udt,
+        output_page_udt,
+        inf_section_udt,
+        tf_section_udt,
+        inf_sav_txt_udt,
+        tf_sav_txt_udt,
+        mode_udt,
+        job_name_txt_udt,
+        job_dropdown_upt,
+    )
+
+def _prepare_back_str(param_state):
+    STR = param_state['STR']
+    str_txt_udt = gr.update(value="")
+    str_check_udt = gr.update(value=True)
+    structure_section_udt = gr.update(visible=True)
+
+    def _resolve_str_path(value):
+        if isinstance(value, str):
+            return value
+        if isinstance(value, (list, tuple)) and len(value) == 1 and isinstance(value[0], str):
+            return value[0]
+        if isinstance(value, dict):
+            path = value.get("path") or value.get("name")
+            if isinstance(path, str):
+                return path
+        return None
+
+    str_path = _resolve_str_path(STR)
+    if STR is None:  # Case 1: No structure provided
+        str_btn_udt = gr.update(visible=True)
+        str_file_udt = gr.update(value=None, visible=False)
+    elif str_path and os.path.isfile(str_path):  # Case 2: File-based STR
+        # IMPORTANT: Gradio file input expects a list
+        str_file_udt = gr.update(value=[str_path], visible=True)
+        str_btn_udt = gr.update(visible=False)
+    else:  # Case 3: Text-based STR
+        str_txt_udt = gr.update(value=str(STR))
+        str_btn_udt = gr.update(visible=True)
+        str_file_udt = gr.update(value=None, visible=False)
+
+    return (
+        structure_section_udt,
+        str_check_udt,
+        str_txt_udt,
+        str_btn_udt,
+        str_file_udt,
     )
 
 def update_sections(param):

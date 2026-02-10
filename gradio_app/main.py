@@ -8,30 +8,31 @@ from src.web_interface import render_job_html, render_session_html
 from src.update_session import on_session
 from src.update_input import update_input_param
 from src.job import on_job, on_reset, send_job, update_sections, update_timer
-from src.job import update_process_status, update_submit_status, on_going_back
+from src.job import update_process_status, update_submit_status, _prepare_back_sav, _prepare_back_str
 from src.update_output import update_finished_job, on_select_sav
 from src.job_manager import manager_tab
 from src.QA import qa
 from src.tutorial import tutorial
 from src.logger import LOGGER
+from src.settings import (
+    MOUNT_POINT,
+    TITLE,
+    ROOT_DIR,
+    TANDEM_DIR,
+    GRADIO_DIR,
+    TMP_DIR,
+    JOB_DIR,
+    SASS_DIR,
+    ASSETS_DIR,
+    FIGURE_1,
+)
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
 
-MOUNT_POINT = '/TANDEM-DEV' # https://dyn.life.nthu.edu.tw/TANDEM-dev
-TITLE = 'TANDEM-DIMPLE-DEV'
-ROOT = os.path.dirname(os.path.dirname(__file__)) # ./tandem_website
-
-TANDEM_DIR = os.path.join(ROOT, 'tandem')
-GRADIO_DIR = os.path.join(ROOT, 'gradio_app')
-TMP_DIR = os.path.join(GRADIO_DIR, 'tmp')
-JOB_DIR = os.path.join(TANDEM_DIR, 'jobs')
-
-SASS_DIR = os.path.join(GRADIO_DIR, "sass")
-ASSETS_DIR = os.path.join(GRADIO_DIR, "assets")
-
-figure_1 = os.path.join(ASSETS_DIR, 'images/figure_1.jpg')
+ROOT = ROOT_DIR
+figure_1 = FIGURE_1
 
 sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
 with open(os.path.join(ASSETS_DIR, "main.css")) as f:
@@ -66,6 +67,8 @@ class HomeTab:
                     self.param_state,
                     self.input_section,
                     self.mode,
+                    self.inf_section,
+                    self.tf_section,
                     self.inf_sav_txt,
                     self.inf_sav_btn,
                     self.inf_sav_file,
@@ -108,24 +111,6 @@ class HomeTab:
                         </button>
                         """)
                 
-                session_box_js = """
-                () => {
-                    const el = document.getElementById("session-id");
-                    if (!el) return;
-
-                    const text = el.innerText.trim();
-                    navigator.clipboard.writeText(text);
-
-                    // Optional visual feedback
-                    el.style.background = "#d1fae5";
-                    setTimeout(() => {el.style.background = "";}, 600);
-                }
-                """
-                self.session_box.click(None, js=session_box_js) # Click = copy to clipboard
-                self.back_btn.click(
-                    fn=on_going_back, inputs=[self.param_state], 
-                    outputs=[self.input_section, self.input_page, self.output_page, self.inf_sav_txt, self.tf_sav_txt, self.structure_section, self.str_check, self.str_txt, self.str_btn, self.str_file, self.mode, self.job_name_txt, self.job_dropdown])
-
             # Result UI
             (
                 self.output_section,
@@ -151,6 +136,30 @@ class HomeTab:
         return self
 
     def _bind_events(self):
+        session_box_js = """
+        () => {
+            const el = document.getElementById("session-id");
+            if (!el) return;
+
+            const text = el.innerText.trim();
+            navigator.clipboard.writeText(text);
+
+            // Optional visual feedback
+            el.style.background = "#d1fae5";
+            setTimeout(() => {el.style.background = "";}, 600);
+        }
+        """
+        self.session_box.click(None, js=session_box_js) # Click = copy to clipboard
+        self.back_btn.click(
+            fn=_prepare_back_sav,
+            inputs=[self.param_state],
+            outputs=[self.input_section, self.input_page, self.output_page, self.inf_section, self.tf_section, self.inf_sav_txt, self.tf_sav_txt, self.mode, self.job_name_txt, self.job_dropdown],
+        ).then(
+            fn=_prepare_back_str,
+            inputs=[self.param_state],
+            outputs=[self.structure_section, self.str_check, self.str_txt, self.str_btn, self.str_file],
+        )
+
         # Stop timer after reset
         self.reset_btn.click(fn=lambda: gr.update(active=False), inputs=[], outputs=self.timer
         ).then(fn=on_reset, inputs=[self.param_state], 

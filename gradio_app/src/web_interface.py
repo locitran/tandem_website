@@ -2,18 +2,12 @@ import os
 import json
 import gradio as gr
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from .update_input import upload_file, on_clear_file, on_clear_param
 from .settings import GRADIO_DIR
 from .update_output import on_sav_set_select
 from .logger import LOGGER
-
-basedir = os.path.dirname(__file__)
-parentdir = os.path.dirname(basedir)
-figure_1 = os.path.join(parentdir, 'assets/images/figure_1.jpg')
-
-time_zone = ZoneInfo("Asia/Taipei")
+from src.settings import FIGURE_1, time_zone
 
 def left_column():
     overall_acc = 83.6
@@ -29,7 +23,7 @@ def left_column():
         "supports clinicians and geneticists in classifying new variants and improving diagnostic tools for genetic disorders."
     )
     gr.Markdown(f"""### What is TANDEM-DIMPLE?\n{intro}""")
-    gr.Image(value=figure_1, label="", show_label=False, width=None)
+    gr.Image(value=FIGURE_1, label="", show_label=False, width=None)
 
 def session():
 
@@ -280,6 +274,8 @@ def tandem_input(param):
         param,
         input_section,
         mode,
+        inf_section,
+        tf_section,
         inf_sav_txt,
         inf_sav_btn,
         inf_sav_file,
