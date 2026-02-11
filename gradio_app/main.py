@@ -131,6 +131,32 @@ class HomeTab:
 
             ) = tandem_output()
             self.reset_btn = gr.Button("New job", elem_classes="gr-button")
+            # Internal trigger used by JS focus/visibility listeners to refresh stale UI.
+            self.focus_refresh_btn = gr.Button(elem_id="focus_refresh_btn", visible=False)
+            gr.HTML("""
+            <script>
+            (() => {
+              if (window.__tandem_focus_refresh_bound__) return;
+              window.__tandem_focus_refresh_bound__ = true;
+
+              let lastTrigger = 0;
+              const throttleMs = 500;
+              const triggerRefresh = () => {
+                const now = Date.now();
+                if (now - lastTrigger < throttleMs) return;
+                lastTrigger = now;
+
+                const btn = document.getElementById("focus_refresh_btn");
+                if (btn) btn.click();
+              };
+
+              document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) triggerRefresh();
+              });
+              window.addEventListener("focus", triggerRefresh);
+            })();
+            </script>
+            """)
 
         self._bind_events()
         return self
@@ -214,6 +240,17 @@ class HomeTab:
         ).then(fn=update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
             outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
         ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer])
+
+        # -------- Focus catch-up refresh --------
+        self.focus_refresh_btn.click(
+            fn=update_submit_status, inputs=[self.param_state], outputs=[self.submit_status]
+        ).then(fn=update_process_status, inputs=[self.param_state, gr.State(False)], outputs=[self.process_status, self.param_state]
+        ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer]
+        ).then(fn=update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
+            outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
+        ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
+        ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
+        )
 
         # ###############--------View output examples---------################
         # Store test parameters 
