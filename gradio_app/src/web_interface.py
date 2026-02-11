@@ -6,8 +6,7 @@ from datetime import datetime
 from .update_input import upload_file, on_clear_file, on_clear_param
 from .settings import GRADIO_DIR
 from .update_output import on_sav_set_select
-from .logger import LOGGER
-from src.settings import FIGURE_1, time_zone
+from .settings import FIGURE_1, time_zone
 
 def left_column():
     overall_acc = 83.6
@@ -323,6 +322,31 @@ def tandem_output():
                 # loss_image = gr.Image(label="", show_label=False, height=393)
             model_save = gr.Markdown(elem_classes="gr-p")
         result_zip = gr.File(label="Download Results")
+        focus_refresh_btn = gr.Button(elem_id="focus_refresh_btn", visible=False)
+        gr.HTML("""
+        <script>
+        (() => {
+            if (window.__tandem_focus_refresh_bound__) return;
+            window.__tandem_focus_refresh_bound__ = true;
+
+            let lastTrigger = 0;
+            const throttleMs = 500;
+            const triggerRefresh = () => {
+            const now = Date.now();
+            if (now - lastTrigger < throttleMs) return;
+            lastTrigger = now;
+
+            const btn = document.getElementById("focus_refresh_btn");
+            if (btn) btn.click();
+            };
+
+            document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) triggerRefresh();
+            });
+            window.addEventListener("focus", triggerRefresh);
+        })();
+        </script>
+        """)
     return (
         output_section,
         inf_output_secion,
@@ -339,6 +363,7 @@ def tandem_output():
         model_save,
 
         result_zip,
+        focus_refresh_btn,
     )
 
 def build_header(title):

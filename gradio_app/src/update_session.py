@@ -1,14 +1,7 @@
-import json 
-import pandas as pd 
 import gradio as gr
-import os 
 import secrets
 import gradio as gr
 import string
-
-from .logger import LOGGER
-
-
 from pymongo import MongoClient
 
 client = MongoClient("mongodb://mongodb:27017/")

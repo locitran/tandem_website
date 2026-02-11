@@ -1,13 +1,8 @@
 import shutil
-import math
 import os 
 import json
-
-from yattag import Doc
 import pandas as pd 
 import gradio as gr
-
-from .logger import LOGGER
 
 def on_sav_set_select(selection, folds):
     return folds[selection]
