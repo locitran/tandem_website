@@ -27,6 +27,7 @@ class HomeTab:
                 (
                     self.session_id,
                     self.session_btn,
+                    self.session_url_bootstrap_btn,
                     self.session_mkd,
                     self.session_status,
                     self.job_dropdown,
@@ -120,6 +121,22 @@ class HomeTab:
             setTimeout(() => {el.style.background = "";}, 600);
         }
         """
+        session_bootstrap_js = """
+        (session_id, param_state) => {
+            const sid = new URLSearchParams(window.location.search).get("session_id");
+            if (!sid) return [session_id, param_state];
+            return [sid.trim(), param_state];
+        }
+        """
+        session_url_update_js = """
+        (session_id) => {
+            const sid = (session_id || "").trim();
+            if (!sid) return;
+            const url = new URL(window.location.href);
+            url.searchParams.set("session_id", sid);
+            history.replaceState({}, "", url.toString());
+        }
+        """
         self.session_box.click(None, js=session_box_js) # Click = copy to clipboard
         self.back_btn.click(outputs=[self.input_section, self.input_page, self.output_page, self.inf_section, self.tf_section, self.inf_sav_txt, self.tf_sav_txt, self.mode, self.job_name_txt, self.job_dropdown],
             fn=_prepare_back_sav, inputs=[self.param_state],
@@ -135,9 +152,15 @@ class HomeTab:
         # Generate/resume session
         session_click_event = self.session_btn.click(fn=on_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.session_btn, self.session_mkd, self.session_status, self.job_dropdown, self.param_state, self.model_dropdown])
         session_submit_event = self.session_id.submit(fn=on_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.session_btn, self.session_mkd, self.session_status, self.job_dropdown, self.param_state, self.model_dropdown])
+        session_bootstrap_event = self.session_url_bootstrap_btn.click(
+            fn=on_session,
+            inputs=[self.session_id, self.param_state],
+            outputs=[self.session_id, self.session_btn, self.session_mkd, self.session_status, self.job_dropdown, self.param_state, self.model_dropdown],
+            js=session_bootstrap_js,
+        )
 
         # Visualize input section
-        session_event = [session_click_event, session_submit_event]
+        session_event = [session_click_event, session_submit_event, session_bootstrap_event]
         for i, event in enumerate(session_event):
             session_event[i] = event.then(
                    fn=update_sections, inputs=[self.param_state], outputs=[self.input_section, self.input_page, self.output_page]
@@ -148,6 +171,7 @@ class HomeTab:
                 outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder]
             ).then(fn=render_session_html, inputs=[self.param_state], outputs=[self.session_box]
             ).then(fn=render_job_html, inputs=[self.param_state], outputs=[self.job_box]
+            ).then(None, inputs=[self.session_id], js=session_url_update_js
             )
             
         #############---input_section following job selection--------################
@@ -193,8 +217,7 @@ class HomeTab:
         )
 
         # ###############--------View output examples---------################
-        # Store test parameters 
-        self.test_param_state = gr.State({})
+        self.test_param_state = gr.State({}) # Store test parameters 
         self.inf_auto_view.click(fn=on_auto_view, inputs=[self.mode, self.jobs_folder_state, self.param_state], outputs=[self.test_param_state, self.param_state]
         ).then(fn=update_sections, inputs=[self.test_param_state], outputs=[self.input_section, self.input_page, self.output_page]
         ).then(fn=update_submit_status, inputs=[self.test_param_state], outputs=[self.submit_status]

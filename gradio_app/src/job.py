@@ -126,9 +126,38 @@ def _prepare_back_sav(param_state):
     input_page_udt = gr.update(visible=True)
     output_page_udt = gr.update(visible=False)
 
-    SAV = param_state['SAV']
-    label = param_state['label']
-    mode = param_state['mode']
+    SAV = param_state.get('SAV')
+    label = param_state.get('label')
+    mode = param_state.get('mode')
+
+    # Session-only state: return to query page with empty inputs.
+    if not SAV or mode is None:
+        inf_section_udt = gr.update(visible=True)
+        tf_section_udt = gr.update(visible=False)
+        inf_sav_txt_udt = gr.update(value='')
+        tf_sav_txt_udt = gr.update(value='')
+        mode_udt = gr.update(value='Inferencing')
+        job_name = param_state.get('job_name', None)
+        if job_name:
+            job_name_txt_udt = gr.update(value=job_name)
+        else:
+            # Keep current/default value from textbox if job_name is unavailable.
+            job_name_txt_udt = gr.update()
+        _session_id = param_state.get('session_id', None)
+        job_dropdown_upt = load_jobs(_session_id)
+        return (
+            input_section_udt,
+            input_page_udt,
+            output_page_udt,
+            inf_section_udt,
+            tf_section_udt,
+            inf_sav_txt_udt,
+            tf_sav_txt_udt,
+            mode_udt,
+            job_name_txt_udt,
+            job_dropdown_upt,
+        )
+
     if mode == 'Inferencing':
         inf_section_udt = gr.update(visible=True)
         tf_section_udt = gr.update(visible=False)
@@ -148,7 +177,7 @@ def _prepare_back_sav(param_state):
         raise ValueError(f"Unknown mode: {mode}")
 
     mode_udt = gr.update(value=mode)
-    job_name_txt_udt = gr.update(value=param_state['job_name'])
+    job_name_txt_udt = gr.update(value=param_state.get('job_name', ''))
     _session_id = param_state.get('session_id', None)
     job_dropdown_upt = load_jobs(_session_id)
 
@@ -166,7 +195,7 @@ def _prepare_back_sav(param_state):
     )
 
 def _prepare_back_str(param_state):
-    STR = param_state['STR']
+    STR = param_state.get('STR')
     str_txt_udt = gr.update(value="")
     str_check_udt = gr.update(value=True)
     structure_section_udt = gr.update(visible=True)

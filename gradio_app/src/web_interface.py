@@ -38,11 +38,31 @@ def session():
             elem_classes="gr-textbox",
         )
         session_btn = gr.Button("▶️ Start / Resume Session", elem_classes="gr-button")
+        session_url_bootstrap_btn = gr.Button(visible=False, elem_id="session_url_bootstrap_btn")
+        gr.HTML(
+            """
+            <script>
+            (() => {
+                const sid = new URLSearchParams(window.location.search).get("session_id");
+                if (!sid) return;
+                const trigger = () => {
+                    const btn = document.getElementById("session_url_bootstrap_btn");
+                    if (btn) btn.click();
+                };
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", trigger, { once: true });
+                } else {
+                    setTimeout(trigger, 0);
+                }
+            })();
+            </script>
+            """
+        )
         session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start / Resume a Session'")
         session_status = gr.Markdown("")
         job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
     
-    return session_id, session_btn, session_mkd, session_status, job_dropdown
+    return session_id, session_btn, session_url_bootstrap_btn, session_mkd, session_status, job_dropdown
 
 def on_auto_fill(mode, param):
     
