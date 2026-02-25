@@ -29,21 +29,32 @@ class TandemApp:
 
     def build(self):
         with gr.Blocks(title=self.title) as self.demo:
-            # ---------- HEADER ---------- uXXF0nC3qJ QVP4GRh26k
-            build_header(self.title)
-
-            # ---------- MAIN CONTENT (with tabs) ----------
+            gr.Navbar(visible=True, main_page_name="Home")
             with gr.Column(elem_id="main-content"):
-                with gr.Tab("Home"):
-                    self.home_tab = HomeTab(self.job_dir).build()
-                with gr.Tab(label="🗂️ Job Manager", id='job'):
-                    manager_tab()
-                with gr.Tab(label="Q & A"):
-                    qa(self.mount_point)
-                with gr.Tab(label="Tutorial"):
-                    tutorial(self.mount_point)
-                    
-            build_footer(self.mount_point)
+                build_header(self.title)
+                self.home_tab = HomeTab(self.job_dir).build()
+                build_footer(self.mount_point)
+
+        with self.demo.route("🗂️ Job Manager"):
+            gr.Navbar(visible=True, main_page_name="Home")
+            with gr.Column(elem_id="main-content"):
+                build_header(self.title)
+                manager_tab()
+                build_footer(self.mount_point)
+
+        with self.demo.route("Q & A"):
+            gr.Navbar(visible=True, main_page_name="Home")
+            with gr.Column(elem_id="main-content"):
+                build_header(self.title)
+                qa(self.mount_point)
+                build_footer(self.mount_point)
+
+        with self.demo.route("Tutorial"):
+            gr.Navbar(visible=True, main_page_name="Home")
+            with gr.Column(elem_id="main-content"):
+                build_header(self.title)
+                tutorial(self.mount_point)
+                build_footer(self.mount_point)
 
         return self.demo
 

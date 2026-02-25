@@ -37,7 +37,7 @@ def session():
             buttons=["copy"],
             elem_classes="gr-textbox",
         )
-        session_btn = gr.Button("▶️ Start / Resume Session", elem_classes="gr-button")
+        session_btn = gr.Button("▶️ Start / Resume a Session", elem_classes="gr-button")
         session_url_bootstrap_btn = gr.Button(visible=False, elem_id="session_url_bootstrap_btn")
         gr.HTML(
             """
@@ -416,12 +416,11 @@ def build_footer(mount_point):
                 Reference:
             </div>
             <div>
-                Loc Dinh Quang Tran, Chen-Hua Lu, Cheng-Yu Tsai, Wei-Hsiang Shen,
+                Loc Dinh Quang Tran<sup>†</sup>, Chen-Hua Lu<sup>†</sup>, Cheng-Yu Tsai, Wei-Hsiang Shen,
                 Chun-Biu Li, Tong-You Lin, Chi-Chun Lee, Pei-Lung Chen,
                 Chen-Chi Wu, Lee-Wei Yang*<br>
-                <em>Transfer-leArNing-ready and Dynamics-Empowered Model for
-                Disease-specific Missense Pathogenicity Level Estimation</em>.
-                (In preparation)
+                <em>TANDEM-DIMPLE Makes Correct Gene-Specific Pathogenicity Predictions for Missense Variants</em>.
+                (Under submission, <sup>†</sup>Co-first authors; <sup>*</sup>Corresponding author)
             </div>
             <div>
                 <strong>Contact:</strong> The server is maintained by the Yang Lab at the Institute of
