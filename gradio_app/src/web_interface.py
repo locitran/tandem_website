@@ -38,31 +38,11 @@ def session():
             elem_classes="gr-textbox",
         )
         session_btn = gr.Button("▶️ Start / Resume a Session", elem_classes="gr-button")
-        session_url_bootstrap_btn = gr.Button(visible=False, elem_id="session_url_bootstrap_btn")
-        gr.HTML(
-            """
-            <script>
-            (() => {
-                const sid = new URLSearchParams(window.location.search).get("session_id");
-                if (!sid) return;
-                const trigger = () => {
-                    const btn = document.getElementById("session_url_bootstrap_btn");
-                    if (btn) btn.click();
-                };
-                if (document.readyState === "loading") {
-                    document.addEventListener("DOMContentLoaded", trigger, { once: true });
-                } else {
-                    setTimeout(trigger, 0);
-                }
-            })();
-            </script>
-            """
-        )
         session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start / Resume a Session'")
         session_status = gr.Markdown("")
         job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
     
-    return session_id, session_btn, session_url_bootstrap_btn, session_mkd, session_status, job_dropdown
+    return session_id, session_btn, session_mkd, session_status, job_dropdown
 
 def on_auto_fill(mode, param):
     
@@ -190,7 +170,7 @@ def tandem_input(param):
     https://www.gradio.app/docs/gradio/paramviewer
 
     """
-    with gr.Group(visible=False) as input_section:
+    with gr.Group(visible=True) as input_section:
 
         ####### Start
         mode = gr.Radio(["Inferencing", "Transfer Learning"], value="Inferencing", label="Mode of Actions")
@@ -403,22 +383,18 @@ def build_header(title):
     """   
     header = gr.HTML(header_html)
     return header
-
+# <img src="{mount_point}/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
 def build_footer(mount_point):
     footer_html = f"""
     <div class="footer-container">
         <div class="footer-logo">
-            <img src="{mount_point}/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
+            <img src="/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
         </div>
 
         <div class="footer-text">
-            <div class="footer-title">
-                Reference:
-            </div>
             <div>
-                Loc Dinh Quang Tran<sup>†</sup>, Chen-Hua Lu<sup>†</sup>, Cheng-Yu Tsai, Wei-Hsiang Shen,
-                Chun-Biu Li, Tong-You Lin, Chi-Chun Lee, Pei-Lung Chen,
-                Chen-Chi Wu, Lee-Wei Yang*<br>
+                <strong>Reference:</strong> Loc Dinh Quang Tran<sup>†</sup>, Chen-Hua Lu<sup>†</sup>, Cheng-Yu Tsai, 
+                Wei-Hsiang Shen, Chun-Biu Li, Tong-You Lin, Chi-Chun Lee, Pei-Lung Chen, Chen-Chi Wu, Lee-Wei Yang*<br>
                 <em>TANDEM-DIMPLE Makes Correct Gene-Specific Pathogenicity Predictions for Missense Variants</em>.
                 (Under submission, <sup>†</sup>Co-first authors; <sup>*</sup>Corresponding author)
             </div>

@@ -1,80 +1,54 @@
 import os
+import re
 
-import sass
 import gradio as gr
+import sass
+import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse, RedirectResponse
+from starlette.convertors import Convertor, register_url_convertor
 
-from src.home import HomeTab
+from src.home import home_page
+from src.session import session_page
+from src.settings import ASSETS_DIR, JOB_DIR, MOUNT_POINT, SASS_DIR, TITLE
 from src.web_interface import build_footer, build_header
-from src.job_manager import manager_tab
+from src.logger import LOGGER 
+from src.update_session import collections, save_session_id, session_exists
 from src.QA import qa
+from src.job_manager import manager_tab
 from src.tutorial import tutorial
-from src.settings import (
-    ASSETS_DIR,
-    JOB_DIR,
-    MOUNT_POINT,
-    SASS_DIR,
-    TITLE,
-)
+from src.web_interface import tandem_input, left_column
 
 sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
 with open(os.path.join(ASSETS_DIR, "main.css")) as f:
     custom_css = f.read()
 
-class TandemApp:
-    def __init__(self, css, job_dir, mount_point, title):
-        self.css = css
-        self.job_dir = job_dir
-        self.mount_point = mount_point
-        self.title = title
+app = FastAPI()
+app = gr.mount_gradio_app(app, session_page(), path="/session", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css)
 
-    def build(self):
-        with gr.Blocks(title=self.title) as self.demo:
-            gr.Navbar(visible=True, main_page_name="Home")
-            with gr.Column(elem_id="main-content"):
-                build_header(self.title)
-                self.home_tab = HomeTab(self.job_dir).build()
-                build_footer(self.mount_point)
+class SessionIDConvertor(Convertor):
+    regex = r"[A-Za-z0-9]{10}"
 
-        with self.demo.route("🗂️ Job Manager"):
-            gr.Navbar(visible=True, main_page_name="Home")
-            with gr.Column(elem_id="main-content"):
-                build_header(self.title)
-                manager_tab()
-                build_footer(self.mount_point)
+    def convert(self, value: str) -> str:
+        return value
 
-        with self.demo.route("Q & A"):
-            gr.Navbar(visible=True, main_page_name="Home")
-            with gr.Column(elem_id="main-content"):
-                build_header(self.title)
-                qa(self.mount_point)
-                build_footer(self.mount_point)
+    def to_string(self, value: str) -> str:
+        return value
 
-        with self.demo.route("Tutorial"):
-            gr.Navbar(visible=True, main_page_name="Home")
-            with gr.Column(elem_id="main-content"):
-                build_header(self.title)
-                tutorial(self.mount_point)
-                build_footer(self.mount_point)
+register_url_convertor("sid", SessionIDConvertor())
 
-        return self.demo
+@app.get("/{session_id:sid}")
+def session_url(session_id: str):
+    cleaned = session_id.strip()
+    LOGGER.info(f"Received session URL request with session_id: '{session_id}', cleaned: '{cleaned}'")
+    if not cleaned:
+        return RedirectResponse(url="/", status_code=307)
+    if not session_exists(cleaned):
+        return PlainTextResponse("Session is down: session_id not found in MongoDB.", status_code=404)
+    return RedirectResponse(url=f"/session/?session_id={cleaned}", status_code=307)
+
+# Mount home UI at "/" last so it becomes the default for everything else.
+app = gr.mount_gradio_app(app, home_page(), path="/", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css)
 
 if __name__ == "__main__":
-    app = TandemApp(
-        css=custom_css,
-        job_dir=JOB_DIR,
-        mount_point=MOUNT_POINT,
-        title=TITLE,
-    )
-    demo = app.build()
-    demo.queue()
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7861,
-        css=custom_css,
-        allowed_paths=[
-            "/tandem/jobs", 
-            "assets/images",
-        ],
-        root_path=MOUNT_POINT,
-        favicon_path=os.path.join(ASSETS_DIR, "images", "nthu_favicon.png")
-    )
+    uvicorn.run(app, host="0.0.0.0", port=7861)

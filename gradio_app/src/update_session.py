@@ -1,8 +1,9 @@
 import gradio as gr
 import secrets
-import gradio as gr
 import string
+from urllib.parse import quote
 from pymongo import MongoClient
+from .logger import LOGGER
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -12,24 +13,36 @@ def generate_token(length=10):
     alphabet = string.ascii_letters + string.digits  # A–Z, a–z, 0–9
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-def on_session(_session_id, param):
-    """
-    1. Start session by generating new id or providing old id
-    2. Update parameter state (status and session_id)
-    3. Update dropdown of pre-trained models to include trained models from user
-        Look up all jobs of session_id to find inference jobs which were finished.
+def session_id2url(session_id):
+    sid = session_id.strip()
+    if not sid:
+        return ""
+    return f"/{quote(sid, safe='')}"
 
-    If id is not valid, no session id is recorded
-    """
+def save_session_id(session_id) -> None:
+    sid = session_id.strip()
+    if not sid:
+        return
+    collections.update_one(
+        {"session_id": sid},
+        {"$setOnInsert": {"session_id": sid, "status": "created"}},
+        upsert=True,
+    )
+
+def session_exists(session_id) -> bool:
+    sid = session_id.strip()
+    if not sid:
+        return False
+    return collections.count_documents({"session_id": sid}) > 0
+
+def on_home_session(_session_id, param):
     old_session_ids = collections.distinct("session_id")
     _session_id = _session_id.strip()
     param_udt = param.copy()
     param_udt['status'] = None
     param_udt["session_id"] = None
-    job_dropdown_upt = gr.update(visible=False)
-    model_dropdown_udt = gr.update()
-    model_choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
-    session_btn_udt = gr.update(interactive=False)
+    param_udt["session_url"] = ""
+    session_url_udt = ""
 
     # Case 1: Empty input → Generate a new unique session ID
     if not _session_id:
@@ -38,51 +51,45 @@ def on_session(_session_id, param):
             new_id = generate_token(length=10) 
             # if new_id overlap with old one --> redo
             if new_id not in old_session_ids:
+                save_session_id(new_id)
                 session_id_udt = gr.update(value=new_id, interactive=False)
-                session_status_udt = f"🔄 New session ID has been generated. <br>ℹ️ Please save the session ID for future reference."
                 param_udt["session_id"] = new_id
-                session_mkd_udt = gr.update(visible=False, value="")
+                session_url_udt = session_id2url(new_id)
+                param_udt["session_url"] = session_url_udt
                 break
-    # Case 2: User-provided input, check validity
+    # Case 2: User-provided input, invalid format
     elif _session_id not in old_session_ids:
         session_id_udt = gr.update(value="", interactive=True)
-        session_status_udt = f"Please generate or paste a valid one."
-        session_btn_udt = gr.update(interactive=True)
-        session_mkd_udt = gr.update()
-        gr.Warning(session_status_udt)
-    # Case 3: Valid existing session
-    else:
+        gr.Warning("Please enter a valid session ID")
+    # Case 3: Valid existing/new session ID
+    elif _session_id in old_session_ids:
         param_udt["session_id"] = _session_id
+        session_url_udt = session_id2url(_session_id)
+        param_udt["session_url"] = session_url_udt
         session_id_udt = gr.update(value=_session_id, interactive=False)
-        session_status_udt = f"✅ Session resumed."
-        session_mkd_udt = gr.update(visible=False, value="")
+    else:
+        session_id_udt = gr.update(value="", interactive=True)
+        gr.Warning("Unexpected error. Please try again.")
+    
+    return (session_id_udt, param_udt, session_url_udt)
 
-        # List out existing jobs of this _session_id and status not None
-        existing_jobs = collections.distinct(
-            "job_name",
-            {
-                "session_id": _session_id, 
-                "status": {"$in": ["pending", "processing", "finished"]}
-            }
-        )
+def on_session_id(_session_id):
+    session_id_udt = gr.update(value=_session_id, interactive=False)
+    session_btn_udt = gr.update(interactive=False)
+    session_status_udt = "ℹ️ Please save the session ID for future reference."
+    base_model_choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
+    existing_jobs = collections.distinct("job_name", {"session_id": _session_id, "status": {"$in": ["pending", "processing", "finished"]}},)
+    has_jobs = len(existing_jobs) > 0
 
-        if len(existing_jobs) == 0:
-            job_dropdown_upt = gr.update(visible=False, value=None, choices=[])
-        else:
-            job_dropdown_upt = gr.update(visible=True, value=None, choices=existing_jobs, interactive=True)
-            # List out pretrained model saved from job_name, status, and mode 
-            pre_trained_models = collections.distinct(
-                "job_name",
-                {
-                    "session_id": _session_id, 
-                    "status": "finished",
-                    "mode": "Transfer Learning"
-                }
-            )
-            model_choices += pre_trained_models
-            model_dropdown_udt = gr.update(choices=model_choices)
-
-    return session_id_udt, session_btn_udt, session_mkd_udt, session_status_udt, job_dropdown_upt, param_udt, model_dropdown_udt
+    if has_jobs:
+        job_dropdown_udt = gr.update(visible=True, value=None, choices=existing_jobs, interactive=True)
+        pre_trained_models = collections.distinct("job_name", {"session_id": _session_id, "status": "finished", "mode": "Transfer Learning"},)
+        model_dropdown_udt = gr.update(choices=base_model_choices + pre_trained_models)
+    else:
+        collections.update_one({"session_id": _session_id}, {"$set": {"status": "created"}})
+        job_dropdown_udt = gr.update(visible=False, value=None, choices=[])
+        model_dropdown_udt = gr.update(choices=base_model_choices)
+    return session_id_udt, session_btn_udt, session_status_udt, job_dropdown_udt, model_dropdown_udt
 
 if __name__ == "__main__":
     pass
