@@ -1,4 +1,7 @@
 import gradio as gr
+import secrets
+import string
+from urllib.parse import quote
 
 from .settings import JOB_DIR, MOUNT_POINT, TITLE
 from .web_interface import build_footer, build_header
@@ -6,7 +9,12 @@ from .QA import qa
 from .job_manager import manager_tab
 from .tutorial import tutorial
 from .web_interface import left_column
-from .update_session import on_home_session
+from pymongo import MongoClient
+from .logger import LOGGER
+
+client = MongoClient("mongodb://mongodb:27017/")
+db = client["app_db"]
+collections = db["input_queue"]
 
 class HomeTab:
     def __init__(self, folder):
@@ -15,7 +23,7 @@ class HomeTab:
     def build(self):
         self.timer = gr.Timer(value=1, active=True) # Timer to check result
         self.job_folder = gr.State()
-        self.session_url_state = gr.Textbox(value="", visible=False)
+        self.session_url = gr.Textbox(value="", visible=False)
 
         with gr.Row() as self.input_page:
             with gr.Column(scale=1):
@@ -45,13 +53,71 @@ class HomeTab:
         ################-------------Simulate session event----------------################ 
         # Generate/resume session
         self.session_btn.click(
-            fn=on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
-        ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=direct2sessionurl_js
+            fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url],
+        ).then(fn=None, inputs=[self.session_url], outputs=[], js=direct2sessionurl_js
         )
 
         self.session_id.submit(
-            fn=on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
-        ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=direct2sessionurl_js
+            fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url],
+        ).then(fn=None, inputs=[self.session_url], outputs=[], js=direct2sessionurl_js
+        )
+    
+    def on_home_session(self, _session_id, param):
+        old_session_ids = collections.distinct("session_id")
+        _session_id = _session_id.strip()
+        param_udt = param.copy()
+        param_udt['status'] = None
+        param_udt["session_id"] = None
+        param_udt["session_url"] = ""
+        session_url = ""
+
+        # Case 1: Empty input → Generate a new unique session ID
+        if not _session_id:
+            # loop until finding an unused ID (guaranteed uniqueness)
+            while True:
+                new_id = self.generate_token(length=10) 
+                # if new_id overlap with old one --> redo
+                if new_id not in old_session_ids:
+                    self.save_session_id(new_id)
+                    session_id = gr.update(value=new_id, interactive=False)
+                    param_udt["session_id"] = new_id
+                    session_url = self.session_id2url(new_id)
+                    param_udt["session_url"] = session_url
+                    break
+        # Case 2: User-provided input, invalid format
+        elif _session_id not in old_session_ids:
+            session_id = gr.update(value="", interactive=True)
+            gr.Warning("Please enter a valid session ID")
+        # Case 3: Valid existing/new session ID
+        elif _session_id in old_session_ids:
+            param_udt["session_id"] = _session_id
+            session_url = self.session_id2url(_session_id)
+            param_udt["session_url"] = session_url
+            session_id = gr.update(value=_session_id, interactive=False)
+        else:
+            session_id = gr.update(value="", interactive=True)
+            gr.Warning("Unexpected error. Please try again.")
+        
+        return (session_id, param_udt, session_url)
+
+    def generate_token(self, length=10):
+        alphabet = string.ascii_letters + string.digits  # A–Z, a–z, 0–9
+        return ''.join(secrets.choice(alphabet) for _ in range(length))
+    
+    def session_id2url(self,session_id):
+        sid = session_id.strip()
+        if not sid:
+            return ""
+        return f"/{quote(sid, safe='')}"
+
+    def save_session_id(self, session_id) -> None:
+        sid = session_id.strip()
+        if not sid:
+            return
+        collections.update_one(
+            {"session_id": sid},
+            {"$setOnInsert": {"session_id": sid, "status": "created"}},
+            upsert=True,
         )
 
 def home_page():

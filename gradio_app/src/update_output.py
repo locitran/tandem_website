@@ -3,6 +3,13 @@ import os
 import json
 import pandas as pd 
 import gradio as gr
+from PIL import Image
+import numpy as np
+
+
+def _image_to_array(path):
+    with Image.open(path) as img:
+        return np.array(img.convert("RGB"))
 
 def on_sav_set_select(selection, folds):
     return folds[selection]
@@ -37,7 +44,7 @@ def on_select_sav(evt: gr.SelectData, df, job_folder):
     sav = df.iloc[row_idx]['SAV']
     shap_img = os.path.join(job_folder, "tandem_shap", f"{sav}.png")
     if os.path.exists(shap_img):
-        return gr.update(value=shap_img)
+        return gr.update(value=_image_to_array(shap_img))
     return gr.update(value=None)
 
 def render_finished_job(_mode, job_folder, _job_name):
@@ -80,10 +87,8 @@ def render_finished_job(_mode, job_folder, _job_name):
         tandem_shap = os.path.join(job_folder, "tandem_shap")
         list_images = os.listdir(tandem_shap) if os.path.isdir(tandem_shap) else []
 
-        image_viewer_udt = gr.update(
-            value=os.path.join(tandem_shap, list_images[0]) if list_images else None,
-            visible=bool(list_images),
-        )
+        first_image = _image_to_array(os.path.join(tandem_shap, list_images[0])) if list_images else None
+        image_viewer_udt = gr.update(value=first_image, visible=bool(list_images))
     # ----------- Transfer Learning mode -----------
     elif _mode == "Transfer Learning":
         tf_output_secion_udt = gr.update(visible=True)
