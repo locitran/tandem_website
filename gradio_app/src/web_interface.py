@@ -161,14 +161,7 @@ def on_structure(checked: bool):
     return structure_section_udt
 
 def tandem_input(param):
-    """
-    Next try: DeletedFileData, Error, ParamViewer
-    https://www.gradio.app/docs/gradio/deletedfiledata
-    https://www.gradio.app/docs/gradio/error
-    https://www.gradio.app/docs/gradio/paramviewer
-
-    """
-    with gr.Group(visible=True) as input_section:
+    with gr.Group(visible=False) as input_section:
 
         ####### Start
         mode = gr.Radio(["Inferencing", "Transfer Learning"], value="Inferencing", label="Mode of Actions")
@@ -381,12 +374,12 @@ def build_header(title):
     """   
     header = gr.HTML(header_html)
     return header
-# <img src="{mount_point}/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
+
 def build_footer(mount_point):
     footer_html = f"""
     <div class="footer-container">
         <div class="footer-logo">
-            <img src="/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
+            <img src="{mount_point}/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
         </div>
 
         <div class="footer-text">
