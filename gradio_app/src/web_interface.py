@@ -45,7 +45,6 @@ def session():
     return session_id, session_btn, session_mkd, session_status, job_dropdown
 
 def on_auto_fill(mode, param):
-    
     param_udt = param.copy()
     # For "Load input example", force feature recalculation on submit.
     param_udt["refresh"] = True
@@ -306,7 +305,7 @@ def tandem_output():
         with gr.Group(visible=False) as inf_output_secion:
             with gr.Row():
                 with gr.Column():
-                    pred_table = gr.Dataframe(interactive=False, max_height=340, show_label=False)
+                    pred_table = gr.Dataframe(interactive=False, max_height=340, show_label=False, column_widths=[60, 150, "auto", "auto"],)
                 with gr.Column():
                     image_viewer = gr.Image(height=340, show_label=False, buttons=["fullscreen"])
                     # image_viewer = gr.Image(height=340, show_label=False)
