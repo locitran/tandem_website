@@ -47,7 +47,7 @@ def on_select_sav(evt: gr.SelectData, df, job_folder):
         return gr.update(value=_image_to_array(shap_img))
     return gr.update(value=None)
 
-def render_finished_job(_mode, job_folder, _job_name):
+def render_finished_job(param, _mode, job_folder, _job_name):
 
     # ----------- defaults (IMPORTANT) -----------
     output_section_udt = gr.update(visible=True)
@@ -74,12 +74,17 @@ def render_finished_job(_mode, job_folder, _job_name):
     if _mode == "Inferencing":
         inf_output_secion_udt = gr.update(visible=True)
 
-        pred_file = os.path.join(job_folder, "predictions.csv")
+        pred_file = os.path.join(job_folder, "Main_Predictions.csv")
         df_pred = pd.read_csv(pred_file)
+
+        # Change column name TANDEM-DIMPLE to model
+        model = param.get("model", 'TANDEM')
+        if "TANDEM-DIMPLE" in df_pred.columns:
+            df_pred = df_pred.rename(columns={"TANDEM-DIMPLE": model})
 
         # ---- Add index column FIRST ----
         df_pred = df_pred.reset_index(drop=True)
-        df_pred.insert(0, "#", df_pred.index)
+        df_pred.insert(0, "#", df_pred.index + 1)
 
         # ---- Send to Gradio ----
         pred_table_udt = gr.update(value=df_pred, visible=True)
@@ -153,7 +158,7 @@ def update_finished_job(param, folder):
 
     if _job_status == "finished":
         job_folder = os.path.join(folder, _session_id, _job_name)
-        return render_finished_job(_mode, job_folder, _job_name)
+        return render_finished_job(param, _mode, job_folder, _job_name)
     else:
         return hide_all(13)
     

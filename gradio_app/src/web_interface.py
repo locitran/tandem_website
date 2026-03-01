@@ -47,6 +47,8 @@ def session():
 def on_auto_fill(mode, param):
     
     param_udt = param.copy()
+    # For "Load input example", force feature recalculation on submit.
+    param_udt["refresh"] = True
     str_file_udt = gr.update()
 
     if mode == "Inferencing":
@@ -59,9 +61,6 @@ def on_auto_fill(mode, param):
             f"O00206 T175A\n"
             f"O00206 Q188R\n"
             f"O00206 C246S\n"
-            f"O00206 E287D\n"
-            f"O00206 E287G\n"
-            f"O00206 C306W\n"
         )
         sav_txt_udt = gr.update(value=inf_test_SAVs)
         job_name_udt = gr.update(value='Inference_test')
@@ -238,7 +237,7 @@ def tandem_input(param):
                     """)
 
         # Assign/Upload your structure
-        str_check = gr.Checkbox(value=False, label="Provide PDB/AF2 ID or upload coordinate file", interactive=True)
+        str_check = gr.Checkbox(value=False, label="Provide PDB/AF2 ID or upload coordinate file (pdb/cif)", interactive=True)
         with gr.Row(visible=False) as structure_section:
             str_txt = gr.Textbox(value=None, label="Structure", placeholder="PDB ID (e.g., 1GOD) or AF2 ID (e.g., 014508)", interactive=True, show_label=False, scale=6)
             str_btn = gr.UploadButton("Upload file", file_count="single", elem_id="sav-btn", file_types=[".cif", ".pdb"], scale=3)

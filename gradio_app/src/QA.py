@@ -67,8 +67,75 @@ def qa(mount_point):
             <div class="q5-item">
                 <h3>Q5: What features are used in TANDEM-DIMPLE?</h3>
                 <p>
-                    TBD
+                    TANDEM-DIMPLE (v1.1) uses 33 features grouped into 3 categories:
                 </p>
+                <style>
+                    .q5-table {{
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 8px;
+                        font-size: 14px;
+                    }}
+                    .q5-table th, .q5-table td {{
+                        border: 1px solid #d4d4d8;
+                        padding: 8px 10px;
+                        vertical-align: top;
+                    }}
+                    .q5-table th {{
+                        background: #f4f4f5;
+                        text-align: left;
+                        font-weight: 700;
+                    }}
+                    .q5-cat {{
+                        width: 52px;
+                        writing-mode: vertical-rl;
+                        transform: rotate(180deg);
+                        text-align: center !important;
+                        font-weight: 700;
+                        letter-spacing: 0.4px;
+                        background: #fafafa;
+                    }}
+                    .q5-feats {{
+                        line-height: 1.45;
+                    }}
+                </style>
+                <table class="q5-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Feature Count</th>
+                            <th>Features</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="q5-cat">Dynamics</td>
+                            <td>9</td>
+                            <td class="q5-feats">
+                                GNM_co_rank_full, ANM_stiffness_chain, GNM_V2_full, GNM_V1_full,
+                                GNM_Eigval1_full, GNM_rankV2_full, GNM_Eigval2_full,
+                                GNM_rankV1_full, ANM_effectiveness_chain
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q5-cat">Structure</td>
+                            <td>15</td>
+                            <td class="q5-feats">
+                                SASA, loop_percent, AG1, Dcom, AG5, AG3, SSbond, Hbond,
+                                DELTA_Hbond, sheet_percent, helix_percent, Rg, IDRs, Lside,
+                                deltaLside
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="q5-cat">Sequence</td>
+                            <td>9</td>
+                            <td class="q5-feats">
+                                entropy, wtPSIC, deltaPSIC, consurf, ACNR, BLOSUM, ranked_MI,
+                                deltaPolarity, deltaCharge
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
         </div>
