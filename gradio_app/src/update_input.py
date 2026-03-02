@@ -69,21 +69,9 @@ def clean(text):
         cleaned.append(line)
     return "\n".join(cleaned)
 
-def handle_SAV(mode: str, SAV_input: str):
-    """
-    Validate SAV input (text or file path) and load into NumPy.
-
-    Returns
-    -------
-    (bool, str, np.ndarray | None)
-    """
-
-    
+def handle_SAV(mode: str, SAV_input: str) -> np.ndarray | None:
+    """Validate SAV input (text or file path) and load into NumPy."""
     data = None
-
-    if mode not in {"Inferencing", "Transfer Learning"}:
-        gr.Warning(message=f"Unknown mode: {mode}")
-        return data
 
     if mode == "Inferencing":
         pattern = INF_PATTERN
@@ -265,29 +253,11 @@ def update_input_param(
     param,
     request: gr.Request,
 ):  
-    """Validate user inputs after clicking Submit, normalize them into a job payload, 
-    update UI states, and decide whether the job can enter the queue.
 
-    After the submit button is clicked, this function:
-	1.	Selects the correct input sources (uploaded files take priority)
-	2.	Validates SAV (variant) input
-	3.	Validates structure (STR) input
-	4.	Builds a clean job parameter dictionary
-	6.	Updates UI state based on success or failure
-	7.	Starts or stops the polling timer
-
-    | UI Component      | Validation Success | Validation Failure |
-    |-------------------|--------------------|--------------------|
-    | Input section     | Hidden             | Visible            |
-    | Submit button     | Hidden             | Visible            |
-    | Reset button      | Visible            | Hidden             |
-    | Status message    | Payload preview    | Error message      |
-    | Polling timer     | Activated          | Deactivated        |
-    """
     def _fail():
         param_udt = param.copy()
         param_udt["status"] = None
-        input_section_udt = gr.update(visible=True)
+        input_section_udt = gr.update()
         reset_btn_udt = gr.update(visible=False)
         timer_udt = gr.update(active=False)
         return param_udt, input_section_udt, reset_btn_udt, timer_udt
@@ -301,10 +271,7 @@ def update_input_param(
         gr.Warning("Job name cannot be empty.")
         return _fail()
     if session_id:
-        existed_job = collections.find_one(
-            {"session_id": session_id, "job_name": job_name},
-            {"_id": 1},
-        )
+        existed_job = collections.find_one({"session_id": session_id, "job_name": job_name},{"_id": 1},)
         if existed_job is not None:
             gr.Warning(f'Job name "{job_name}" already exists in this session. Please use a different job name.')
             return _fail()
@@ -355,13 +322,10 @@ def update_input_param(
     param_udt["email"] = _email_txt
     param_udt["STR"] = STR_value
     param_udt["IP"] = ip
-
-    return (
-        param_udt,
-        gr.update(visible=False),
-        gr.update(visible=True, interactive=True),
-        gr.update(active=True),
-    )
+    input_section_udt = gr.update(visible=False)
+    reset_btn_udt = gr.update(visible=True, interactive=True)
+    timer_udt = gr.update(active=True)
+    return param_udt, input_section_udt, reset_btn_udt, timer_udt
 
 if __name__ == "__main__":
     pass

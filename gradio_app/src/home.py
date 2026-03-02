@@ -7,6 +7,7 @@ from .update_input import update_input_param
 from .job import on_job, on_reset, send_job, update_sections, update_timer
 from .job import update_process_status, update_submit_status, _prepare_back_sav, _prepare_back_str
 from .update_output import update_finished_job, on_select_sav
+from .logger import LOGGER
 
 class HomeTab:
     def __init__(self, folder):
@@ -24,13 +25,7 @@ class HomeTab:
                 self.jobs_folder_state = gr.State(self.folder)
 
                 # Session UI
-                (
-                    self.session_id,
-                    self.session_btn,
-                    self.session_mkd,
-                    self.session_status,
-                    self.job_dropdown,
-                ) = session()
+                (self.session_id, self.session_btn, self.session_mkd, self.session_status, self.job_dropdown) = session()
                 
                 # Input UI
                 (
@@ -106,7 +101,12 @@ class HomeTab:
         self._bind_events()
         return self
 
+    def _sync_mode_sections(self, mode_value):
+        return (gr.update(visible=(mode_value == "Inferencing")),gr.update(visible=(mode_value == "Transfer Learning")),)
+
     def _bind_events(self):
+
+
         session_box_js = """
         () => {
             const el = document.getElementById("session-id");
@@ -168,6 +168,7 @@ class HomeTab:
                fn=update_input_param, outputs=[self.param_state, self.input_section, self.reset_btn, self.timer],
         ).then(fn=send_job, inputs=[self.param_state, self.jobs_folder_state], outputs=[self.param_state],
         ).then(fn=update_sections, inputs=[self.param_state], outputs=[self.input_section, self.input_page, self.output_page]
+        ).then(fn=self._sync_mode_sections, inputs=[self.mode], outputs=[self.inf_section, self.tf_section], queue=False
         ).then(fn=update_submit_status, inputs=[self.param_state], outputs=[self.submit_status]
         ).then(fn=update_process_status, inputs=[self.param_state, gr.State(False)], outputs=[self.process_status, self.param_state]
         ).then(fn=update_timer, inputs=[self.param_state], outputs=[self.timer]

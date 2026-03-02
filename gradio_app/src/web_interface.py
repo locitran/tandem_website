@@ -168,10 +168,10 @@ def tandem_input(param):
         # Inferencing input mode
         with gr.Group(visible=True) as inf_section:
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<5)"
+                label = "Paste single amino acid variants for one or multiple proteins (<=4)"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)"
                 placeholder="O14508 S52N\nP29033 Y217D\n..."
-                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
+                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="inf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
                 inf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 inf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
             
@@ -201,10 +201,10 @@ def tandem_input(param):
         # Transfer Learning input mode
         with gr.Group(visible=False) as tf_section:
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<5) and the corresponding labels"
+                label = "Paste single amino acid variants for one or multiple proteins (<=4) and the corresponding labels"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)(space)(Label)"
                 placeholder="O14508 S52N 1\nP29033 Y217D 0\n..."
-                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
+                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
                 tf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 tf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
             with gr.Row():
