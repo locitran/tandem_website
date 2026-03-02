@@ -129,7 +129,9 @@ class HomeTab:
         # Stop timer after reset
         self.reset_btn.click(fn=lambda: gr.update(active=False), inputs=[], outputs=self.timer
         ).then(fn=on_reset, inputs=[self.param_state], 
-            outputs=[self.input_page, self.param_state, self.job_dropdown, self.input_section, self.output_page, self.inf_sav_txt, self.inf_sav_btn, self.inf_sav_file, self.tf_sav_txt, self.tf_sav_btn, self.tf_sav_file, self.str_txt, self.str_btn, self.str_file, self.job_name_txt, self.email_txt])
+            outputs=[self.input_page, self.param_state, self.job_dropdown, self.input_section, self.output_page, self.inf_sav_txt, self.inf_sav_btn, self.inf_sav_file, self.tf_sav_txt, self.tf_sav_btn, self.tf_sav_file, self.str_txt, self.str_btn, self.str_file, self.job_name_txt, self.email_txt]
+        ).then(fn=self._sync_mode_sections, inputs=[self.mode], outputs=[self.inf_section, self.tf_section], queue=False
+        )
         
         ################-------------Simulate session event----------------################ 
         # Generate/resume session
