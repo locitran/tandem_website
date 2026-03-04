@@ -237,8 +237,7 @@ def tandem_input(param):
         str_check.change(on_structure, str_check, [structure_section])
 
         # General info
-        job_name = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
-        job_name_txt = gr.Textbox(value=job_name, label="Job name", placeholder="Enter job name", interactive=True, elem_classes="gr-textbox")
+        job_name_txt = gr.Textbox(value="", label="Job name", placeholder="Enter job name", interactive=True, elem_classes="gr-textbox")
         email_txt = gr.Textbox(value=None, label="Email (Optional)", placeholder="Enter your email", interactive=True, visible=False, type='email', elem_classes="gr-textbox")
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
 

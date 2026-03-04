@@ -7,9 +7,11 @@ import gradio as gr
 import numpy as np
 from io import StringIO
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from pymongo import MongoClient
 from .logger import LOGGER
-from .settings import time_zone
+from .settings import time_zone, TAIPEI_TIME_ZONE
+from .request import request2info
 
 TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # ./tandem_website
 jobs_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'tandem/jobs')
@@ -130,12 +132,7 @@ def handle_SAV(mode: str, SAV_input: str) -> np.ndarray | None:
 
     # ---------- NumPy load (ONCE) ----------
     try:
-        data = np.loadtxt(
-            StringIO(clean_text),
-            dtype=dtype,
-            comments=None,
-            ndmin=1,
-        )
+        data = np.loadtxt(StringIO(clean_text),dtype=dtype,comments=None,ndmin=1)
         data = np.atleast_1d(data)
         data["acc"] = np.char.upper(data["acc"])
         data["wt_resid_mt"] = np.char.upper(data["wt_resid_mt"])
@@ -253,30 +250,26 @@ def update_input_param(
     param,
     request: gr.Request,
 ):  
+    # IP, Timezone
+    ip, tz_final = request2info(request)
+
+    # Job name 
+    job_name_raw = (_job_name_txt or "").strip()
+    if not job_name_raw:
+        job_name_full = datetime.now(tz_final).strftime('%H%M%S%d%m%Y')
+    else:
+        job_name_full = f"{job_name_raw}_{datetime.now(tz_final).strftime('%H%M%S%d%m%Y')}"
+
+    param_udt = param.copy()
+    param_udt["status"] = None
 
     def _fail():
-        param_udt = param.copy()
-        param_udt["status"] = None
         input_section_udt = gr.update()
         reset_btn_udt = gr.update(visible=False)
         timer_udt = gr.update(active=False)
         return param_udt, input_section_udt, reset_btn_udt, timer_udt
 
-    param_udt = param.copy()
-    session_id = param_udt.get("session_id")
-    job_name = (_job_name_txt or "").strip()
-
-    # 1) Validate job name first
-    if not job_name:
-        gr.Warning("Job name cannot be empty.")
-        return _fail()
-    if session_id:
-        existed_job = collections.find_one({"session_id": session_id, "job_name": job_name},{"_id": 1},)
-        if existed_job is not None:
-            gr.Warning(f'Job name "{job_name}" already exists in this session. Please use a different job name.')
-            return _fail()
-
-    # 2) Validate SAV
+    # SAV
     if _mode == "Inferencing":
         SAV_input = _inf_sav_file if (_inf_sav_file and os.path.isfile(_inf_sav_file)) else (_inf_sav_txt or "")
     elif _mode == "Transfer Learning":
@@ -292,7 +285,7 @@ def update_input_param(
     SAV = [f"{ele['acc']} {ele['wt_resid_mt']}" for ele in SAV_data]
     label = None if _mode == "Inferencing" else SAV_data["label"].tolist()
 
-    # 3) Validate STR
+    # STR
     if _str_file and os.path.isfile(_str_file):
         basename = os.path.basename(_str_file)
         tmpfile = os.path.join(tmp_folder, basename)
@@ -305,20 +298,12 @@ def update_input_param(
         if STR_value is None:
             return _fail()
 
-    # 4) Attach IP (from previous getip flow)
-    ip = None
-    if request is not None:
-        ip = request.client.host if request.client else None
-        forwarded = request.headers.get("x-forwarded-for") if request.headers else None
-        if forwarded:
-            ip = forwarded.split(",")[0].strip()
-
     param_udt["status"] = "pending"
     param_udt["mode"] = _mode
     param_udt["SAV"] = SAV
     param_udt["label"] = label
     param_udt["model"] = _model_dropdown
-    param_udt["job_name"] = job_name
+    param_udt["job_name"] = job_name_full
     param_udt["email"] = _email_txt
     param_udt["STR"] = STR_value
     param_udt["IP"] = ip
