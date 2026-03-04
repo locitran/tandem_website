@@ -10,10 +10,12 @@ from .web_interface import build_footer, build_header
 from .QA import qa
 from .job_manager import manager_tab
 from .tutorial import tutorial
-from .web_interface import left_column
-from .web_interface import tandem_input, left_column
-from .web_interface import session, tandem_input, tandem_output, left_column, on_auto_view
+from .web_interface import left_column, tandem_input, left_column
+from .web_interface import tandem_input, left_column, on_auto_view
 from .logger import LOGGER
+from .request import request2session_id, request2info
+from .update_input import handle_SAV, handle_STR
+from .home import build_session_url
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -28,9 +30,13 @@ def session_exists(session_id) -> bool:
         return False
     return collections.count_documents({"session_id": sid}) > 0
 
+def build_job_url(root_url, session_id, job_name):
+    return f"{root_url}/{quote(session_id, safe='')}/{quote(job_name, safe='')}"
+
 class SessionPage:
     def __init__(self, folder):
         self.folder = folder
+        self.root_url = os.getenv("ROOT_URL", "").strip().rstrip("/")
 
     def build(self):
         self.job_folder = gr.State()
@@ -92,48 +98,34 @@ class SessionPage:
             }
         """
         # Collect parameters and submit to MongoDB.
-        self.submit_btn.click(
-               fn=self.update_input_param, outputs=[self.param_state, self.job_url], inputs=[self.session_id, self.mode, self.inf_sav_txt, self.inf_sav_file, self.model_dropdown, self.tf_sav_txt, self.tf_sav_file, self.str_txt, self.str_file, self.job_name_txt, self.email_txt, self.param_state,],
+        self.submit_btn.click(fn=self.update_input_param, outputs=[self.param_state, self.job_url], 
+        inputs=[self.session_id, self.mode, self.inf_sav_txt, self.inf_sav_file, self.model_dropdown, self.tf_sav_txt, self.tf_sav_file, self.str_txt, self.str_file, self.job_name_txt, self.email_txt, self.param_state,],
         ).then(fn=self.send_job, inputs=[self.param_state], outputs=[self.param_state],
         ).then(fn=None, inputs=[self.job_url], outputs=[], js=direct2joburl_js
         )
 
-        self.job_dropdown.select(fn=self.build_job_url, inputs=[self.session_id, self.job_dropdown], outputs=[self.job_url],
+        self.job_dropdown.select(fn=build_job_url, inputs=[gr.State(self.root_url), self.session_id, self.job_dropdown], outputs=[self.job_url],
         ).then(fn=None, inputs=[self.job_url], outputs=[], js=direct2joburl_js
         )
-
-    def build_job_url(self, session_id, job_name):
-        sid = (session_id or "").strip()
-        jn = (job_name or "").strip()
-        if not sid or not jn:
-            return ""
-        root_url = os.getenv("ROOT_URL", "").strip().rstrip("/")
-        if root_url:
-            return f"{root_url}/{quote(sid, safe='')}/{quote(jn, safe='')}"
-        return f"/{quote(sid, safe='')}/{quote(jn, safe='')}"
 
     def update_input_param(self, session_id, mode, inf_sav_txt, inf_sav_file,
         model_dropdown, tf_sav_txt, tf_sav_file, str_txt, str_file, job_name_txt, email_txt, param, request: gr.Request
     ):
-        from .update_input import handle_SAV, handle_STR
+        # IP, Timezone
+        ip, tz_final = request2info(request)
 
-        param_udt = (param or {}).copy()
+        # Job name 
+        job_name_raw = (job_name_txt or "").strip()
+        if not job_name_raw:
+            job_name_full = datetime.now(tz_final).strftime('%H%M%S%d%m%Y')
+        else:
+            job_name_full = f"{job_name_raw}_{datetime.now(tz_final).strftime('%H%M%S%d%m%Y')}"
+
+        param_udt = param.copy()
+        param_udt["status"] = None
         session_id = (session_id or "").strip()
-        job_name = (job_name_txt or "").strip()
-        job_url = ""
-
-        # 1) Validate job name first
-        if not job_name:
-            gr.Warning("Job name cannot be empty.")
-            return param_udt, job_url
-        if not session_id:
-            gr.Warning("Session ID is required.")
-            return param_udt, job_url
-        if session_id:
-            existed_job = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 1},)
-            if existed_job is not None:
-                gr.Warning(f'Job name "{job_name}" already exists in this session. Please use a different job name.')
-                return param_udt, job_url
+        job_url = build_job_url(self.root_url, session_id, job_name_full)
+        session_url = build_session_url(self.root_url, session_id)
 
         # 2) Validate SAV
         if mode == "Inferencing":
@@ -164,24 +156,6 @@ class SessionPage:
             if STR_value is None:
                 return param_udt, job_url
 
-        # 4) Attach IP (from previous getip flow)
-        ip = None
-        if request is not None:
-            ip = request.client.host if request.client else None
-            forwarded = request.headers.get("x-forwarded-for") if request.headers else None
-            if forwarded:
-                ip = forwarded.split(",")[0].strip()
-
-        root_url = os.getenv("ROOT_URL", "").strip().rstrip("/")
-        if not root_url and request is not None and request.base_url is not None:
-            root_url = str(request.base_url).rstrip("/")
-        session_url = ""
-        if root_url:
-            session_url = f"{root_url}/{quote(session_id, safe='')}"
-        job_url = ""
-        if root_url:
-            job_url = f"{root_url}/{quote(session_id, safe='')}/{quote(job_name, safe='')}"
-
         param_udt["status"] = "pending"
         param_udt["session_id"] = session_id
         param_udt["session_url"] = session_url
@@ -189,7 +163,7 @@ class SessionPage:
         param_udt["SAV"] = SAV
         param_udt["label"] = label
         param_udt["model"] = model_dropdown
-        param_udt["job_name"] = job_name
+        param_udt["job_name"] = job_name_full
         param_udt["email"] = email_txt
         param_udt["STR"] = STR_value
         param_udt["IP"] = ip
@@ -205,11 +179,6 @@ class SessionPage:
         LOGGER.info(f"✅ Submitted with payload: {_param}")
         return _param
 
-def _read_session_id(request: gr.Request):
-    if request is None:
-        return ""
-    return (request.query_params.get("session_id", "") or "").strip()
-
 def on_session_id(_session_id):
     session_id_udt = gr.update(value=_session_id, interactive=False)
     session_btn_udt = gr.update(interactive=False)
@@ -223,8 +192,7 @@ def on_session_id(_session_id):
         pre_trained_models = collections.distinct("job_name", {"session_id": _session_id, "status": "finished", "mode": "Transfer Learning"},)
         model_dropdown_udt = gr.update(choices=base_model_choices + pre_trained_models)
     else:
-        collections.update_one(
-            {"session_id": _session_id},
+        collections.update_one({"session_id": _session_id},
             {"$set": {"session_id": _session_id, "status": "created"}},
             upsert=True,
         )
@@ -246,7 +214,7 @@ def session_page():
                 tutorial(MOUNT_POINT)
         build_footer(MOUNT_POINT)
 
-        page.load(fn=_read_session_id, inputs=None, outputs=[session_ui.session_id], queue=False,
+        page.load(fn=request2session_id, inputs=None, outputs=[session_ui.session_id], queue=False,
         ).then(fn=on_session_id, inputs=session_ui.session_id, outputs=[session_ui.session_id, session_ui.session_btn, session_ui.session_status, session_ui.job_dropdown, session_ui.model_dropdown], queue=False,
         )
 

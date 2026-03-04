@@ -161,17 +161,14 @@ def on_structure(checked: bool):
     return structure_section_udt
 
 def tandem_input(param):
-    with gr.Group(visible=False) as input_section:
-
-        ####### Start
+    with gr.Group() as input_section:
         mode = gr.Radio(["Inferencing", "Transfer Learning"], value="Inferencing", label="Mode of Actions")
-        # Inferencing input mode
-        with gr.Group(visible=True) as inf_section:
+        with gr.Group(visible=True) as inf_section: # Inferencing input mode
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<5)"
+                label = "Paste single amino acid variants for one or multiple proteins (<=4)"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)"
                 placeholder="O14508 S52N\nP29033 Y217D\n..."
-                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
+                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="inf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
                 inf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 inf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
             
@@ -198,13 +195,12 @@ def tandem_input(param):
             choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
             model_dropdown = gr.Dropdown(value="TANDEM", label="Select model for prediction", choices=choices, interactive=True, filterable=False)
 
-        # Transfer Learning input mode
-        with gr.Group(visible=False) as tf_section:
+        with gr.Group(visible=False) as tf_section: # Transfer Learning input mode
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<5) and the corresponding labels"
+                label = "Paste single amino acid variants for one or multiple proteins (<=4) and the corresponding labels"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)(space)(Label)"
                 placeholder="O14508 S52N 1\nP29033 Y217D 0\n..."
-                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
+                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
                 tf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 tf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
             with gr.Row():
@@ -237,8 +233,7 @@ def tandem_input(param):
         str_check.change(on_structure, str_check, [structure_section])
 
         # General info
-        job_name = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
-        job_name_txt = gr.Textbox(value=job_name, label="Job name", placeholder="Enter job name", interactive=True, elem_classes="gr-textbox")
+        job_name_txt = gr.Textbox(value="", label="Job name", placeholder="Enter job name", interactive=True, elem_classes="gr-textbox")
         email_txt = gr.Textbox(value=None, label="Email (Optional)", placeholder="Enter your email", interactive=True, visible=False, type='email', elem_classes="gr-textbox")
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
 

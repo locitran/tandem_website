@@ -233,5 +233,10 @@ def manager_tab():
         _event.then(on_refresh, inputs=[gr.State("All"), gr.State()], outputs=[df_jobs, params_box, status_msg])
 
 
+def job_page():
+    with gr.Blocks(title='Job Manager') as page:
+        manager_tab()
+    return page
+
 if __name__ == "__main__":
     pass

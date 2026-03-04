@@ -13,9 +13,9 @@ from starlette.convertors import Convertor, register_url_convertor
 from src.home import home_page
 from src.session import session_page, session_exists
 from src.result import result_page
-from src.settings import ASSETS_DIR, SASS_DIR
+from src.settings import ASSETS_DIR, SASS_DIR, MOUNT_POINT
 from src.logger import LOGGER 
-
+from src.job_manager import job_page
 
 sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
 with open(os.path.join(ASSETS_DIR, "main.css")) as f:
@@ -28,6 +28,7 @@ collections = db["input_queue"]
 app = FastAPI()
 app = gr.mount_gradio_app(app, session_page(), path="/session", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css)
 app = gr.mount_gradio_app(app, result_page(), path="/result", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css)
+app = gr.mount_gradio_app(app, job_page(), path="/jobs", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css)
 
 class SessionIDConvertor(Convertor):
     regex = r"[A-Za-z0-9]{10}"
@@ -39,6 +40,10 @@ class SessionIDConvertor(Convertor):
         return value
 
 register_url_convertor("sid", SessionIDConvertor())
+
+@app.get("/jobs")
+def job_page_redirect():
+    return RedirectResponse(url=f"/jobs/", status_code=307)
 
 @app.get("/{session_id:sid}/{job_name}")
 def job_url(session_id: str, job_name: str):
@@ -69,7 +74,7 @@ def session_url(session_id: str):
     return RedirectResponse(url=f"/session/?session_id={cleaned}", status_code=307)
 
 # Mount home UI at "/" last so it becomes the default for everything else.
-app = gr.mount_gradio_app(app, home_page(), path="/", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css)
+app = gr.mount_gradio_app(app, home_page(), path="/", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css, root_path=MOUNT_POINT)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7861)
