@@ -1,12 +1,16 @@
 import os
 import json
 import gradio as gr
-from datetime import datetime
+from pathlib import Path
 
 from .update_input import upload_file, on_clear_file, on_clear_param
 from .settings import GRADIO_DIR
 from .update_output import on_sav_set_select
-from .settings import FIGURE_1, time_zone
+from .settings import FIGURE_1, EXAMPLES_JSON, GRADIO_DIR
+from .logger import LOGGER
+
+with open(EXAMPLES_JSON, 'r') as f:
+    EXAMPLES = json.load(f)
 
 def left_column():
     overall_acc = 83.6
@@ -43,6 +47,22 @@ def session():
         job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
     
     return session_id, session_btn, session_mkd, session_status, job_dropdown
+
+def on_load_example(example_name):
+    ex = EXAMPLES.get(example_name, "")
+    if ex == "":
+        return (gr.update(),) * 5
+    
+    SAV = ex["SAV"]
+    SAV_txt = "\n".join(SAV)
+    LOGGER.info(SAV_txt)
+
+    sav_txt_udt = gr.update(value=SAV_txt)
+    str_check_udt = gr.update(value=True)
+    str_btn_udt = gr.update(visible=False)
+    str_file_udt = gr.update(value=ex['str_file'], visible=True)
+    job_name_udt = gr.update(value=ex['job_name'])
+    return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt
 
 def on_auto_fill(mode, param):
     param_udt = param.copy()
@@ -207,26 +227,22 @@ def tandem_input(param):
                 tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
                 tf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 tf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
-            with gr.Row():
-                tf_auto_fill = gr.Button(elem_id="tf_auto_fill")
-                tf_auto_view = gr.Button(elem_id="tf_auto_view")
-                tf_clear_btn = gr.Button(elem_id="tf_clear_btn")
-                gr.HTML("""
-                    <button class="load-input-btn"
-                        onclick="document.getElementById('tf_auto_fill').click()">
-                        Load input example
-                    </button>
 
-                    <button class="view-output-btn"
-                        onclick="document.getElementById('tf_auto_view').click()">
-                        View output example
-                    </button>
-                    
-                    <button class="clear-input-btn"
-                        onclick="document.getElementById('tf_clear_btn').click()">
-                        Clear all
-                    </button>
-                    """)
+            with gr.Row():
+                tf_input_example = gr.Markdown(elem_id="tf_input_example") # temporary name (bridge)
+                tf_input_load    = gr.Button(elem_id="tf_input_load")
+                tf_output_view   = gr.Button(elem_id="tf_output_view")
+                tf_clear_btn     = gr.Button(elem_id="tf_clear_btn")
+
+                tf_input_output_examples_html = Path(os.path.join(GRADIO_DIR, 'src/html/tf_input_output_examples.html'))
+                html_str = tf_input_output_examples_html.read_text(encoding="utf-8")
+                gr.HTML(html_str)
+                tf_input_load_js ="""
+                () => {
+                const v = document.getElementById('tf_input_example_select')?.value || "";
+                return [v];
+                }
+                """
 
         # Assign/Upload your structure
         str_check = gr.Checkbox(value=False, label="Provide PDB/AF2 ID or upload coordinate file (pdb/cif)", interactive=True)
@@ -243,7 +259,7 @@ def tandem_input(param):
 
     # Fill test case
     inf_auto_fill.click(fn=on_auto_fill, inputs=[mode, param], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt, param])
-    tf_auto_fill.click(fn=on_auto_fill, inputs=[mode, param], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt, param])
+    tf_input_load.click(fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt],js=tf_input_load_js)
 
     # Select mode (1) Inferencing or (2) Transfer Learning
     mode.change(fn=on_mode, inputs=[mode, param], outputs=[inf_section, tf_section, param])
@@ -277,7 +293,7 @@ def tandem_input(param):
         tf_sav_txt,
         tf_sav_btn,
         tf_sav_file,
-        tf_auto_view,
+        tf_output_view,
         structure_section,
         str_check,
         str_txt,

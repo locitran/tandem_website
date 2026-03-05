@@ -73,6 +73,21 @@ h3 {
   color: var(--block-title-text-color) !important;
 }
 
+.example-label {
+  font-size: 14px;
+  /* label font size */
+  margin-right: 4px;
+}
+
+.example-select {
+  font-size: 14px;
+  /* dropdown font size */
+  padding: 2px 4px;
+  border-radius: 2px;
+  border: 1px solid #6b7280;
+  outline: none;
+}
+
 .gr-button {
   font-size: 15px;
   font-weight: 500;
@@ -80,8 +95,11 @@ h3 {
   border-radius: 8px;
 }
 
+#try_pkd_demo,
 #going_back_btn,
-#tf_auto_fill,
+#tf_input_example,
+#tf_input_load,
+#tf_output_view,
 #tf_auto_view,
 #inf_auto_fill,
 #inf_auto_view,
@@ -91,6 +109,7 @@ h3 {
 }
 
 /* ---------- base style ---------- */
+.try-pkd-demo,
 .load-input-btn,
 .view-output-btn,
 .clear-input-btn {
@@ -107,43 +126,46 @@ h3 {
 
 /* ---------- Light mode (lighter pastels) ---------- */
 @media (prefers-color-scheme: light) {
-  .load-input-btn {
-    color: #1f47b4 !important;
-    /* dark blue */
-    background-color: #99b4e3 !important;
-    /* very light blue */
+  .try-pkd-demo,
+.load-input-btn,
+.view-output-btn,
+.clear-input-btn {
+    background: transparent !important;
+    border: 1px solid #aaacb3 !important;
+    box-shadow: none !important;
   }
-  .view-output-btn {
-    color: #732e12 !important;
-    /* dark orange */
-    background-color: #f0bba7 !important;
-    /* very light orange */
-  }
-  .load-input-btn:hover,
+  .try-pkd-demo:hover,
+.load-input-btn:hover,
 .view-output-btn:hover,
 .clear-input-btn:hover {
     text-decoration: underline !important;
+  }
+  .example-select {
+    background: #e5e7eb !important;
+    color: #f0f3f7;
   }
 }
 
 /* ---------- Dark mode (lighter but still dark-safe) ---------- */
 @media (prefers-color-scheme: dark) {
-  .load-input-btn {
-    color: #bfdbfe !important;
-    /* softer light blue */
-    background-color: #404e6c !important;
-    /* lighter deep blue */
+  .try-pkd-demo,
+.load-input-btn,
+.view-output-btn,
+.clear-input-btn {
+    background: transparent !important;
+    border: 1px solid #a4a4a9 !important;
+    box-shadow: none !important;
   }
-  .view-output-btn {
-    color: #fed7aa !important;
-    /* softer light orange */
-    background-color: #8a563c !important;
-    /* lighter deep orange */
-  }
-  .load-input-btn:hover,
+  .try-pkd-demo:hover,
+.load-input-btn:hover,
 .view-output-btn:hover,
 .clear-input-btn:hover {
     text-decoration: underline !important;
+  }
+  .example-select {
+    background: #2f3542;
+    color: #e5e7eb;
+    border-color: #5b6473;
   }
 }
 

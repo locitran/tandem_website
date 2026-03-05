@@ -1,0 +1,31 @@
+<div>
+    <!--  -->
+    <label for="tf_input_example_select" class="example-label"><b>Example:</b></label>
+    <!-- Dropdown with two options "PKD1/2 demo" and "GJB2 demo" -->
+    <select id="tf_input_example_select" class="example-select">
+        <option value="">-- Select --</option>
+        <option value="PKD1/2 demo">PKD1/2 demo</option>
+        <option value="GJB2 demo">GJB2 demo</option>
+    </select>
+    
+    <!-- Read selected option / assign to tf_input_example / Tell Gradio “input changed” -->
+    <button class="view-output-btn" onclick="
+        const v = document.getElementById('tf_input_example_select').value;
+        const bridge = document.getElementById('tf_input_example');
+        if (!bridge) return;
+        bridge.value = v;
+        bridge.dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('tf_input_load')?.click();">
+            Load input
+    </button>
+
+    <button class="view-output-btn" onclick="
+        document.getElementById('tf_output_view')?.click();">
+            View output
+    </button>
+        
+    <button class="clear-input-btn"
+        onclick="document.getElementById('tf_clear_btn').click()">
+        Clear all
+    </button>
+</div>

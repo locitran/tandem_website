@@ -16,3 +16,5 @@ JOB_DIR = os.path.join(TANDEM_DIR, 'jobs')
 SASS_DIR = os.path.join(GRADIO_DIR, "sass")
 ASSETS_DIR = os.path.join(GRADIO_DIR, "assets")
 FIGURE_1 = os.path.join(ASSETS_DIR, 'images/figure_1.jpg')
+
+EXAMPLES_JSON = os.path.join(GRADIO_DIR, 'examples/examples.json')
