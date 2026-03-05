@@ -7,7 +7,7 @@ services:
     build: ./gradio_app
     container_name: gradio_app_dev
     ports:
-      - "7862:7861"
+      - "7890:7890"
     volumes:
       - ./gradio_app:/gradio_app
       - ./tandem:/tandem

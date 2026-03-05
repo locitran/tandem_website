@@ -77,4 +77,4 @@ def session_url(session_id: str):
 app = gr.mount_gradio_app(app, home_page(), path="/", allowed_paths=["/tandem/jobs", "assets/images"], css=custom_css, root_path=MOUNT_POINT)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7861)
+    uvicorn.run(app, host="0.0.0.0", port=7890)

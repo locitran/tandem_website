@@ -21,3 +21,8 @@ def request2info(request: gr.Request):
 
 def request2session_id(request: gr.Request):
     return request.query_params.get("session_id", "").strip()
+
+def request2session_and_job(request: gr.Request):
+    session_id = (request.query_params.get("session_id", "") or "").strip()
+    job_name = (request.query_params.get("job_name", "") or "").strip()
+    return session_id, job_name

@@ -7,6 +7,7 @@ from .QA import qa
 from .job_manager import manager_tab
 from .tutorial import tutorial
 from .update_output import on_select_sav, update_finished_job
+from .request import request2session_and_job
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -46,15 +47,6 @@ class ResultPage:
         )
         return self
 
-
-def _read_session_id_and_job_name(request: gr.Request):
-    if request is None:
-        return "", ""
-    session_id = (request.query_params.get("session_id", "") or "").strip()
-    job_name = (request.query_params.get("job_name", "") or "").strip()
-    return session_id, job_name
-
-
 def _load_result_param(session_id, job_name):
     sid = (session_id or "").strip()
     jn = (job_name or "").strip()
@@ -85,24 +77,10 @@ def result_page():
         build_footer(MOUNT_POINT)
 
         page.load(
-            fn=_read_session_id_and_job_name, inputs=None, outputs=[session_id_tb, job_name_tb], queue=False,
+            fn=request2session_and_job, inputs=None, outputs=[session_id_tb, job_name_tb], queue=False,
         ).then(fn=_load_result_param, inputs=[session_id_tb, job_name_tb], outputs=[result_ui.param_state, result_ui.page_status], queue=False,
         ).then(fn=update_finished_job,inputs=[result_ui.param_state, result_ui.jobs_folder_state],
-            outputs=[
-                result_ui.output_section,
-                result_ui.result_zip,
-                result_ui.inf_output_secion,
-                result_ui.pred_table,
-                result_ui.image_viewer,
-                result_ui.tf_output_secion,
-                result_ui.folds_state,
-                result_ui.fold_dropdown,
-                result_ui.sav_textbox,
-                result_ui.loss_image,
-                result_ui.test_evaluation,
-                result_ui.model_save,
-                result_ui.job_folder,
-            ],
+            outputs=[result_ui.output_section, result_ui.result_zip, result_ui.inf_output_secion, result_ui.pred_table, result_ui.image_viewer, result_ui.tf_output_secion, result_ui.folds_state, result_ui.fold_dropdown, result_ui.sav_textbox, result_ui.loss_image, result_ui.test_evaluation, result_ui.model_save, result_ui.job_folder,],
             queue=False,
         )
 
