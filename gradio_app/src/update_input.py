@@ -7,10 +7,9 @@ import gradio as gr
 import numpy as np
 from io import StringIO
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from pymongo import MongoClient
 from .logger import LOGGER
-from .settings import time_zone, TAIPEI_TIME_ZONE
+from .settings import time_zone
 from .request import request2info
 
 TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # ./tandem_website

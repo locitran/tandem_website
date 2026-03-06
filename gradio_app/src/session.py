@@ -5,10 +5,10 @@ from pymongo import MongoClient
 from datetime import datetime, timezone
 from urllib.parse import quote
 
+from . import js
 from .settings import JOB_DIR, MOUNT_POINT, TITLE
 from .web_interface import build_footer, build_header
 from .QA import qa
-from .job_manager import manager_tab
 from .tutorial import tutorial
 from .web_interface import left_column, tandem_input, left_column
 from .web_interface import tandem_input, left_column, on_auto_view
@@ -30,13 +30,12 @@ def session_exists(session_id) -> bool:
         return False
     return collections.count_documents({"session_id": sid}) > 0
 
-def build_job_url(root_url, session_id, job_name):
-    return f"{root_url}/{quote(session_id, safe='')}/{quote(job_name, safe='')}"
+def build_job_url(session_id, job_name):
+    return f"/{MOUNT_POINT}/results/?session_id={session_id}&job_name={job_name}"
 
 class SessionPage:
     def __init__(self, folder):
         self.folder = folder
-        self.root_url = os.getenv("ROOT_URL", "").strip().rstrip("/")
 
     def build(self):
         self.job_folder = gr.State()
@@ -91,21 +90,15 @@ class SessionPage:
         return self
 
     def _bind_events(self):
-        direct2joburl_js = """
-            (url) => {
-                if (!url) return;
-                window.location.assign(url);
-            }
-        """
         # Collect parameters and submit to MongoDB.
         self.submit_btn.click(fn=self.update_input_param, outputs=[self.param_state, self.job_url], 
         inputs=[self.session_id, self.mode, self.inf_sav_txt, self.inf_sav_file, self.model_dropdown, self.tf_sav_txt, self.tf_sav_file, self.str_txt, self.str_file, self.job_name_txt, self.email_txt, self.param_state,],
         ).then(fn=self.send_job, inputs=[self.param_state], outputs=[self.param_state],
-        ).then(fn=None, inputs=[self.job_url], outputs=[], js=direct2joburl_js
+        ).then(fn=None, inputs=[self.job_url], outputs=[], js=js.direct2url_refresh
         )
 
-        self.job_dropdown.select(fn=build_job_url, inputs=[gr.State(self.root_url), self.session_id, self.job_dropdown], outputs=[self.job_url],
-        ).then(fn=None, inputs=[self.job_url], outputs=[], js=direct2joburl_js
+        self.job_dropdown.select(fn=build_job_url, inputs=[self.session_id, self.job_dropdown], outputs=[self.job_url],
+        ).then(fn=None, inputs=[self.job_url], outputs=[], js=js.direct2url_refresh
         )
 
     def update_input_param(self, session_id, mode, inf_sav_txt, inf_sav_file,
@@ -124,8 +117,8 @@ class SessionPage:
         param_udt = param.copy()
         param_udt["status"] = None
         session_id = (session_id or "").strip()
-        job_url = build_job_url(self.root_url, session_id, job_name_full)
-        session_url = build_session_url(self.root_url, session_id)
+        job_url = build_job_url(session_id, job_name_full)
+        session_url = build_session_url(session_id)
 
         # 2) Validate SAV
         if mode == "Inferencing":
@@ -206,8 +199,6 @@ def session_page():
         with gr.Column(elem_id="main-content"):
             with gr.Tab("Home"):
                 session_ui = SessionPage(JOB_DIR).build()
-            with gr.Tab(label="🗂️ Job Manager", id='job'):
-                manager_tab()
             with gr.Tab(label="Q & A"):
                 qa(MOUNT_POINT)
             with gr.Tab(label="Tutorial"):

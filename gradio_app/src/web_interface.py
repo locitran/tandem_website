@@ -1,12 +1,11 @@
 import os
 import json
 import gradio as gr
-from datetime import datetime
 
 from .update_input import upload_file, on_clear_file, on_clear_param
 from .settings import GRADIO_DIR
 from .update_output import on_sav_set_select
-from .settings import FIGURE_1, time_zone
+from .settings import FIGURE_1
 
 def left_column():
     overall_acc = 83.6

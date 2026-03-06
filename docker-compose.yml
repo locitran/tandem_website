@@ -1,10 +1,12 @@
 # TANDEM 
   # gradio_app: port 7861
 # TANDEM-dev : port 7862
+# always : docker compose down
+# unless-stopped : docker compose stop
 
 services:
   gradio_app:
-    # platform: linux/amd64
+    restart: always
     build: ./gradio_app
     container_name: gradio_app
     ports:
@@ -21,6 +23,7 @@ services:
       project: "tandem_website"
 
   tandem:
+    restart: always
     platform: linux/amd64
     build: ./tandem
     container_name: tandem
@@ -29,7 +32,6 @@ services:
     depends_on:
       - mongodb
     volumes:
-      # Mount the external git repo into expected paths
       - ./tandem:/tandem
       - ./gradio_app:/gradio_app
     labels:
@@ -37,7 +39,7 @@ services:
       project: "tandem_website"
 
   worker:
-    # platform: linux/amd64
+    restart: always
     build: ./worker
     container_name: worker
     depends_on:
@@ -51,12 +53,11 @@ services:
       project: "tandem_website"
 
   mongodb:
-    # platform: linux/amd64
+    restart: always
     image: mongo:8
     container_name: mongodb
     ports:
       - "27017:27017"
-    restart: always
     labels:
       owner: "yang_loci"
       project: "tandem_website"

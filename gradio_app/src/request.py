@@ -1,10 +1,19 @@
 import gradio as gr
 from zoneinfo import ZoneInfo
 
-from .settings import TAIPEI_TIME_ZONE
+from .settings import TAIPEI_TIME_ZONE, MOUNT_POINT
+from .logger import LOGGER
+
+def build_session_url(session_id):
+    url = f"/{MOUNT_POINT}/session/?session_id={session_id}"
+    LOGGER.info(url)
+    return f"/{MOUNT_POINT}/session/?session_id={session_id}"
+
+def build_job_url(session_id, job_name):
+    return f"/{MOUNT_POINT}/results/?session_id={session_id}&job_name={job_name}"
 
 def request2info(request: gr.Request):
-# Timezone and timestamp from request (with fallback to server timezone)
+    # Timezone and timestamp from request (with fallback to server timezone)
     ip = request.client.host if request.client else None
     forwarded = request.headers.get("x-forwarded-for") if request.headers else None
     if forwarded:

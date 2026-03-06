@@ -10,6 +10,15 @@ collections = db["input_queue"]
 ADMIN_PASSWORD = "yanglab"
 JOBS_ROOT = "/tandem/jobs"
 
+def _get_job_time(data: dict):
+    return (
+        data.get("created_at")
+        or data.get("submitted_at")
+        or data.get("timestamp")
+        or data.get("time")
+        or ""
+    )
+
 def on_save_job(json_text, df_jobs):
     df_jobs_udt = gr.update()
 
@@ -33,7 +42,7 @@ def on_save_job(json_text, df_jobs):
 
         # ---- Update dataframe (append or update) ----
         df_jobs_copy = df_jobs.copy()
-        headers = ["IP", "session_id", "job_name", "mode", "status"]
+        headers = ["time", "IP", "session_id", "job_name", "mode", "status"]
 
         saved_idx = df_jobs_copy[
             (df_jobs_copy["session_id"] == session_id) &
@@ -47,6 +56,7 @@ def on_save_job(json_text, df_jobs):
         else:
             # New job → append
             new_row = {
+                "time": _get_job_time(data),
                 "IP": data.get("IP", ""),
                 "session_id": session_id,
                 "job_name": job_name,
@@ -117,6 +127,7 @@ def on_refresh(status, keyword):
             
     unique_jobs = [
         [
+            _get_job_time(j),
             j.get("IP", ""),
             j.get("session_id", ""),
             j.get("job_name", ""),
@@ -204,7 +215,7 @@ def manager_tab():
             new_job_btn = gr.Button("➕ New Job")
 
         # ---- Job Table ----
-        headers = ["IP", "session_id","job_name","mode","status",]
+        headers = ["time", "IP", "session_id","job_name","mode","status",]
         df_jobs = gr.Dataframe(headers=headers, interactive=False, wrap=True)
         # ---- State: selected job ----
         selected_session = gr.State(None)

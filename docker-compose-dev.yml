@@ -1,13 +1,15 @@
-# TANDEM 
-  # gradio_app: port 7861
-# TANDEM-dev : port 7862
+# TANDEM gradio_app: port 7861
+# TANDEM-dev gradio_app : port 7862
 
 services:
+  
   gradio_app:
+    restart: always
     build: ./gradio_app
     container_name: gradio_app_dev
     ports:
-      - "7890:7890"
+      - "7862:7861"
+      # - "7890:7890"
     volumes:
       - ./gradio_app:/gradio_app
       - ./tandem:/tandem
@@ -20,6 +22,7 @@ services:
       project: "tandem_website_dev"
 
   tandem:
+    restart: always
     platform: linux/amd64
     build: ./tandem
     container_name: tandem_dev
@@ -35,6 +38,7 @@ services:
       project: "tandem_website_dev"
 
   worker:
+    restart: always
     build: ./worker
     container_name: worker_dev
     depends_on:
@@ -48,11 +52,9 @@ services:
       project: "tandem_website_dev"
 
   mongodb:
+    restart: always
     image: mongo:8
     container_name: mongodb_dev
-    # ports:
-      # - "27017:27017"
-    restart: always
     labels:
       owner: "yang_loci"
       project: "tandem_website"

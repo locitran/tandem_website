@@ -2,14 +2,14 @@ import os
 import gradio as gr
 import secrets
 import string
-from urllib.parse import quote
+from datetime import datetime
 
-from .settings import JOB_DIR, MOUNT_POINT, TITLE
+from .settings import JOB_DIR, MOUNT_POINT, TITLE, TAIPEI_TIME_ZONE
 from .web_interface import build_footer, build_header
 from .QA import qa
-from .job_manager import manager_tab
 from .tutorial import tutorial
 from .web_interface import left_column
+from .request import request2info
 
 from pymongo import MongoClient
 
@@ -17,13 +17,12 @@ client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
 
-def build_session_url(root_url, session_id):
-    return f"{root_url}/{quote(session_id, safe='')}"
+def build_session_url(session_id):
+    return f"/{MOUNT_POINT}/session/?session_id={session_id}"
 
 class HomeTab:
     def __init__(self, folder):
         self.folder = folder
-        self.root_url = os.getenv("ROOT_URL", "").strip().rstrip("/")
 
     def build(self):
         self.timer = gr.Timer(value=1, active=True) # Timer to check result
@@ -55,22 +54,26 @@ class HomeTab:
                 window.location.assign(url);
             }
         """
-        ################-------------Simulate session event----------------################ 
         # Generate/resume session
-        self.session_btn.click(
-            fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
+        self.session_btn.click(fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
         ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=direct2sessionurl_js
         )
 
-        self.session_id.submit(
-            fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
+        self.session_id.submit(fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
         ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=direct2sessionurl_js
         )
     
-    def save_session_id(self, session_id) -> None:
+    def save_session_id(self, session_id, ip=None) -> None:
         collections.update_one(
             {"session_id": session_id},
-            {"$setOnInsert": {"session_id": session_id, "status": "created"}},
+            {
+                "$setOnInsert": {
+                    "session_id": session_id,
+                    "status": "created",
+                    "IP": ip,
+                    "created_at": datetime.now(TAIPEI_TIME_ZONE).strftime('%H%M%S%d%m%Y'),
+                }
+            },
             upsert=True,
         )
         
@@ -78,13 +81,15 @@ class HomeTab:
         alphabet = string.ascii_letters + string.digits  # A–Z, a–z, 0–9
         return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-    def on_home_session(self, _session_id, param):
+    def on_home_session(self, _session_id, param, request: gr.Request):
         old_session_ids = collections.distinct("session_id")
         _session_id = _session_id.strip()
+        ip, _ = request2info(request)
         param_udt = param.copy()
         param_udt['status'] = None
         param_udt["session_id"] = None
         param_udt["session_url"] = ""
+        param_udt["IP"] = ip
         session_url_udt = ""
 
         # Case 1: Empty input → Generate a new unique session ID
@@ -94,10 +99,10 @@ class HomeTab:
                 new_id = self.generate_token(length=10) 
                 # if new_id overlap with old one --> redo
                 if new_id not in old_session_ids:
-                    self.save_session_id(new_id)
+                    self.save_session_id(new_id, ip=ip)
                     session_id_udt = gr.update(value=new_id, interactive=False)
                     param_udt["session_id"] = new_id
-                    session_url_udt = build_session_url(self.root_url, new_id)
+                    session_url_udt = build_session_url(new_id)
                     param_udt["session_url"] = session_url_udt
                     break
         # Case 2: User-provided input, invalid format
@@ -107,7 +112,7 @@ class HomeTab:
         # Case 3: Valid existing/new session ID
         elif _session_id in old_session_ids:
             param_udt["session_id"] = _session_id
-            session_url_udt = build_session_url(self.root_url, _session_id)
+            session_url_udt = build_session_url(_session_id)
             param_udt["session_url"] = session_url_udt
             session_id_udt = gr.update(value=_session_id, interactive=False)
         else:
@@ -122,8 +127,6 @@ def home_page():
         with gr.Column(elem_id="main-content"):
             with gr.Tab("Home"):
                 HomeTab(JOB_DIR).build()
-            with gr.Tab(label="🗂️ Job Manager", id='job'):
-                manager_tab()
             with gr.Tab(label="Q & A"):
                 qa(MOUNT_POINT)
             with gr.Tab(label="Tutorial"):
