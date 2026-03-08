@@ -1,69 +1,41 @@
 import os
-
-import sass
 import gradio as gr
+import sass
+import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from pymongo import MongoClient
 
-from src.home import HomeTab
-from src.web_interface import build_footer, build_header
-from src.job_manager import manager_tab
-from src.QA import qa
-from src.tutorial import tutorial
-from src.settings import (
-    ASSETS_DIR,
-    JOB_DIR,
-    MOUNT_POINT,
-    SASS_DIR,
-    TITLE,
-)
+from src.home import home_page
+from src.session import session_page
+from src.results import results_page
+from src.settings import ASSETS_DIR, SASS_DIR, MOUNT_POINT
+from src.job_manager import job_page
 
+allowed_paths = ["/tandem/jobs", "assets/images"]
 sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
 with open(os.path.join(ASSETS_DIR, "main.css")) as f:
     custom_css = f.read()
 
-class TandemApp:
-    def __init__(self, css, job_dir, mount_point, title):
-        self.css = css
-        self.job_dir = job_dir
-        self.mount_point = mount_point
-        self.title = title
+client = MongoClient("mongodb://mongodb:27017/")
+db = client["app_db"]
+collections = db["input_queue"]
 
-    def build(self):
-        with gr.Blocks(title=self.title) as self.demo:
-            # ---------- HEADER ---------- uXXF0nC3qJ QVP4GRh26k
-            build_header(self.title)
+app = FastAPI()
+app = gr.mount_gradio_app(app, session_page(), path=f"/{MOUNT_POINT}/session", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/session")
+app = gr.mount_gradio_app(app, results_page(), path=f"/{MOUNT_POINT}/results", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/results")
+app = gr.mount_gradio_app(app, job_page(), path=f"/{MOUNT_POINT}/jobs", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/jobs")
 
-            # ---------- MAIN CONTENT (with tabs) ----------
-            with gr.Column(elem_id="main-content"):
-                with gr.Tab("Home"):
-                    self.home_tab = HomeTab(self.job_dir).build()
-                with gr.Tab(label="🗂️ Job Manager", id='job'):
-                    manager_tab()
-                with gr.Tab(label="Q & A"):
-                    qa(self.mount_point)
-                with gr.Tab(label="Tutorial"):
-                    tutorial(self.mount_point)
-                    
-            build_footer(self.mount_point)
+@app.get(f"/{MOUNT_POINT}/jobs")
+def job_page_redirect():
+    return RedirectResponse(url=f"/{MOUNT_POINT}/jobs/", status_code=307) # url=f"./jobs/" is also fine
 
-        return self.demo
+app = gr.mount_gradio_app(app, home_page(), path=f"/{MOUNT_POINT}", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}")
 
 if __name__ == "__main__":
-    app = TandemApp(
-        css=custom_css,
-        job_dir=JOB_DIR,
-        mount_point=MOUNT_POINT,
-        title=TITLE,
-    )
-    demo = app.build()
-    demo.queue()
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7861,
-        css=custom_css,
-        allowed_paths=[
-            "/tandem/jobs", 
-            "assets/images",
-        ],
-        root_path=MOUNT_POINT,
-        favicon_path=os.path.join(ASSETS_DIR, "images", "nthu_favicon.png")
-    )
+    uvicorn.run(app, host="0.0.0.0", port=7861)
+    # https://dyn.life.nthu.edu.tw/TANDEM-dev/jobs/
+    # root_path=MOUNT_POINT
+    # http://localhost:7862/TANDEM-dev/
+    # https://dyn.life.nthu.edu.tw/TANDEM-dev/session?session_id=Sq1wvtriTw
+    # https://dyn.life.nthu.edu.tw/TANDEM-dev/result?session_id=Sq1wvtriTw&job_name=abc

@@ -1,21 +1,37 @@
 {
-  "inf_default": {
+  "inf1protein": {
     "mode": "Inferencing",
-    "job_name": "Inference_test",
+    "job_name": "Inference_test_1p",
     "refresh": true,
     "str_check": false,
     "str_file": null,
-    "SAV": [
-      "O00189 R271H",
-      "O00194 P138L",
-      "O00194 A92T",
-      "O00204 V240I",
-      "O00204 L51S",
-      "O00206 T175A",
-      "O00206 Q188R",
-      "O00206 C246S"
-    ]
+    "SAV": ["O00187 R118C", "O00187 D120G", "O00187 T128M", "O00187 H155R"]
   },
+  "inf2protein": {
+    "mode": "Inferencing",
+    "job_name": "Inference_test_2p",
+    "refresh": true,
+    "str_check": false,
+    "str_file": null,
+    "SAV": ["O00206 T175A", "O00206 Q188R", "O00222 I265T", "O00222 R343Q"]
+  },
+  "inf3protein": {
+    "mode": "Inferencing",
+    "job_name": "Inference_test_3p",
+    "refresh": true,
+    "str_check": false,
+    "str_file": null,
+    "SAV": ["O00311 G112W","O00311 F162L","O00391 N114S","O00391 G200A","O00444 R146H","O00444 A226T"]
+  },
+  "inf4protein": {
+    "mode": "Inferencing",
+    "job_name": "Inference_test_4p",
+    "refresh": true,
+    "str_check": false,
+    "str_file": null,
+    "SAV": ["O00189 R271H", "O00194 P138L", "O00194 A92T", "O00204 V240I", "O00204 L51S", "O00206 T175A", "O00206 Q188R", "O00206 C246S"]
+  },
+  
   "GJB2 demo": {
     "mode": "Transfer Learning",
     "job_name": "GJB2_demo",

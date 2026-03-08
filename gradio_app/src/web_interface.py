@@ -1,16 +1,17 @@
 import os
 import json
 import gradio as gr
-from pathlib import Path
 
 from .update_input import upload_file, on_clear_file, on_clear_param
-from .settings import GRADIO_DIR
-from .update_output import on_sav_set_select
-from .settings import FIGURE_1, EXAMPLES_JSON, GRADIO_DIR
+from . import js
 from .logger import LOGGER
+from .settings import FIGURE_1, GRADIO_DIR, HTML_DIR, EXAMPLES_JSON, GRADIO_DIR
 
 with open(EXAMPLES_JSON, 'r') as f:
     EXAMPLES = json.load(f)
+
+def on_sav_set_select(selection, folds):
+    return folds[selection]
 
 def left_column():
     overall_acc = 83.6
@@ -28,6 +29,24 @@ def left_column():
     gr.Markdown(f"""### What is TANDEM-DIMPLE?\n{intro}""")
     gr.Image(value=FIGURE_1, label="", show_label=False, width=None)
 
+def on_load_example(example_name):
+    ex = EXAMPLES.get(example_name, "")
+    if ex == "":
+        return (gr.update(),) * 5
+    
+    SAV = ex["SAV"]
+    SAV_txt = "\n".join(SAV)
+    LOGGER.info(SAV_txt)
+
+    sav_txt_udt = gr.update(value=SAV_txt)
+    str_check_value = bool(ex.get("str_check", False))
+    str_file_value = ex.get("str_file")
+    str_check_udt = gr.update(value=str_check_value)
+    str_btn_udt = gr.update(visible=not str_check_value)
+    str_file_udt = gr.update(value=str_file_value, visible=bool(str_check_value and str_file_value))
+    job_name_udt = gr.update(value=ex['job_name'])
+    return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt
+
 def session():
 
     with gr.Group():
@@ -41,114 +60,12 @@ def session():
             buttons=["copy"],
             elem_classes="gr-textbox",
         )
-        session_btn = gr.Button("▶️ Start / Resume a Session", elem_classes="gr-button")
-        session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start / Resume a Session'")
+        session_btn = gr.Button("▶️ Start or Resume a Session", elem_classes="gr-button")
+        session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start or Resume a Session'")
         session_status = gr.Markdown("")
         job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
     
     return session_id, session_btn, session_mkd, session_status, job_dropdown
-
-def on_load_example(example_name):
-    ex = EXAMPLES.get(example_name, "")
-    if ex == "":
-        return (gr.update(),) * 5
-    
-    SAV = ex["SAV"]
-    SAV_txt = "\n".join(SAV)
-    LOGGER.info(SAV_txt)
-
-    sav_txt_udt = gr.update(value=SAV_txt)
-    str_check_udt = gr.update(value=True)
-    str_btn_udt = gr.update(visible=False)
-    str_file_udt = gr.update(value=ex['str_file'], visible=True)
-    job_name_udt = gr.update(value=ex['job_name'])
-    return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt
-
-def on_auto_fill(mode, param):
-    param_udt = param.copy()
-    # For "Load input example", force feature recalculation on submit.
-    param_udt["refresh"] = True
-    str_file_udt = gr.update()
-
-    if mode == "Inferencing":
-        inf_test_SAVs = (
-            f"O00189 R271H\n"
-            f"O00194 P138L\n"
-            f"O00194 A92T\n"
-            f"O00204 V240I\n"
-            f"O00204 L51S\n"
-            f"O00206 T175A\n"
-            f"O00206 Q188R\n"
-            f"O00206 C246S\n"
-        )
-        sav_txt_udt = gr.update(value=inf_test_SAVs)
-        job_name_udt = gr.update(value='Inference_test')
-        str_btn_udt = gr.update(visible=True)
-        str_file_udt = gr.update(value=None, visible=False)
-        str_check_udt = gr.update(value=False)
-    elif mode == "Transfer Learning":
-        tf_test_SAVs = (
-            f"P29033 Y217D 0\n"
-            f"P29033 I215M 0\n"
-            f"P29033 L214V 0\n"
-            f"P29033 L210V 0\n"
-            f"P29033 I203T 0\n"
-            f"P29033 A197T 0\n"
-            f"P29033 N170K 0\n"
-            f"P29033 N170S 0\n"
-            f"P29033 K168R 0\n"
-            f"P29033 V156I 0\n"
-            f"P29033 V153I 0\n"
-            f"P29033 R127H 0\n"
-            f"P29033 T123N 0\n"
-            f"P29033 I121V 0\n"
-            f"P29033 F115V 0\n"
-            f"P29033 E114G 0\n"
-            f"P29033 I111T 0\n"
-            f"P29033 I107L 0\n"
-            f"P29033 H100Q 0\n"
-            f"P29033 F83L 0\n"
-            f"P29033 V27I 0\n"
-            f"P29033 H16Y 0\n"
-            f"P29033 G4V 0\n"
-            f"P29033 G4D 0\n"
-            f"P29033 R165W 0\n"
-            f"P29033 M34T 1\n"
-            f"P29033 V37I 1\n"
-            f"P29033 W44C 1\n"
-            f"P29033 W44S 1\n"
-            f"P29033 D50N 1\n"
-            f"P29033 G59A 1\n"
-            f"P29033 R75Q 1\n"
-            f"P29033 R75W 1\n"
-            f"P29033 V84L 1\n"
-            f"P29033 L90P 1\n"
-            f"P29033 V95M 1\n"
-            f"P29033 R143W 1\n"
-            f"P29033 R143Q 1\n"
-            f"P29033 F161S 1\n"
-            f"P29033 M163T 1\n"
-            f"P29033 D179N 1\n"
-            f"P29033 R184Q 1\n"
-            f"P29033 M195T 1\n"
-            f"P29033 A197S 1\n"
-            f"P29033 C202F 1\n"
-            f"P29033 L205V 1\n"
-            f"P29033 N206S 1\n"
-        )
-        sav_txt_udt = gr.update(value=tf_test_SAVs)
-        param_udt['GJB2_test'] = True
-        job_name_udt = gr.update(value='GJB2_test')
-
-        # STR
-        str_check_udt = gr.update(value=True)
-        str_btn_udt = gr.update(visible=False)
-        str_file_udt = os.path.join(GRADIO_DIR, 'test/8qa2_opm_25Apr03.pdb')
-        str_file_udt = gr.update(value=str_file_udt, visible=True)
-    else:
-        raise KeyError(f"Unknown mode: {mode}")
-
-    return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt, param_udt
 
 def on_auto_view(mode, jobs_folder, param):
     test_session = 'test'
@@ -181,50 +98,39 @@ def on_structure(checked: bool):
     return structure_section_udt
 
 def tandem_input(param):
-    with gr.Group(visible=False) as input_section:
+    with gr.Group() as input_section:
 
         ####### Start
         mode = gr.Radio(["Inferencing", "Transfer Learning"], value="Inferencing", label="Mode of Actions")
         # Inferencing input mode
         with gr.Group(visible=True) as inf_section:
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<=4)"
+                label = "Paste single amino acid variants for one or multiple proteins (≤4)"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)"
                 placeholder="O14508 S52N\nP29033 Y217D\n..."
-                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="inf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
+                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="inf-sav-txt", label=label, placeholder=placeholder, scale=7, elem_classes="gr-textbox", info=info)
                 inf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 inf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
             
             with gr.Row():
-                inf_auto_fill = gr.Button(elem_id="inf_auto_fill")
+                inf_input_example = gr.Markdown(elem_id="inf_input_example")
+                inf_input_load = gr.Button(elem_id="inf_input_load")
                 inf_auto_view = gr.Button(elem_id="inf_auto_view")
                 inf_clear_btn = gr.Button(elem_id="inf_clear_btn")
-                gr.HTML("""
-                    <button class="load-input-btn"
-                        onclick="document.getElementById('inf_auto_fill').click()">
-                        Load input example
-                    </button>
 
-                    <button class="view-output-btn"
-                        onclick="document.getElementById('inf_auto_view').click()">
-                        View output example
-                    </button>
-                    
-                    <button class="clear-input-btn"
-                        onclick="document.getElementById('inf_clear_btn').click()">
-                        Clear all
-                    </button>
-                    """)
+                filepath = os.path.join(HTML_DIR, 'inf_input_output_examples.html')
+                inf_examples_html = js.build_html_text(filepath)
+                inf_examples_html = gr.HTML(inf_examples_html)
             choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
             model_dropdown = gr.Dropdown(value="TANDEM", label="Select model for prediction", choices=choices, interactive=True, filterable=False)
 
         # Transfer Learning input mode
         with gr.Group(visible=False) as tf_section:
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<=4) and the corresponding labels"
+                label = "Paste single amino acid variants for one or multiple proteins (≤4) and the corresponding labels"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)(space)(Label)"
                 placeholder="O14508 S52N 1\nP29033 Y217D 0\n..."
-                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
+                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=7, elem_classes="gr-textbox", info=info)
                 tf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 tf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
 
@@ -233,16 +139,10 @@ def tandem_input(param):
                 tf_input_load    = gr.Button(elem_id="tf_input_load")
                 tf_output_view   = gr.Button(elem_id="tf_output_view")
                 tf_clear_btn     = gr.Button(elem_id="tf_clear_btn")
-
-                tf_input_output_examples_html = Path(os.path.join(GRADIO_DIR, 'src/html/tf_input_output_examples.html'))
-                html_str = tf_input_output_examples_html.read_text(encoding="utf-8")
-                gr.HTML(html_str)
-                tf_input_load_js ="""
-                () => {
-                const v = document.getElementById('tf_input_example_select')?.value || "";
-                return [v];
-                }
-                """
+                
+                filepath = os.path.join(HTML_DIR, 'tf_input_output_examples.html')
+                tf_examples_html = js.build_html_text(filepath)
+                tf_examples_html = gr.HTML(tf_examples_html)
 
         # Assign/Upload your structure
         str_check = gr.Checkbox(value=False, label="Provide PDB/AF2 ID or upload coordinate file (pdb/cif)", interactive=True)
@@ -258,8 +158,8 @@ def tandem_input(param):
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
 
     # Fill test case
-    inf_auto_fill.click(fn=on_auto_fill, inputs=[mode, param], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt, param])
-    tf_input_load.click(fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt],js=tf_input_load_js)
+    inf_input_load.click(fn=on_load_example, inputs=[inf_input_example], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_inf_input)
+    tf_input_load.click(fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_tf_input)
 
     # Select mode (1) Inferencing or (2) Transfer Learning
     mode.change(fn=on_mode, inputs=[mode, param], outputs=[inf_section, tf_section, param])
@@ -316,7 +216,6 @@ def tandem_output():
                     pred_table = gr.Dataframe(interactive=False, max_height=340, show_label=False, column_widths=[60, 150, "auto", "auto"],)
                 with gr.Column():
                     image_viewer = gr.Image(height=340, show_label=False, buttons=["fullscreen"])
-                    # image_viewer = gr.Image(height=340, show_label=False)
         
         with gr.Group(visible=False) as tf_output_secion:
             with gr.Row():
@@ -375,47 +274,34 @@ def tandem_output():
     )
 
 def build_header(title):
-    header_html = f"""
-    <div class="header">
-        <div class="header-bg"></div>
-
-        <div class="header-content">
-            <div class="header-text">
-                <div class="header-title">{title}</div>
-                <div class="header-subtitle">Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Estimation</div>
-            </div>
-        </div>
-    </div>
-    """   
-    header = gr.HTML(header_html)
+    filepath = os.path.join(HTML_DIR, 'header.html')
+    html = js.build_html_text(filepath, title=title)
+    header = gr.HTML(html)
     return header
 
-def build_footer(mount_point):
-    footer_html = f"""
-    <div class="footer-container">
-        <div class="footer-logo">
-            <img src="{mount_point}/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
-        </div>
-
-        <div class="footer-text">
-            <div>
-                <strong>Reference:</strong> Loc Dinh Quang Tran<sup>†</sup>, Chen-Hua Lu<sup>†</sup>, Cheng-Yu Tsai, 
-                Wei-Hsiang Shen, Chun-Biu Li, Tong-You Lin, Chi-Chun Lee, Pei-Lung Chen, Chen-Chi Wu, Lee-Wei Yang*<br>
-                <em>TANDEM-DIMPLE Makes Correct Gene-Specific Pathogenicity Predictions for Missense Variants</em>.
-                (Under submission, <sup>†</sup>Co-first authors; <sup>*</sup>Corresponding author)
-            </div>
-            <div>
-                <strong>Contact:</strong> The server is maintained by the Yang Lab at the Institute of
-                Bioinformatics and Structural Biology, National Tsing Hua University, Taiwan.
-            </div>
-            <div>
-                <strong>Email:</strong> <a href="mailto:locitran0521@gmail.com">locitran0521@gmail.com</a>
-            </div>
-        </div>
-    </div>
-    """
-    footer = gr.HTML(footer_html, elem_classes="footer")
+def build_footer():
+    filepath = os.path.join(HTML_DIR, 'footer.html')
+    html = js.build_html_text(filepath)
+    footer = gr.HTML(html, elem_classes="footer")
     return footer
+
+def build_qa():
+    filepath = os.path.join(HTML_DIR, "QA.html")
+    html = js.build_html_text(filepath)
+    qa_page = gr.HTML(html, elem_classes="qa")
+    return qa_page
+
+def build_tutorial():
+    filepath = os.path.join(HTML_DIR, "tutorial.html")
+    html = js.build_html_text(filepath)
+    tutorial_page = gr.HTML(html, elem_classes="tutorial")
+    return tutorial_page
+
+def build_licence():
+    filepath = os.path.join(HTML_DIR, "licence.html")
+    html = js.build_html_text(filepath)
+    licence_page = gr.HTML(html, elem_classes="tutorial")
+    return licence_page
 
 def render_job_html(name):
     if isinstance(name, dict):

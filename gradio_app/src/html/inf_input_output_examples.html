@@ -1,0 +1,30 @@
+<div>
+    <label for="inf_input_example_select" class="example-label"><b>Examples:</b></label>
+    <select id="inf_input_example_select" class="example-select">
+        <option value="">-- Select --</option>
+        <option value="inf1protein">1 protein</option>
+        <option value="inf2protein">2 proteins</option>
+        <option value="inf3protein">3 proteins</option>
+        <option value="inf4protein">4 proteins</option>
+    </select>
+
+    <button class="view-output-btn" onclick="
+        const v = document.getElementById('inf_input_example_select').value;
+        const bridge = document.getElementById('inf_input_example');
+        if (!bridge) return;
+        bridge.value = v;
+        bridge.dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('inf_input_load')?.click();">
+            Load input
+    </button>
+
+    <button class="view-output-btn" onclick="
+        document.getElementById('inf_auto_view')?.click();">
+            View output
+    </button>
+
+    <button class="clear-input-btn"
+        onclick="document.getElementById('inf_clear_btn').click()">
+        Clear all
+    </button>
+</div>

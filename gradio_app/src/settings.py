@@ -5,13 +5,14 @@ time_zone = ZoneInfo("Asia/Taipei")
 TAIPEI_TIME_ZONE = ZoneInfo("Asia/Taipei")
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # ./tandem_website
 
-MOUNT_POINT = '/TANDEM-dev'  # https://dyn.life.nthu.edu.tw/TANDEM-dev
+MOUNT_POINT = 'TANDEM-dev'  # https://dyn.life.nthu.edu.tw/TANDEM-dev
 TITLE = 'TANDEM-DIMPLE-DEV'
 
 TANDEM_DIR = os.path.join(ROOT_DIR, 'tandem')
 GRADIO_DIR = os.path.join(ROOT_DIR, 'gradio_app')
 TMP_DIR = os.path.join(GRADIO_DIR, 'tmp')
 JOB_DIR = os.path.join(TANDEM_DIR, 'jobs')
+HTML_DIR = os.path.join(GRADIO_DIR, 'src/html')
 
 SASS_DIR = os.path.join(GRADIO_DIR, "sass")
 ASSETS_DIR = os.path.join(GRADIO_DIR, "assets")

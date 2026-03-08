@@ -1,7 +1,5 @@
-import pandas as pd 
 from datetime import datetime
 import time
-import json
 import gradio as gr 
 import os 
 
