@@ -1,3 +1,6 @@
+import os 
+from .logger import LOGGER
+
 direct2url_refresh = """
 (url) => {
     if (!url) return;
@@ -25,3 +28,12 @@ session_box = """
     setTimeout(() => {el.style.background = "";}, 600);
 }
 """
+
+def build_html_text(filepath, **keys) -> str:
+    if not os.path.isfile(filepath):
+        LOGGER.warn(f"{filepath} is not a file")
+        return ""
+    
+    with open(filepath, "r", encoding="utf-8") as f:
+        tpl = f.read()
+    return tpl.format(**keys)

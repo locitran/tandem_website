@@ -7,9 +7,7 @@ from urllib.parse import quote
 
 from . import js
 from .settings import JOB_DIR, MOUNT_POINT, TITLE
-from .web_interface import build_footer, build_header
-from .QA import qa
-from .tutorial import tutorial
+from .web_interface import build_footer, build_header, build_qa, build_licence, build_tutorial
 from .web_interface import left_column, tandem_input, left_column
 from .web_interface import tandem_input, left_column, on_auto_view
 from .logger import LOGGER
@@ -200,10 +198,12 @@ def session_page():
             with gr.Tab("Home"):
                 session_ui = SessionPage(JOB_DIR).build()
             with gr.Tab(label="Q & A"):
-                qa(MOUNT_POINT)
+                build_qa()
             with gr.Tab(label="Tutorial"):
-                tutorial(MOUNT_POINT)
-        build_footer(MOUNT_POINT)
+                build_tutorial()
+            with gr.Tab(label="License"):
+                build_licence()
+        build_footer()
 
         page.load(fn=request2session_id, inputs=None, outputs=[session_ui.session_id], queue=False,
         ).then(fn=on_session_id, inputs=session_ui.session_id, outputs=[session_ui.session_id, session_ui.session_btn, session_ui.session_status, session_ui.job_dropdown, session_ui.model_dropdown], queue=False,

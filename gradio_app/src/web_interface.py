@@ -5,7 +5,8 @@ import gradio as gr
 from .update_input import upload_file, on_clear_file, on_clear_param
 from .settings import GRADIO_DIR
 from .update_output import on_sav_set_select
-from .settings import FIGURE_1
+from .settings import FIGURE_1, HTML_DIR
+from .js import build_html_text
 
 def left_column():
     overall_acc = 83.6
@@ -36,8 +37,8 @@ def session():
             buttons=["copy"],
             elem_classes="gr-textbox",
         )
-        session_btn = gr.Button("▶️ Start / Resume a Session", elem_classes="gr-button")
-        session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start / Resume a Session'")
+        session_btn = gr.Button("▶️ Start or Resume a Session", elem_classes="gr-button")
+        session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start or Resume a Session'")
         session_status = gr.Markdown("")
         job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
     
@@ -164,7 +165,7 @@ def tandem_input(param):
         mode = gr.Radio(["Inferencing", "Transfer Learning"], value="Inferencing", label="Mode of Actions")
         with gr.Group(visible=True) as inf_section: # Inferencing input mode
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<=4)"
+                label = "Paste single amino acid variants for one or multiple proteins (≤4)"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)"
                 placeholder="O14508 S52N\nP29033 Y217D\n..."
                 inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="inf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
@@ -196,7 +197,7 @@ def tandem_input(param):
 
         with gr.Group(visible=False) as tf_section: # Transfer Learning input mode
             with gr.Row():
-                label = "Paste single amino acid variants for one or multiple proteins (<=4) and the corresponding labels"
+                label = "Paste single amino acid variants for one or multiple proteins (≤4) and the corresponding labels"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)(space)(Label)"
                 placeholder="O14508 S52N 1\nP29033 Y217D 0\n..."
                 tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=6, elem_classes="gr-textbox", info=info)
@@ -295,7 +296,6 @@ def tandem_output():
                     pred_table = gr.Dataframe(interactive=False, max_height=340, show_label=False, column_widths=[60, 150, "auto", "auto"],)
                 with gr.Column():
                     image_viewer = gr.Image(height=340, show_label=False, buttons=["fullscreen"])
-                    # image_viewer = gr.Image(height=340, show_label=False)
         
         with gr.Group(visible=False) as tf_output_secion:
             with gr.Row():
@@ -354,47 +354,34 @@ def tandem_output():
     )
 
 def build_header(title):
-    header_html = f"""
-    <div class="header">
-        <div class="header-bg"></div>
-
-        <div class="header-content">
-            <div class="header-text">
-                <div class="header-title">{title}</div>
-                <div class="header-subtitle">Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Estimation</div>
-            </div>
-        </div>
-    </div>
-    """   
-    header = gr.HTML(header_html)
+    filepath = os.path.join(HTML_DIR, 'header.html')
+    html = build_html_text(filepath, title=title)
+    header = gr.HTML(html)
     return header
 
-def build_footer(mount_point):
-    footer_html = f"""
-    <div class="footer-container">
-        <div class="footer-logo">
-            <img src="{mount_point}/gradio_api/file=assets/images/nthu_logo.png" alt="NTHU Logo">
-        </div>
-
-        <div class="footer-text">
-            <div>
-                <strong>Reference:</strong> Loc Dinh Quang Tran<sup>†</sup>, Chen-Hua Lu<sup>†</sup>, Cheng-Yu Tsai, 
-                Wei-Hsiang Shen, Chun-Biu Li, Tong-You Lin, Chi-Chun Lee, Pei-Lung Chen, Chen-Chi Wu, Lee-Wei Yang*<br>
-                <em>TANDEM-DIMPLE Makes Correct Gene-Specific Pathogenicity Predictions for Missense Variants</em>.
-                (Under submission, <sup>†</sup>Co-first authors; <sup>*</sup>Corresponding author)
-            </div>
-            <div>
-                <strong>Contact:</strong> The server is maintained by the Yang Lab at the Institute of
-                Bioinformatics and Structural Biology, National Tsing Hua University, Taiwan.
-            </div>
-            <div>
-                <strong>Email:</strong> <a href="mailto:locitran0521@gmail.com">locitran0521@gmail.com</a>
-            </div>
-        </div>
-    </div>
-    """
-    footer = gr.HTML(footer_html, elem_classes="footer")
+def build_footer():
+    filepath = os.path.join(HTML_DIR, 'footer.html')
+    html = build_html_text(filepath)
+    footer = gr.HTML(html, elem_classes="footer")
     return footer
+
+def build_qa():
+    filepath = os.path.join(HTML_DIR, "QA.html")
+    html = build_html_text(filepath)
+    qa_page = gr.HTML(html, elem_classes="qa")
+    return qa_page
+
+def build_tutorial():
+    filepath = os.path.join(HTML_DIR, "tutorial.html")
+    html = build_html_text(filepath)
+    tutorial_page = gr.HTML(html, elem_classes="tutorial")
+    return tutorial_page
+
+def build_licence():
+    filepath = os.path.join(HTML_DIR, "licence.html")
+    html = build_html_text(filepath)
+    licence_page = gr.HTML(html, elem_classes="tutorial")
+    return licence_page
 
 def render_job_html(name):
     if isinstance(name, dict):

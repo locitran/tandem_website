@@ -22,15 +22,15 @@ db = client["app_db"]
 collections = db["input_queue"]
 
 app = FastAPI()
-app = gr.mount_gradio_app(app, session_page(), path=f"/{MOUNT_POINT}/session", allowed_paths=allowed_paths, css=custom_css)
-app = gr.mount_gradio_app(app, results_page(), path=f"/{MOUNT_POINT}/results", allowed_paths=allowed_paths, css=custom_css)
-app = gr.mount_gradio_app(app, job_page(), path=f"/{MOUNT_POINT}/jobs", allowed_paths=allowed_paths, css=custom_css)
+app = gr.mount_gradio_app(app, session_page(), path=f"/{MOUNT_POINT}/session", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/session")
+app = gr.mount_gradio_app(app, results_page(), path=f"/{MOUNT_POINT}/results", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/results")
+app = gr.mount_gradio_app(app, job_page(), path=f"/{MOUNT_POINT}/jobs", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/jobs")
 
 @app.get(f"/{MOUNT_POINT}/jobs")
 def job_page_redirect():
     return RedirectResponse(url=f"/{MOUNT_POINT}/jobs/", status_code=307) # url=f"./jobs/" is also fine
 
-app = gr.mount_gradio_app(app, home_page(), path=f"/{MOUNT_POINT}", allowed_paths=allowed_paths, css=custom_css)
+app = gr.mount_gradio_app(app, home_page(), path=f"/{MOUNT_POINT}", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=7861)

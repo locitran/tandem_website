@@ -6,8 +6,7 @@ from datetime import datetime
 
 from .settings import JOB_DIR, MOUNT_POINT, TITLE, TAIPEI_TIME_ZONE
 from .web_interface import build_footer, build_header
-from .QA import qa
-from .tutorial import tutorial
+from .web_interface import build_qa, build_licence, build_tutorial
 from .web_interface import left_column
 from .request import request2info
 
@@ -128,10 +127,12 @@ def home_page():
             with gr.Tab("Home"):
                 HomeTab(JOB_DIR).build()
             with gr.Tab(label="Q & A"):
-                qa(MOUNT_POINT)
+                build_qa()
             with gr.Tab(label="Tutorial"):
-                tutorial(MOUNT_POINT)
-        build_footer(MOUNT_POINT)
+                build_tutorial()
+            with gr.Tab(label="License"):
+                build_licence()
+        build_footer()
 
     return page
 

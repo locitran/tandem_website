@@ -7,13 +7,13 @@ import gradio as gr
 from pymongo import MongoClient
 
 from . import js
-from .QA import qa
-from .tutorial import tutorial
-from .settings import JOB_DIR, MOUNT_POINT, TITLE
+from .settings import JOB_DIR, TITLE
 from .update_output import update_finished_job
 from .request import request2session_and_job, build_session_url
 from .job import update_submit_status, update_process_status, update_timer
 from .web_interface import build_footer, build_header, tandem_output
+from .web_interface import build_qa, build_licence, build_tutorial
+from .logger import LOGGER
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -104,12 +104,13 @@ class ResultPage:
             <span style="font-size:12px; color:var(--body-text-color-subdued);">(click to copy)</span>
         </div>
         """
-
+# https://dyn.life.nthu.edu.tw/TANDEM-dev/gradio_api/file=/tmp/gradio/3a58d4761571cc47456d40599e68b54fff1c5b097586c80943858515aed2ec28/O00189%20R271H.png
     def on_select_sav(self, evt: gr.SelectData, df, job_folder):
         row_idx, col_idx = evt.index
         sav = df.iloc[row_idx]['SAV']
         shap_img = os.path.join(job_folder, "tandem_shap", f"{sav}.png")
         if os.path.exists(shap_img):
+            LOGGER.info(shap_img)
             return gr.update(value=shap_img)
         return gr.update(value=None)
 
@@ -121,11 +122,9 @@ class ResultPage:
         base_dir = os.path.basename(folder)
         root_dir = os.path.dirname(folder)
 
-        # 1️⃣ Create zip NEXT TO the folder (safe)
-        temp_base_name = os.path.join(root_dir, base_dir)
+        temp_base_name = os.path.join(root_dir, base_dir) # 1️⃣ Create zip NEXT TO the folder (safe)
         temp_zip_path = temp_base_name + ".zip"
-        # 2️⃣ Move zip INTO the folder
-        final_zip_path = os.path.join(folder, "result.zip")
+        final_zip_path = os.path.join(folder, "result.zip") # 2️⃣ Move zip INTO the folder
 
         if not os.path.exists(final_zip_path):
             shutil.make_archive(base_name=temp_base_name, format="zip", root_dir=root_dir, base_dir=base_dir)
@@ -186,6 +185,7 @@ class ResultPage:
             list_images = os.listdir(tandem_shap) if os.path.isdir(tandem_shap) else []
 
             first_image = os.path.join(tandem_shap, list_images[0]) if list_images else None
+            LOGGER.info(first_image)
             image_viewer_udt = gr.update(value=first_image, visible=bool(list_images))
         # ----------- Transfer Learning mode -----------
         elif _mode == "Transfer Learning":
@@ -268,10 +268,12 @@ def results_page():
             with gr.Tab("Home"):
                 ui = ResultPage(JOB_DIR).build()
             with gr.Tab(label="Q & A"):
-                qa(MOUNT_POINT)
+                build_qa()
             with gr.Tab(label="Tutorial"):
-                tutorial(MOUNT_POINT)
-        build_footer(MOUNT_POINT)
+                build_tutorial()
+            with gr.Tab(label="License"):
+                build_licence()
+        build_footer()
 
         page.load(fn=request2session_and_job, inputs=None, outputs=[ui.session_id, ui.job_name], queue=False,
         ).then(fn=_load_result_param, inputs=[ui.session_id, ui.job_name], outputs=[ui.param_state, ui.page_status], queue=False,
@@ -279,7 +281,7 @@ def results_page():
         ).then(fn=update_process_status, inputs=[ui.param_state, gr.State(False)], outputs=[ui.process_status, ui.param_state], queue=False,
         ).then(fn=ui.render_session_html, inputs=[ui.param_state], outputs=[ui.session_box]
         ).then(fn=ui.render_job_html, inputs=[ui.param_state], outputs=[ui.job_box]
-        ).then(fn=update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state], queue=False,
+        ).then(fn=update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state],# queue=False,
             outputs=[ui.output_section, ui.result_zip, ui.inf_output_secion, ui.pred_table, ui.image_viewer, ui.tf_output_secion, ui.folds_state, ui.fold_dropdown, ui.sav_textbox, ui.loss_image, ui.test_evaluation, ui.model_save, ui.job_folder,],
         ).then(fn=update_timer, inputs=[ui.param_state], outputs=[ui.timer], queue=False,
         )

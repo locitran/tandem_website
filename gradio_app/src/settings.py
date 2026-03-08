@@ -12,6 +12,7 @@ TANDEM_DIR = os.path.join(ROOT_DIR, 'tandem')
 GRADIO_DIR = os.path.join(ROOT_DIR, 'gradio_app')
 TMP_DIR = os.path.join(GRADIO_DIR, 'tmp')
 JOB_DIR = os.path.join(TANDEM_DIR, 'jobs')
+HTML_DIR = os.path.join(GRADIO_DIR, 'src/html')
 
 SASS_DIR = os.path.join(GRADIO_DIR, "sass")
 ASSETS_DIR = os.path.join(GRADIO_DIR, "assets")
