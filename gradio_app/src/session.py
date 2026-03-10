@@ -2,18 +2,17 @@ import os
 import shutil
 import gradio as gr
 from pymongo import MongoClient
-from datetime import datetime, timezone
-from urllib.parse import quote
+from datetime import datetime
 
 from . import js
-from .settings import JOB_DIR, MOUNT_POINT, TITLE
+from .settings import JOB_DIR, TITLE
+from .logger import LOGGER
 from .web_interface import build_footer, build_header, build_qa, build_licence, build_tutorial
 from .web_interface import left_column, tandem_input, left_column
-from .web_interface import tandem_input, left_column, on_auto_view
-from .logger import LOGGER
-from .request import request2session_id, request2info
+from .web_interface import tandem_input, left_column
 from .update_input import handle_SAV, handle_STR
 from .home import build_session_url
+from .request import request2session_id, request2info, build_job_url, passthrough_url, session_exists
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -22,22 +21,13 @@ TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__))
 jobs_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'tandem/jobs')
 tmp_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'gradio_app/tmp')
 
-def session_exists(session_id) -> bool:
-    sid = session_id.strip()
-    if not sid:
-        return False
-    return collections.count_documents({"session_id": sid}) > 0
-
-def build_job_url(session_id, job_name):
-    return f"/{MOUNT_POINT}/results/?session_id={session_id}&job_name={job_name}"
-
 class SessionPage:
     def __init__(self, folder):
         self.folder = folder
 
     def build(self):
         self.job_folder = gr.State()
-        self.session_url_state = gr.State("")
+        self.error_url = gr.Textbox(value="", visible=False)
 
         with gr.Row() as self.input_page:
             with gr.Column(scale=1):
@@ -50,8 +40,7 @@ class SessionPage:
                 with gr.Group():
                     gr.Markdown("### User session", elem_classes="h3")
                     placeholder = "Start a new session or paste an existing session ID"
-                    self.session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder, interactive=True, buttons=["copy"], elem_classes="gr-textbox",)
-                    self.session_btn = gr.Button("▶️ Start / Resume a Session", elem_classes="gr-button")
+                    self.session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder, interactive=False, buttons=["copy"], elem_classes="gr-textbox",)
                     self.session_status = gr.Markdown("")
                     self.job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
                 
@@ -92,6 +81,7 @@ class SessionPage:
         self.submit_btn.click(fn=self.update_input_param, outputs=[self.param_state, self.job_url], 
         inputs=[self.session_id, self.mode, self.inf_sav_txt, self.inf_sav_file, self.model_dropdown, self.tf_sav_txt, self.tf_sav_file, self.str_txt, self.str_file, self.job_name_txt, self.email_txt, self.param_state,],
         ).then(fn=self.send_job, inputs=[self.param_state], outputs=[self.param_state],
+        ).then(fn=self.refresh_job_dropdown, inputs=[self.param_state], outputs=[self.job_dropdown],
         ).then(fn=None, inputs=[self.job_url], outputs=[], js=js.direct2url_refresh
         )
 
@@ -166,37 +156,59 @@ class SessionPage:
         _job_status = _param.get('status', None)
         if _job_status != 'pending':
             return _param
-        collections.insert_one(_param)
-        LOGGER.info(f"✅ Submitted with payload: {_param}")
-        return _param
+        param_udt = _param.copy()
+        param_udt.pop("_id", None)
+        collections.update_one(
+            {"session_id": param_udt.get("session_id"), "job_name": param_udt.get("job_name")},
+            {"$set": param_udt},
+            upsert=True,
+        )
+        LOGGER.info(f"✅ Submitted with payload: {param_udt}")
+        return param_udt
 
-def on_session_id(_session_id):
-    session_id_udt = gr.update(value=_session_id, interactive=False)
-    session_btn_udt = gr.update(interactive=False)
-    session_status_udt = "ℹ️ Please save the session ID for future reference."
+    def refresh_job_dropdown(self, param):
+        session_id = param.get("session_id")
+        current_job = param.get("job_name")
+
+        if not session_id or not current_job:
+            return gr.update()
+
+        job_names = collections.distinct(
+            "job_name",
+            {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},
+        )
+        if current_job not in job_names:
+            job_names.append(current_job)
+
+        job_names = sorted(job_names)
+        return gr.update(visible=True, choices=job_names, value=current_job, interactive=True)
+
+def on_session_id(session_id):
     base_model_choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
-    existing_jobs = collections.distinct("job_name", {"session_id": _session_id, "status": {"$in": ["pending", "processing", "finished"]}},)
+    session_id_udt = gr.update(value=session_id, interactive=False)
+    session_status_udt = "ℹ️ Please save the session ID for future reference."
+    existing_jobs = collections.distinct("job_name", {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},)
     has_jobs = len(existing_jobs) > 0
 
     if has_jobs:
         job_dropdown_udt = gr.update(visible=True, value=None, choices=existing_jobs, interactive=True)
-        pre_trained_models = collections.distinct("job_name", {"session_id": _session_id, "status": "finished", "mode": "Transfer Learning"},)
+        pre_trained_models = collections.distinct("job_name", {"session_id": session_id, "status": "finished", "mode": "Transfer Learning"},)
         model_dropdown_udt = gr.update(choices=base_model_choices + pre_trained_models)
     else:
-        collections.update_one({"session_id": _session_id},
-            {"$set": {"session_id": _session_id, "status": "created"}},
+        collections.update_one({"session_id": session_id},
+            {"$set": {"session_id": session_id, "status": "created"}},
             upsert=True,
         )
         job_dropdown_udt = gr.update(visible=False, value=None, choices=[])
         model_dropdown_udt = gr.update(choices=base_model_choices)
-    return session_id_udt, session_btn_udt, session_status_udt, job_dropdown_udt, model_dropdown_udt
+    return session_id_udt, session_status_udt, job_dropdown_udt, model_dropdown_udt
 
 def session_page():
     with gr.Blocks(title=TITLE) as page:
         build_header(TITLE)
         with gr.Column(elem_id="main-content"):
             with gr.Tab("Home"):
-                session_ui = SessionPage(JOB_DIR).build()
+                ui = SessionPage(JOB_DIR).build()
             with gr.Tab(label="Q & A"):
                 build_qa()
             with gr.Tab(label="Tutorial"):
@@ -205,8 +217,10 @@ def session_page():
                 build_licence()
         build_footer()
 
-        page.load(fn=request2session_id, inputs=None, outputs=[session_ui.session_id], queue=False,
-        ).then(fn=on_session_id, inputs=session_ui.session_id, outputs=[session_ui.session_id, session_ui.session_btn, session_ui.session_status, session_ui.job_dropdown, session_ui.model_dropdown], queue=False,
+        page.load(fn=request2session_id, inputs=None, outputs=[ui.session_id], queue=False, # ui is already strip()
+        ).then(fn=session_exists, inputs=[ui.session_id], outputs=[ui.error_url], queue=False,
+        ).then(fn=passthrough_url, inputs=[ui.error_url], outputs=[ui.error_url], js=js.direct2url_refresh, queue=False,
+        ).then(fn=on_session_id, inputs=ui.session_id, outputs=[ui.session_id, ui.session_status, ui.job_dropdown, ui.model_dropdown], queue=False,
         )
 
     return page

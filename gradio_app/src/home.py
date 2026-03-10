@@ -4,20 +4,17 @@ import secrets
 import string
 from datetime import datetime
 
-from .settings import JOB_DIR, MOUNT_POINT, TITLE, TAIPEI_TIME_ZONE
+from .settings import JOB_DIR, TITLE, TAIPEI_TIME_ZONE
 from .web_interface import build_footer, build_header
 from .web_interface import build_qa, build_licence, build_tutorial
 from .web_interface import left_column
-from .request import request2info
+from .request import request2info, build_session_url
 
 from pymongo import MongoClient
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
-
-def build_session_url(session_id):
-    return f"/{MOUNT_POINT}/session/?session_id={session_id}"
 
 class HomeTab:
     def __init__(self, folder):

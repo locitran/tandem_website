@@ -2,10 +2,11 @@ import os
 import json
 import gradio as gr
 
-from .update_input import upload_file, on_clear_file, on_clear_param
 from . import js
+from .update_input import upload_file, on_clear_file, on_clear_param
 from .logger import LOGGER
-from .settings import FIGURE_1, GRADIO_DIR, HTML_DIR, EXAMPLES_JSON, GRADIO_DIR
+from .settings import FIGURE_1, HTML_DIR, EXAMPLES_JSON
+from .request import build_job_url, passthrough_url
 
 with open(EXAMPLES_JSON, 'r') as f:
     EXAMPLES = json.load(f)
@@ -36,7 +37,6 @@ def on_load_example(example_name):
     
     SAV = ex["SAV"]
     SAV_txt = "\n".join(SAV)
-    LOGGER.info(SAV_txt)
 
     sav_txt_udt = gr.update(value=SAV_txt)
     str_check_value = bool(ex.get("str_check", False))
@@ -47,42 +47,24 @@ def on_load_example(example_name):
     job_name_udt = gr.update(value=ex['job_name'])
     return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt
 
-def session():
+def on_tandem_refresh(param):
+    param_udt = param.copy()
+    param_udt["refresh"] = True
+    return param_udt
 
-    with gr.Group():
-        gr.Markdown("### User session", elem_classes="h3")
-        placeholder = "Start a new session or paste an existing session ID"
-        session_id = gr.Textbox(
-            label=" ",
-            show_label=True,
-            placeholder=placeholder,
-            interactive=True,
-            buttons=["copy"],
-            elem_classes="gr-textbox",
-        )
-        session_btn = gr.Button("▶️ Start or Resume a Session", elem_classes="gr-button")
-        session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start or Resume a Session'")
-        session_status = gr.Markdown("")
-        job_dropdown = gr.Dropdown(label="Old jobs", visible=False, filterable=False, allow_custom_value=False, preserved_by_key=None)
-    
-    return session_id, session_btn, session_mkd, session_status, job_dropdown
+def on_view_example(example_name):
+    ex = EXAMPLES.get(example_name, "")
+    if ex == "":
+        gr.Warning("Please select an example first.")
+        return ""
 
-def on_auto_view(mode, jobs_folder, param):
-    test_session = 'test'
-    if mode == "Inferencing":
-        job_name = "inference_test"
-    elif mode == "Transfer Learning":
-        job_name = "GJB2_test"
-    else:
-        raise InterruptedError()
-    test_param_file = os.path.join(jobs_folder, test_session, job_name, 'params.json')
-    with open(test_param_file, 'r') as f:
-        test_param = json.load(f)
-    
-    # Copy test_param to main_param
-    param_udt = test_param.copy()
-    param_udt['session_id'] = param['session_id']
-    return test_param, param_udt
+    session_id = ex.get("session_id", "")
+    job_name = ex.get("job_name", "")
+    if not session_id or not job_name:
+        gr.Warning(f"No output example is configured for '{example_name}'.")
+        return ""
+
+    return build_job_url(session_id, job_name)
 
 def on_mode(mode, param):
     param_udt = param.copy()
@@ -108,7 +90,7 @@ def tandem_input(param):
                 label = "Paste single amino acid variants for one or multiple proteins (≤4)"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)"
                 placeholder="O14508 S52N\nP29033 Y217D\n..."
-                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="inf-sav-txt", label=label, placeholder=placeholder, scale=7, elem_classes="gr-textbox", info=info)
+                inf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="inf-sav-txt", label=label, placeholder=placeholder, scale=8, elem_classes="gr-textbox", info=info)
                 inf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 inf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
             
@@ -117,6 +99,7 @@ def tandem_input(param):
                 inf_input_load = gr.Button(elem_id="inf_input_load")
                 inf_auto_view = gr.Button(elem_id="inf_auto_view")
                 inf_clear_btn = gr.Button(elem_id="inf_clear_btn")
+                inf_output_url = gr.Textbox(value="", visible=False)
 
                 filepath = os.path.join(HTML_DIR, 'inf_input_output_examples.html')
                 inf_examples_html = js.build_html_text(filepath)
@@ -130,7 +113,7 @@ def tandem_input(param):
                 label = "Paste single amino acid variants for one or multiple proteins (≤4) and the corresponding labels"
                 info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)(space)(Label)"
                 placeholder="O14508 S52N 1\nP29033 Y217D 0\n..."
-                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=7, elem_classes="gr-textbox", info=info)
+                tf_sav_txt = gr.Textbox(value='', interactive=True, max_lines=5, lines=4, elem_id="tf-sav-txt", label=label, placeholder=placeholder, scale=8, elem_classes="gr-textbox", info=info)
                 tf_sav_btn = gr.UploadButton(label="Upload SAVs", file_count="single", file_types=[".txt"], elem_classes="gr-button", scale=3)
                 tf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3)
 
@@ -139,6 +122,7 @@ def tandem_input(param):
                 tf_input_load    = gr.Button(elem_id="tf_input_load")
                 tf_output_view   = gr.Button(elem_id="tf_output_view")
                 tf_clear_btn     = gr.Button(elem_id="tf_clear_btn")
+                tf_output_url    = gr.Textbox(value="", visible=False)
                 
                 filepath = os.path.join(HTML_DIR, 'tf_input_output_examples.html')
                 tf_examples_html = js.build_html_text(filepath)
@@ -147,7 +131,7 @@ def tandem_input(param):
         # Assign/Upload your structure
         str_check = gr.Checkbox(value=False, label="Provide PDB/AF2 ID or upload coordinate file (pdb/cif)", interactive=True)
         with gr.Row(visible=False) as structure_section:
-            str_txt = gr.Textbox(value=None, label="Structure", placeholder="PDB ID (e.g., 1GOD) or AF2 ID (e.g., 014508)", interactive=True, show_label=False, scale=6)
+            str_txt = gr.Textbox(value=None, label="Structure", placeholder="PDB ID (e.g., 1GOD) or AF2 ID (e.g., 014508)", interactive=True, show_label=False, scale=8)
             str_btn = gr.UploadButton("Upload file", file_count="single", elem_id="sav-btn", file_types=[".cif", ".pdb"], scale=3)
             str_file = gr.File(visible=False, scale=3, height=145)
         str_check.change(on_structure, str_check, [structure_section])
@@ -158,8 +142,17 @@ def tandem_input(param):
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
 
     # Fill test case
-    inf_input_load.click(fn=on_load_example, inputs=[inf_input_example], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_inf_input)
-    tf_input_load.click(fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_tf_input)
+    inf_input_load.click(fn=on_load_example, inputs=[inf_input_example], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_inf_input
+    ).then(fn=on_tandem_refresh, inputs=[param], outputs=[param],)
+
+    tf_input_load.click(fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_tf_input
+    ).then(fn=on_tandem_refresh, inputs=[param], outputs=[param],)
+
+    inf_auto_view.click(fn=on_view_example, inputs=[inf_input_example], outputs=[inf_output_url], js=js.load_inf_input
+    ).then(fn=passthrough_url, inputs=[inf_output_url], outputs=[inf_output_url], js=js.direct2url_open)
+
+    tf_output_view.click(fn=on_view_example, inputs=[tf_input_example], outputs=[tf_output_url], js=js.load_tf_input
+    ).then(fn=passthrough_url, inputs=[tf_output_url], outputs=[tf_output_url], js=js.direct2url_open)
 
     # Select mode (1) Inferencing or (2) Transfer Learning
     mode.change(fn=on_mode, inputs=[mode, param], outputs=[inf_section, tf_section, param])
@@ -302,28 +295,6 @@ def build_licence():
     html = js.build_html_text(filepath)
     licence_page = gr.HTML(html, elem_classes="tutorial")
     return licence_page
-
-def render_job_html(name):
-    if isinstance(name, dict):
-        name = name.get("job_name", "")
-    return f"""
-    <div class="job-row">
-        <span class="job-label">Job:</span>
-        <span class="job-name" id="job-name">{name}</span>
-    </div>
-    """
-
-def render_session_html(id):
-    if isinstance(id, dict):
-        id = id.get("session_id", "")
-
-    return f"""
-    <div class="session-row">
-        <span class="session-label">Session:</span>
-        <span class="session-id" id="session-id" style="padding:4px 6px; border-radius:4px;">{id}</span>
-        <span style="font-size:12px; color:var(--body-text-color-subdued);">(click to copy)</span>
-    </div>
-    """
 
 if __name__ == "__main__":
     pass

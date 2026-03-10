@@ -22,6 +22,42 @@
     border-radius: var(--radius-md) !important;
 }
 
+.results-side-panel {
+  gap: 8px !important;
+}
+
+.results-side-panel > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.new-job-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.mini-action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--input-border-color) !important;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  color: var(--body-text-color);
+  background: transparent;
+}
+
+.mini-action-link:hover {
+  text-decoration: none;
+  border-color: var(--color-accent-soft) !important;
+  background: color-mix(in srgb, var(--color-accent-soft) 12%, transparent);
+}
+
 // .gradio-container {
 //   min-height: 100vh;
 //   display: flex;

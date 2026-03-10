@@ -1,13 +1,14 @@
 import os
 import shutil
 import json
+import html
 import pandas as pd 
 import gradio as gr
 from pymongo import MongoClient
 
 from . import js
 from .settings import JOB_DIR, TITLE
-from .request import request2session_and_job, build_session_url
+from .request import build_session_url, build_job_url, passthrough_url, job_exists, request2session_and_job
 from .job import update_submit_status, update_process_status, update_timer
 from .web_interface import build_footer, build_header, tandem_output
 from .web_interface import build_qa, build_licence, build_tutorial
@@ -28,33 +29,28 @@ class ResultPage:
         self.session_id = gr.Textbox(value="", visible=False)
         self.job_name = gr.Textbox(value="", visible=False)
         self.session_url = gr.Textbox(value="", visible=False)
+        self.error_url = gr.Textbox(value="", visible=False)
         self.job_folder = gr.Textbox(value="", visible=False)
 
         self.param_state = gr.State({})
         self.jobs_folder_state = gr.State(self.folder)
-        self.page_status = gr.Markdown("")
         with gr.Row(elem_classes="bg-row-column"):
             with gr.Column(scale=4):
                 self.submit_status = gr.Textbox(label="Submission Status",lines=2,interactive=False,elem_classes="gr-textbox",autoscroll=False,)
             with gr.Column(scale=4):
                 self.process_status = gr.Textbox(label="Processing Status",lines=2,interactive=False,elem_classes="gr-textbox",autoscroll=False,)
-            with gr.Column(scale=2):
+            with gr.Column(scale=2, elem_classes="results-side-panel"):
                 self.session_box = gr.HTML()
-                self.job_box = gr.HTML()
+                self.job_dropdown = gr.HTML()
+                self.new_job_btn = gr.HTML()
         (self.output_section, self.inf_output_secion, self.tf_output_secion, self.pred_table, self.image_viewer, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.result_zip, self.focus_refresh_btn,
         ) = tandem_output()
-
-        self.new_job_btn = gr.Button("New job", elem_classes="gr-button")
         
         self._bind_events()
         return self
 
     def _bind_events(self):
         self.pred_table.select(self.on_select_sav, inputs=[self.pred_table, self.job_folder], outputs=[self.image_viewer])
-        
-        self.new_job_btn.click(fn=build_session_url, inputs=[self.session_id], outputs=[self.session_url]
-        ).then(fn=None, inputs=[self.session_url], outputs=[], js=js.direct2url_refresh
-        )
 
         self.session_box.click(None, js=js.session_box) # Click = copy to clipboard
 
@@ -81,13 +77,43 @@ class ResultPage:
             timer_udt = gr.update(active=True)
         return timer_udt
     
-    def render_job_html(self, name):
-        if isinstance(name, dict):
-            name = name.get("job_name", "")
+    def render_job_html(self, param):
+        if not isinstance(param, dict):
+            return ""
+
+        session_id = param.get("session_id", "")
+        current_job = param.get("job_name", "")
+
+        if not session_id:
+            return """
+            <div class="job-row">
+                <span class="job-label">Job:</span>
+                <span class="job-name">-</span>
+            </div>
+            """
+
+        job_names = collections.distinct(
+            "job_name",
+            {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},
+        )
+        job_names = sorted(job_names)
+
+        option_html = []
+        for job_name in job_names:
+            selected = " selected" if job_name == current_job else ""
+            url = build_job_url(session_id, job_name)
+            option_html.append(
+                f'<option value="{html.escape(url, quote=True)}"{selected}>{html.escape(job_name)}</option>'
+            )
+
+        options = "\n".join(option_html) if option_html else '<option value="">No jobs</option>'
+
         return f"""
         <div class="job-row">
-            <span class="job-label">Job:</span>
-            <span class="job-name" id="job-name">{name}</span>
+            <label class="job-label" for="job-select">Job:</label>
+            <select id="job-select" class="example-select" onchange="if (this.value) window.location.assign(this.value);">
+                {options}
+            </select>
         </div>
         """
     
@@ -103,12 +129,26 @@ class ResultPage:
         </div>
         """
 
+    def render_new_job_html(self, session_id):
+        if isinstance(session_id, dict):
+            session_id = session_id.get("session_id", "")
+
+        if not session_id:
+            return ""
+
+        session_url = build_session_url(session_id)
+        safe_url = html.escape(session_url, quote=True)
+        return f"""
+        <div class="new-job-row">
+            <a class="mini-action-link" href="{safe_url}">New job</a>
+        </div>
+        """
+
     def on_select_sav(self, evt: gr.SelectData, df, job_folder):
         row_idx, col_idx = evt.index
         sav = df.iloc[row_idx]['SAV']
         shap_img = os.path.join(job_folder, "tandem_shap", f"{sav}.png")
         if os.path.exists(shap_img):
-            LOGGER.info(shap_img)
             return gr.update(value=shap_img)
         return gr.update(value=None)
 
@@ -183,7 +223,6 @@ class ResultPage:
             list_images = os.listdir(tandem_shap) if os.path.isdir(tandem_shap) else []
 
             first_image = os.path.join(tandem_shap, list_images[0]) if list_images else None
-            LOGGER.info(first_image)
             image_viewer_udt = gr.update(value=first_image, visible=bool(list_images))
         # ----------- Transfer Learning mode -----------
         elif _mode == "Transfer Learning":
@@ -255,9 +294,8 @@ class ResultPage:
 
 def _load_result_param(session_id, job_name):
     doc = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 0})
-    if doc is None:
-        return {}, f"Job not found: session_id={session_id}, job_name={job_name}"
-    return doc, ""
+    new_job_btn = gr.update(visible=False) if session_id == "test" else gr.update(visible=True)
+    return doc, new_job_btn
 
 def results_page():
     with gr.Blocks(title=TITLE) as page:
@@ -274,11 +312,14 @@ def results_page():
         build_footer()
 
         page.load(fn=request2session_and_job, inputs=None, outputs=[ui.session_id, ui.job_name], queue=False,
-        ).then(fn=_load_result_param, inputs=[ui.session_id, ui.job_name], outputs=[ui.param_state, ui.page_status], queue=False,
+        ).then(fn=job_exists, inputs=[ui.session_id, ui.job_name], outputs=[ui.error_url], queue=False,
+        ).then(fn=passthrough_url, inputs=[ui.error_url], outputs=[ui.error_url], js=js.direct2url_refresh, queue=False,
+        ).then(fn=_load_result_param, inputs=[ui.session_id, ui.job_name], outputs=[ui.param_state, ui.new_job_btn], queue=False,
         ).then(fn=update_submit_status, inputs=[ui.param_state], outputs=[ui.submit_status], queue=False,
         ).then(fn=update_process_status, inputs=[ui.param_state, gr.State(False)], outputs=[ui.process_status, ui.param_state], queue=False,
         ).then(fn=ui.render_session_html, inputs=[ui.param_state], outputs=[ui.session_box]
-        ).then(fn=ui.render_job_html, inputs=[ui.param_state], outputs=[ui.job_box]
+        ).then(fn=ui.render_new_job_html, inputs=[ui.param_state], outputs=[ui.new_job_btn]
+        ).then(fn=ui.render_job_html, inputs=[ui.param_state], outputs=[ui.job_dropdown]
         ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state],# queue=False,
             outputs=[ui.output_section, ui.result_zip, ui.inf_output_secion, ui.pred_table, ui.image_viewer, ui.tf_output_secion, ui.folds_state, ui.fold_dropdown, ui.sav_textbox, ui.loss_image, ui.test_evaluation, ui.model_save, ui.job_folder,],
         ).then(fn=update_timer, inputs=[ui.param_state], outputs=[ui.timer], queue=False,

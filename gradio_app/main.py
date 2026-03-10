@@ -9,8 +9,9 @@ from pymongo import MongoClient
 from src.home import home_page
 from src.session import session_page
 from src.results import results_page
-from src.settings import ASSETS_DIR, SASS_DIR, MOUNT_POINT
+from src.error_page import error_page
 from src.job_manager import job_page
+from src.settings import ASSETS_DIR, SASS_DIR, MOUNT_POINT
 
 allowed_paths = ["/tandem/jobs", "assets/images"]
 sass.compile(dirname=(str(SASS_DIR), str(ASSETS_DIR)), output_style="expanded")
@@ -22,6 +23,7 @@ db = client["app_db"]
 collections = db["input_queue"]
 
 app = FastAPI()
+app = gr.mount_gradio_app(app, error_page(), path=f"/{MOUNT_POINT}/error", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/error")
 app = gr.mount_gradio_app(app, session_page(), path=f"/{MOUNT_POINT}/session", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/session")
 app = gr.mount_gradio_app(app, results_page(), path=f"/{MOUNT_POINT}/results", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/results")
 app = gr.mount_gradio_app(app, job_page(), path=f"/{MOUNT_POINT}/jobs", allowed_paths=allowed_paths, css=custom_css, root_path=f"/{MOUNT_POINT}/jobs")

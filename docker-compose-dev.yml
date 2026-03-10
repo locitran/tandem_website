@@ -33,6 +33,7 @@ services:
     volumes:
       - ./tandem:/tandem
       - ./gradio_app:/gradio_app
+      - ../tandem_website/tandem/data/consurf/uniref90.fasta:/tandem/data/consurf/uniref90.fasta:ro
     labels:
       owner: "yang_loci"
       project: "tandem_website_dev"
@@ -47,6 +48,7 @@ services:
     volumes:
       - ./worker:/worker
       - ./tandem:/tandem
+      - ../tandem_website/tandem/data/consurf/uniref90.fasta:/tandem/data/consurf/uniref90.fasta:ro
     labels:
       owner: "yang_loci"
       project: "tandem_website_dev"

@@ -12,8 +12,9 @@ JOBS_ROOT = "/tandem/jobs"
 
 def _get_job_time(data: dict):
     return (
-        data.get("created_at")
-        or data.get("submitted_at")
+        data.get("submitted_at")
+        or data.get("job_start")
+        or data.get("created_at")
         or data.get("timestamp")
         or data.get("time")
         or ""
@@ -51,7 +52,8 @@ def on_save_job(json_text, df_jobs):
 
         if len(saved_idx) > 0:
             # Existing job → update
-            for h in headers:
+            df_jobs_copy.loc[saved_idx, "time"] = _get_job_time(data)
+            for h in ["IP", "session_id", "job_name", "mode", "status"]:
                 df_jobs_copy.loc[saved_idx, h] = data.get(h, "")
         else:
             # New job → append
@@ -148,6 +150,14 @@ def on_select_job(evt: gr.SelectData, df):
     session_id = df.iloc[row_idx]['session_id']
     job_name = df.iloc[row_idx]['job_name']
 
+    if not job_name:
+        params_box_udt = gr.update(
+            value='{\n  "session_id": "%s",\n  "status": "created"\n}' % session_id,
+            lines=4,
+        )
+        status_msg_udt = gr.update(value="This session has been created, but no submitted job exists in this row.")
+        return session_id, job_name, params_box_udt, status_msg_udt
+
     job = collections.find_one(
         {"session_id": session_id, "job_name": job_name},
         {"_id": 0}
@@ -156,7 +166,7 @@ def on_select_job(evt: gr.SelectData, df):
         params = jsonyx.dumps(job, indent=2, indent_leaves=False, separators=(",", ": "))
         nlines = len(job)+3
     else:
-        params = {}
+        params = ""
         nlines = 1
     
     params_box_udt = gr.update(value=params, lines=nlines)
