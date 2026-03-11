@@ -1,7 +1,7 @@
 import gradio as gr
 
 from .settings import TITLE, MOUNT_POINT
-from .web_interface import build_footer, build_header, build_qa, build_licence, build_tutorial
+from .web_interface import build_footer, build_header
 
 
 def _error_content(request: gr.Request):
@@ -48,16 +48,9 @@ def _error_content(request: gr.Request):
 
 def error_page():
     with gr.Blocks(title=TITLE) as page:
-        build_header(TITLE)
+        build_header(TITLE, current_page="home")
         with gr.Column(elem_id="main-content"):
-            with gr.Tab("Home"):
-                error_body = gr.HTML()
-            with gr.Tab(label="Q & A"):
-                build_qa()
-            with gr.Tab(label="Tutorial"):
-                build_tutorial()
-            with gr.Tab(label="License"):
-                build_licence()
+            error_body = gr.HTML()
         build_footer()
 
         page.load(fn=_error_content, inputs=None, outputs=[error_body], queue=False)

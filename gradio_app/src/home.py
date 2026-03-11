@@ -1,4 +1,3 @@
-import os
 import gradio as gr
 import secrets
 import string
@@ -6,7 +5,6 @@ from datetime import datetime
 
 from .settings import JOB_DIR, TITLE, TAIPEI_TIME_ZONE
 from .web_interface import build_footer, build_header
-from .web_interface import build_qa, build_licence, build_tutorial
 from .web_interface import left_column
 from .request import request2info, build_session_url
 
@@ -119,16 +117,9 @@ class HomeTab:
 
 def home_page():
     with gr.Blocks(title=TITLE) as page:
-        build_header(TITLE)
+        build_header(TITLE, current_page="home")
         with gr.Column(elem_id="main-content"):
-            with gr.Tab("Home"):
-                HomeTab(JOB_DIR).build()
-            with gr.Tab(label="Q & A"):
-                build_qa()
-            with gr.Tab(label="Tutorial"):
-                build_tutorial()
-            with gr.Tab(label="License"):
-                build_licence()
+            HomeTab(JOB_DIR).build()
         build_footer()
 
     return page

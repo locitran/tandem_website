@@ -5,7 +5,7 @@ import gradio as gr
 from . import js
 from .update_input import upload_file, on_clear_file, on_clear_param
 from .logger import LOGGER
-from .settings import FIGURE_1, HTML_DIR, EXAMPLES_JSON
+from .settings import FIGURE_1, HTML_DIR, EXAMPLES_JSON, MOUNT_POINT
 from .request import build_job_url, passthrough_url
 
 with open(EXAMPLES_JSON, 'r') as f:
@@ -47,9 +47,11 @@ def on_load_example(example_name):
     job_name_udt = gr.update(value=ex['job_name'])
     return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt
 
-def on_tandem_refresh(param):
+def on_tandem_refresh(param, job_name):
     param_udt = param.copy()
     param_udt["refresh"] = True
+    if job_name == "GJB2_demo":
+        param_udt["GJB2_test"] = True
     return param_udt
 
 def on_view_example(example_name):
@@ -142,16 +144,18 @@ def tandem_input(param):
         submit_btn = gr.Button("Submit", elem_classes="gr-button")
 
     # Fill test case
-    inf_input_load.click(fn=on_load_example, inputs=[inf_input_example], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_inf_input
-    ).then(fn=on_tandem_refresh, inputs=[param], outputs=[param],)
+    inf_input_load.click(
+           fn=on_load_example, inputs=[inf_input_example], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_inf_input
+    ).then(fn=on_tandem_refresh, inputs=[param, job_name_txt], outputs=[param],)
+    tf_input_load.click(
+           fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_tf_input
+    ).then(fn=on_tandem_refresh, inputs=[param, job_name_txt], outputs=[param],)
 
-    tf_input_load.click(fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_tf_input
-    ).then(fn=on_tandem_refresh, inputs=[param], outputs=[param],)
-
-    inf_auto_view.click(fn=on_view_example, inputs=[inf_input_example], outputs=[inf_output_url], js=js.load_inf_input
+    inf_auto_view.click(
+            fn=on_view_example, inputs=[inf_input_example], outputs=[inf_output_url], js=js.load_inf_input
     ).then(fn=passthrough_url, inputs=[inf_output_url], outputs=[inf_output_url], js=js.direct2url_open)
-
-    tf_output_view.click(fn=on_view_example, inputs=[tf_input_example], outputs=[tf_output_url], js=js.load_tf_input
+    tf_output_view.click(
+            fn=on_view_example, inputs=[tf_input_example], outputs=[tf_output_url], js=js.load_tf_input
     ).then(fn=passthrough_url, inputs=[tf_output_url], outputs=[tf_output_url], js=js.direct2url_open)
 
     # Select mode (1) Inferencing or (2) Transfer Learning
@@ -266,9 +270,19 @@ def tandem_output():
         focus_refresh_btn,
     )
 
-def build_header(title):
+def build_header(title, current_page="home"):
     filepath = os.path.join(HTML_DIR, 'header.html')
-    html = js.build_html_text(filepath, title=title)
+    nav_state = {
+        "home_active": "is-active" if current_page == "home" else "",
+        "tutorial_active": "is-active" if current_page == "tutorial" else "",
+        "qa_active": "is-active" if current_page == "qa" else "",
+        "licence_active": "is-active" if current_page == "licence" else "",
+        "home_url": f"/{MOUNT_POINT}/",
+        "tutorial_url": f"/{MOUNT_POINT}/tutorial/",
+        "qa_url": f"/{MOUNT_POINT}/QA/",
+        "licence_url": f"/{MOUNT_POINT}/licence/",
+    }
+    html = js.build_html_text(filepath, title=title, **nav_state)
     header = gr.HTML(html)
     return header
 
@@ -298,3 +312,41 @@ def build_licence():
 
 if __name__ == "__main__":
     pass
+
+
+
+"""
+def on_tandem_refresh(param, example_name):
+    param_udt = param.copy()
+    param_udt["refresh"] = True
+    LOGGER.info(f"example_name 1 {example_name}")
+    if example_name == "GJB2 demo":
+        LOGGER.info(f"example_name 2 {example_name}")
+        param_udt["GJB2_test"] = True
+
+    return param_udt
+
+
+    # Fill test case
+    inf_input_load.click(
+           fn=on_load_example, inputs=[inf_input_example], outputs=[inf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_inf_input
+    ).then(fn=on_tandem_refresh, inputs=[param, inf_input_example], outputs=[param],)
+    tf_input_load.click(
+           fn=on_load_example, inputs=[tf_input_example], outputs=[tf_sav_txt, str_check, str_btn, str_file, job_name_txt], js=js.load_tf_input
+    ).then(fn=on_tandem_refresh, inputs=[param, tf_input_example], outputs=[param],)
+
+I want to check this function.
+
+Why clicking submit button an input example, `example_name` return None
+"INFO:     172.31.99.98:58602 - "POST /TANDEM-dev/session/gradio_api/queue/join?session_id=lS3KuxQxaW HTTP/1.1" 200 OK
+@> example_name 1 None
+INFO:     172.31.99.98:58602 - "GET /TANDEM-dev/session/gradio_api/queue/data?session_hash=9j2ft6l3u HTTP/1.1" 200 OK
+INFO:     172.31.99.98:58602 - "POST /TANDEM-dev/session/gradio_api/queue/join?session_id=lS3KuxQxaW HTTP/1.1" 200 OK
+INFO:     172.31.99.98:58602 - "GET /TANDEM-dev/session/gradio_api/queue/data?session_hash=9j2ft6l3u HTTP/1.1" 200 OK
+INFO:     172.31.99.98:58602 - "POST /TANDEM-dev/session/gradio_api/queue/join?session_id=lS3KuxQxaW HTTP/1.1" 200 OK
+@> ✅ Submitted with payload: {'refresh': True, 'status': 'pending', 'session_id': 'lS3KuxQxaW', 'session_url': '/TANDEM-dev/session/?session_id=lS3KuxQxaW', 'mode': 'Inferencing', 'SAV': ['O00187 R118C', 'O00187 D120G', 'O00187 T128M', 'O00187 H155R'], 'label': None, 'model': 'TANDEM', 'job_name': 'Inference_test_1p_11575411032026', 'email': None, 'STR': None, 'IP': '140.114.123.87', 'job_url': '/TANDEM-dev/results/?session_id=lS3KuxQxaW&job_name=Inference_test_1p_11575411032026'}
+INFO:     172.31.99.98:58602 - "GET /TANDEM-dev/se"
+
+please look for the reason first.
+
+"""

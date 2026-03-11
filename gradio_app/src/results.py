@@ -292,6 +292,24 @@ class ResultPage:
         else:
             return hide_all(13)
 
+    def update_submit_status(self, param):
+        _session_id = param.get("session_id")
+        _job_status = param.get("status", None)
+
+        if _session_id is None or _job_status is None:
+            submit_status_udt  = gr.update()
+        else:
+            msg = ""
+            for k in ["SAV", "label", "model", "STR"]:
+                v = param.get(k, None)
+                if v is not None:
+                    msg += f"{k}: {v}"
+                    if k != "STR":
+                        msg += '\n'
+            
+            submit_status_udt  = gr.update(value=msg, visible=True, lines=2)
+        return submit_status_udt
+
 def _load_result_param(session_id, job_name):
     doc = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 0})
     new_job_btn = gr.update(visible=False) if session_id == "test" else gr.update(visible=True)
@@ -299,23 +317,16 @@ def _load_result_param(session_id, job_name):
 
 def results_page():
     with gr.Blocks(title=TITLE) as page:
-        build_header(TITLE)
+        build_header(TITLE, current_page="home")
         with gr.Column(elem_id="main-content"):
-            with gr.Tab("Home"):
-                ui = ResultPage(JOB_DIR).build()
-            with gr.Tab(label="Q & A"):
-                build_qa()
-            with gr.Tab(label="Tutorial"):
-                build_tutorial()
-            with gr.Tab(label="License"):
-                build_licence()
+            ui = ResultPage(JOB_DIR).build()
         build_footer()
 
         page.load(fn=request2session_and_job, inputs=None, outputs=[ui.session_id, ui.job_name], queue=False,
         ).then(fn=job_exists, inputs=[ui.session_id, ui.job_name], outputs=[ui.error_url], queue=False,
         ).then(fn=passthrough_url, inputs=[ui.error_url], outputs=[ui.error_url], js=js.direct2url_refresh, queue=False,
         ).then(fn=_load_result_param, inputs=[ui.session_id, ui.job_name], outputs=[ui.param_state, ui.new_job_btn], queue=False,
-        ).then(fn=update_submit_status, inputs=[ui.param_state], outputs=[ui.submit_status], queue=False,
+        ).then(fn=ui.update_submit_status, inputs=[ui.param_state], outputs=[ui.submit_status], queue=False,
         ).then(fn=update_process_status, inputs=[ui.param_state, gr.State(False)], outputs=[ui.process_status, ui.param_state], queue=False,
         ).then(fn=ui.render_session_html, inputs=[ui.param_state], outputs=[ui.session_box]
         ).then(fn=ui.render_new_job_html, inputs=[ui.param_state], outputs=[ui.new_job_btn]

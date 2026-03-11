@@ -26,6 +26,8 @@ def build_error_url(kind, session_id="", job_name=""):
     return f"/{MOUNT_POINT}/error/?{urlencode(params)}"
 
 def session_exists(session_id):
+    """Check https://{root_path}/session/?session_id={session_id} is valid
+    """
     if not session_id:
         return build_error_url("missing_session")
     exists = collections.count_documents({"session_id": session_id}) > 0
@@ -34,24 +36,21 @@ def session_exists(session_id):
     return build_error_url("session_not_found", session_id=session_id)
 
 def job_exists(session_id, job_name):
+    """Check https://{root_path}/results/?session_id={session_id}&job_name={job_name} is valid
+    """
     if not session_id:
         return build_error_url("missing_session")
-    error_url = session_exists(session_id)
-    if error_url:
-        job_folder = os.path.join(JOB_DIR, session_id, job_name) if job_name else ""
-        if not (job_name and os.path.isdir(job_folder)):
-            return error_url
+    
     if not job_name:
         return build_error_url("missing_job", session_id=session_id)
+    
+    error_url = session_exists(session_id)
+    if error_url:
+        return error_url
     
     exists = collections.count_documents({"session_id": session_id, "job_name": job_name}) > 0
     if exists:
         return ""
-
-    job_folder = os.path.join(JOB_DIR, session_id, job_name)
-    if os.path.isdir(job_folder):
-        return ""
-    
     return build_error_url("job_not_found", session_id=session_id, job_name=job_name,)
 
 def request2info(request: gr.Request):
