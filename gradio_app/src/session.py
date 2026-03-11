@@ -73,7 +73,7 @@ class SessionPage:
                 with gr.Row():
                     self.inf_input_example = gr.Markdown(elem_id="inf_input_example")
                     self.inf_input_load = gr.Button(elem_id="inf_input_load")
-                    self.inf_auto_view = gr.Button(elem_id="inf_auto_view")
+                    self.inf_output_view = gr.Button(elem_id="inf_output_view")
                     self.inf_clear_btn = gr.Button(elem_id="inf_clear_btn")
                     self.inf_output_url = gr.Textbox(value="", visible=False)
 
@@ -120,11 +120,11 @@ class SessionPage:
         self.inf_input_load.click(fn=self.on_load_example, inputs=[self.inf_input_example], outputs=[self.inf_sav_txt, self.str_check, self.str_btn, self.str_file, self.job_name_txt], js=js.load_inf_input
         ).then(fn=self.on_tandem_refresh, inputs=[self.param_state, self.job_name_txt], outputs=[self.param_state],
         )
-        self.tf_input_load.click(fn=self.on_load_example, inputs=[self.tf_input_example], outputs=[self.inf_sav_txt, self.str_check, self.str_btn, self.str_file, self.job_name_txt], js=js.load_tf_input
+        self.tf_input_load.click(fn=self.on_load_example, inputs=[self.tf_input_example], outputs=[self.tf_sav_txt, self.str_check, self.str_btn, self.str_file, self.job_name_txt], js=js.load_tf_input
         ).then(fn=self.on_tandem_refresh, inputs=[self.param_state, self.job_name_txt], outputs=[self.param_state],
         )
 
-        self.inf_auto_view.click(fn=self.on_view_example,inputs=[self.inf_input_example],outputs=[self.inf_output_url],js=js.load_inf_input,
+        self.inf_output_view.click(fn=self.on_view_example,inputs=[self.inf_input_example],outputs=[self.inf_output_url],js=js.load_inf_input,
         ).then(fn=passthrough_url,inputs=[self.inf_output_url],outputs=[self.inf_output_url],js=js.direct2url_open,
         )
         self.tf_output_view.click(fn=self.on_view_example,inputs=[self.tf_input_example],outputs=[self.tf_output_url],js=js.load_tf_input,
@@ -165,6 +165,8 @@ class SessionPage:
             return (gr.update(),) * 5
 
         sav_txt_udt = gr.update(value="\n".join(ex["SAV"]))
+        x = "\n".join(ex["SAV"])
+        LOGGER.info(x)
         str_check_value = bool(ex.get("str_check", False))
         str_file_value = ex.get("str_file")
         str_check_udt = gr.update(value=str_check_value)
@@ -234,7 +236,7 @@ class SessionPage:
 
         param_udt = param.copy()
         param_udt["status"] = None
-        job_url = build_job_url(session_id, job_name_full)
+        job_url = ""
         session_url = build_session_url(session_id)
 
         if mode == "Inferencing":
@@ -294,7 +296,7 @@ class SessionPage:
     def refresh_job_dropdown(self, param):
         session_id = param.get("session_id")
         current_job = param.get("job_name")
-        if not session_id or not current_job:
+        if not session_id or not current_job or param.get("status") != "pending":
             return gr.update()
 
         job_names = collections.distinct(
