@@ -16,9 +16,9 @@ from .request import (
     request2session_id,
     session_exists,
 )
-from .settings import EXAMPLES_JSON, HTML_DIR, JOB_DIR, TITLE
-from .update_input import handle_SAV, handle_STR, on_clear_file, on_clear_param, upload_file
-from .web_interface import build_footer, build_header, left_column
+from .settings import EXAMPLES_JSON, FIGURE_1, HTML_DIR, JOB_DIR, TITLE, TAIPEI_TIME_ZONE
+from .update_input import handle_SAV, handle_STR, on_clear_file, upload_file
+from .base import build_footer, build_header, build_last_updated
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
@@ -30,6 +30,23 @@ READ_ONLY_SESSION_ID = "test"
 
 with open(EXAMPLES_JSON, "r", encoding="utf-8") as f:
     EXAMPLES = json.load(f)
+
+
+def left_column():
+    overall_acc = 83.6
+    gjb2_acc = 98.7
+    ryr1_acc = 97.0
+
+    intro = (
+        "A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants. "
+        "It integrates protein dynamics with sequence, chemical, and structural features and uses transfer learning "
+        "to refine models for specific diseases. Trained on ~20,000 variants, it achieves high accuracy in general "
+        f"predictions ({overall_acc:.1f}%) and excels in disease-specific contexts, reaching {gjb2_acc:.1f}% accuracy "
+        f"for GJB2 and {ryr1_acc:.1f}% for RYR1, surpassing tools like Rhapsody and AlphaMissense. TANDEM-DIMPLE "
+        "supports clinicians and geneticists in classifying new variants and improving diagnostic tools for genetic disorders."
+    )
+    gr.Markdown(f"### What is TANDEM-DIMPLE?\n{intro}")
+    gr.Image(value=FIGURE_1, label="", show_label=False, width=None)
 
 
 class SessionPage:
@@ -60,15 +77,12 @@ class SessionPage:
 
     def _build_input_section(self):
         with gr.Group() as self.input_section:
-            self.mode = gr.Radio(["Inferencing", "Transfer Learning"], value="Inferencing",label="Mode of Actions",)
+            self.mode = gr.Radio(["Inferencing", "Training"], value="Inferencing",label="Mode of Actions",)
             with gr.Group(visible=True) as self.inf_section:
-                with gr.Row():
-                    label = "Paste single amino acid variants for one or multiple proteins (≤4)"
-                    info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)"
-                    placeholder = "O14508 S52N\nP29033 Y217D\n..."
-                    self.inf_sav_txt = gr.Textbox(value="",interactive=True,max_lines=5,lines=4,elem_id="inf-sav-txt",label=label,placeholder=placeholder,scale=8,elem_classes="gr-textbox",info=info,)
-                    self.inf_sav_btn = gr.UploadButton(label="Upload SAVs",file_count="single",file_types=[".txt"],elem_classes="gr-button",scale=3,)
-                    self.inf_sav_file = gr.File(visible=False,file_types=[".txt"],height=145,scale=3,)
+                label = "Paste single amino acid variants for one or multiple proteins (≤4)"
+                info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)"
+                placeholder = "O14508 S52N\nP29033 Y217D\n..."
+                self.inf_sav_txt = gr.Textbox(max_lines=5, lines=5,elem_id="inf-sav-txt",label=label,placeholder=placeholder,elem_classes="gr-textbox",info=info,)
 
                 with gr.Row():
                     self.inf_input_example = gr.Markdown(elem_id="inf_input_example")
@@ -77,7 +91,7 @@ class SessionPage:
                     self.inf_clear_btn = gr.Button(elem_id="inf_clear_btn")
                     self.inf_output_url = gr.Textbox(value="", visible=False)
 
-                    filepath = os.path.join(HTML_DIR, "inf_input_output_examples.html")
+                    filepath = os.path.join(HTML_DIR, "inf_examples.html")
                     inf_examples_html = js.build_html_text(filepath)
                     self.inf_examples_html = gr.HTML(inf_examples_html)
 
@@ -85,13 +99,10 @@ class SessionPage:
                 self.model_dropdown = gr.Dropdown(value="TANDEM", label="Select model for prediction", choices=choices, interactive=True, filterable=False,)
 
             with gr.Group(visible=False) as self.tf_section:
-                with gr.Row():
-                    label = "Paste single amino acid variants for one or multiple proteins (≤4) and the corresponding labels"
-                    info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)(space)(Label)"
-                    placeholder = "O14508 S52N 1\nP29033 Y217D 0\n..."
-                    self.tf_sav_txt = gr.Textbox(value="",interactive=True,max_lines=5,lines=4,elem_id="tf-sav-txt",label=label,placeholder=placeholder,scale=8,elem_classes="gr-textbox",info=info,)
-                    self.tf_sav_btn = gr.UploadButton(label="Upload SAVs",file_count="single",file_types=[".txt"],elem_classes="gr-button",scale=3,)
-                    self.tf_sav_file = gr.File(visible=False, file_types=[".txt"], height=145, scale=3,)
+                label = "Paste single amino acid variants for one or multiple proteins (≤4) and the corresponding labels"
+                info = "using the format - (UniProt_ID)(space)(WT_AA|ResidueID|Mutant_AA)(space)(Label)"
+                placeholder = "O14508 S52N 1\nP29033 Y217D 0\n..."
+                self.tf_sav_txt = gr.Textbox(max_lines=5, lines=5,elem_id="tf-sav-txt",label=label,placeholder=placeholder,elem_classes="gr-textbox",info=info,)
 
                 with gr.Row():
                     self.tf_input_example = gr.Markdown(elem_id="tf_input_example") # temporary name (bridge)
@@ -100,7 +111,7 @@ class SessionPage:
                     self.tf_clear_btn = gr.Button(elem_id="tf_clear_btn")
                     self.tf_output_url = gr.Textbox(value="", visible=False)
 
-                    filepath = os.path.join(HTML_DIR, "tf_input_output_examples.html")
+                    filepath = os.path.join(HTML_DIR, "tf_examples.html")
                     tf_examples_html = js.build_html_text(filepath)
                     self.tf_examples_html = gr.HTML(tf_examples_html)
 
@@ -111,7 +122,6 @@ class SessionPage:
                 self.str_file = gr.File(visible=False, scale=3, height=145)
 
             self.job_name_txt = gr.Textbox(value="",label="Job name",placeholder="Enter job name",interactive=True,elem_classes="gr-textbox",)
-            self.email_txt = gr.Textbox(value=None,label="Email (Optional)",placeholder="Enter your email",interactive=True,visible=False,type="email",elem_classes="gr-textbox",)
             self.submit_btn = gr.Button("Submit", elem_classes="gr-button")
 
     def _bind_events(self):
@@ -132,24 +142,14 @@ class SessionPage:
         )
 
         self.mode.change(fn=self.on_mode,inputs=[self.mode, self.param_state],outputs=[self.inf_section, self.tf_section, self.param_state],)
-
-        self.inf_sav_btn.upload(fn=upload_file, inputs=[self.inf_sav_btn], outputs=[self.inf_sav_btn, self.inf_sav_file])
-        self.tf_sav_btn.upload(fn=upload_file, inputs=[self.tf_sav_btn], outputs=[self.tf_sav_btn, self.tf_sav_file])
         self.str_btn.upload(fn=upload_file, inputs=[self.str_btn], outputs=[self.str_btn, self.str_file])
-
-        self.inf_sav_file.clear(fn=on_clear_file, inputs=[], outputs=[self.inf_sav_btn, self.inf_sav_file])
-        self.tf_sav_file.clear(fn=on_clear_file, inputs=[], outputs=[self.tf_sav_btn, self.tf_sav_file])
         self.str_file.clear(fn=on_clear_file, inputs=[], outputs=[self.str_btn, self.str_file])
 
-        self.inf_clear_btn.click(fn=on_clear_param, inputs=[],
-            outputs=[self.inf_sav_txt,self.inf_sav_btn,self.inf_sav_file,self.tf_sav_txt,self.tf_sav_btn,self.tf_sav_file,self.str_txt,self.str_btn,self.str_file,self.job_name_txt,self.email_txt,],
-        )
-        self.tf_clear_btn.click(fn=on_clear_param, inputs=[],
-            outputs=[self.inf_sav_txt,self.inf_sav_btn,self.inf_sav_file,self.tf_sav_txt,self.tf_sav_btn,self.tf_sav_file,self.str_txt,self.str_btn,self.str_file,self.job_name_txt,self.email_txt,],
-        )
+        self.inf_clear_btn.click(fn=self.on_clear_param, inputs=[], outputs=[self.inf_sav_txt,self.tf_sav_txt,self.str_txt,self.str_btn,self.str_file,self.job_name_txt,])
+        self.tf_clear_btn.click(fn=self.on_clear_param, inputs=[], outputs=[self.inf_sav_txt,self.tf_sav_txt,self.str_txt,self.str_btn,self.str_file,self.job_name_txt,])
 
         self.submit_btn.click(fn=self.update_input_param, outputs=[self.param_state, self.job_url],
-            inputs=[self.session_id,self.mode,self.inf_sav_txt,self.inf_sav_file,self.model_dropdown,self.tf_sav_txt,self.tf_sav_file,self.str_txt,self.str_file,self.job_name_txt,self.email_txt,self.param_state,],
+            inputs=[self.session_id,self.mode,self.inf_sav_txt,self.model_dropdown,self.tf_sav_txt,self.str_txt,self.str_file,self.job_name_txt,self.param_state,],
         ).then(fn=self.send_job,inputs=[self.param_state],outputs=[self.param_state],
         ).then(fn=self.refresh_job_dropdown,inputs=[self.param_state],outputs=[self.job_dropdown],
         ).then(fn=None,inputs=[self.job_url],outputs=[],js=js.direct2url_refresh,
@@ -165,8 +165,6 @@ class SessionPage:
             return (gr.update(),) * 5
 
         sav_txt_udt = gr.update(value="\n".join(ex["SAV"]))
-        x = "\n".join(ex["SAV"])
-        LOGGER.info(x)
         str_check_value = bool(ex.get("str_check", False))
         str_file_value = ex.get("str_file")
         str_check_udt = gr.update(value=str_check_value)
@@ -195,35 +193,25 @@ class SessionPage:
 
         return build_job_url(session_id, job_name)
 
+    def on_clear_param(self):
+        job_name_udt = datetime.now(TAIPEI_TIME_ZONE).strftime("%Y-%m-%d_%H-%M-%S")
+        inf_sav_txt_udt = gr.update(value="")
+        tf_sav_txt_udt = gr.update(value="")
+        str_txt_udt = gr.update(value="")
+        str_btn_udt, str_file_udt = on_clear_file()
+        job_name_txt_udt = gr.update(value=job_name_udt)
+        return inf_sav_txt_udt, tf_sav_txt_udt, str_txt_udt, str_btn_udt, str_file_udt, job_name_txt_udt
+
     def on_mode(self, mode, param):
         param_udt = param.copy()
         param_udt["GJB2_test"] = False
-        return (
-            gr.update(visible=(mode == "Inferencing")),
-            gr.update(visible=(mode == "Transfer Learning")),
-            param_udt,
-        )
+        return (gr.update(visible=(mode == "Inferencing")), gr.update(visible=(mode == "Training")), param_udt,)
 
     def on_structure(self, checked: bool):
         return gr.update(visible=checked)
 
-    def update_input_param(
-        self,
-        session_id,
-        mode,
-        inf_sav_txt,
-        inf_sav_file,
-        model_dropdown,
-        tf_sav_txt,
-        tf_sav_file,
-        str_txt,
-        str_file,
-        job_name_txt,
-        email_txt,
-        param,
-        request: gr.Request,
-    ):
-        ip, tz_final = request2info(request)
+    def update_input_param(self, session_id, mode, inf_sav_txt, model_dropdown, tf_sav_txt, str_txt, str_file, job_name_txt, param, request: gr.Request):
+        ip, tz_final, geo_info = request2info(request)
         if session_id == READ_ONLY_SESSION_ID:
             gr.Warning("Session 'test' is read-only. Please start a new session to submit jobs.")
             param_udt = param.copy()
@@ -240,9 +228,9 @@ class SessionPage:
         session_url = build_session_url(session_id)
 
         if mode == "Inferencing":
-            sav_input = inf_sav_file if (inf_sav_file and os.path.isfile(inf_sav_file)) else (inf_sav_txt or "")
-        elif mode == "Transfer Learning":
-            sav_input = tf_sav_file if (tf_sav_file and os.path.isfile(tf_sav_file)) else (tf_sav_txt or "")
+            sav_input = inf_sav_txt or ""
+        elif mode == "Training":
+            sav_input = tf_sav_txt or ""
         else:
             gr.Warning(f"Unknown mode: {mode}")
             return param_udt, job_url
@@ -265,7 +253,8 @@ class SessionPage:
             str_value = handle_STR(str_txt)
             if str_value is None:
                 return param_udt, job_url
-
+            
+        job_url = build_job_url(session_id, job_name_full)
         param_udt["status"] = "pending"
         param_udt["session_id"] = session_id
         param_udt["session_url"] = session_url
@@ -274,9 +263,14 @@ class SessionPage:
         param_udt["label"] = label
         param_udt["model"] = model_dropdown
         param_udt["job_name"] = job_name_full
-        param_udt["email"] = email_txt
+        param_udt["email"] = None
         param_udt["STR"] = str_value
         param_udt["IP"] = ip
+        param_udt["geo_info"] = geo_info
+        param_udt["city"] = geo_info.get("city", "")
+        param_udt["region"] = geo_info.get("region", "")
+        param_udt["country"] = geo_info.get("country", "")
+        param_udt["continent"] = geo_info.get("continent", "")
         param_udt["job_url"] = job_url
         return param_udt, job_url
 
@@ -285,11 +279,7 @@ class SessionPage:
             return _param
         param_udt = _param.copy()
         param_udt.pop("_id", None)
-        collections.update_one(
-            {"session_id": param_udt.get("session_id"), "job_name": param_udt.get("job_name")},
-            {"$set": param_udt},
-            upsert=True,
-        )
+        collections.update_one({"session_id": param_udt.get("session_id"), "job_name": param_udt.get("job_name")}, {"$set": param_udt}, upsert=True,)
         LOGGER.info(f"✅ Submitted with payload: {param_udt}")
         return param_udt
 
@@ -299,10 +289,7 @@ class SessionPage:
         if not session_id or not current_job or param.get("status") != "pending":
             return gr.update()
 
-        job_names = collections.distinct(
-            "job_name",
-            {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},
-        )
+        job_names = collections.distinct("job_name", {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},)
         if current_job not in job_names:
             job_names.append(current_job)
         return gr.update(visible=True, choices=sorted(job_names), value=current_job, interactive=True)
@@ -316,24 +303,13 @@ def on_session_id(session_id):
     if is_read_only:
         session_status_udt = "\n⚠️ Demo session 'test' is read-only. Job submission is disabled."
 
-    existing_jobs = collections.distinct(
-        "job_name",
-        {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},
-    )
-
+    existing_jobs = collections.distinct("job_name", {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},)
     if existing_jobs:
         job_dropdown_udt = gr.update(visible=True, value=None, choices=existing_jobs, interactive=True)
-        pre_trained_models = collections.distinct(
-            "job_name",
-            {"session_id": session_id, "status": "finished", "mode": "Transfer Learning"},
-        )
+        pre_trained_models = collections.distinct("job_name", {"session_id": session_id, "status": "finished", "mode": {"$in": ["Training", "Transfer Learning"]}},)
         model_dropdown_udt = gr.update(choices=base_model_choices + pre_trained_models)
     else:
-        collections.update_one(
-            {"session_id": session_id},
-            {"$set": {"session_id": session_id, "status": "created"}},
-            upsert=True,
-        )
+        collections.update_one({"session_id": session_id}, {"$set": {"session_id": session_id, "status": "created"}}, upsert=True,)
         job_dropdown_udt = gr.update(visible=False, value=None, choices=[])
         model_dropdown_udt = gr.update(choices=base_model_choices)
 
@@ -346,6 +322,7 @@ def session_page():
         build_header(TITLE, current_page="home")
         with gr.Column(elem_id="main-content"):
             ui = SessionPage(JOB_DIR).build()
+            build_last_updated()
         build_footer()
 
         page.load(fn=request2session_id, inputs=None, outputs=[ui.session_id], queue=False,

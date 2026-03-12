@@ -3,9 +3,9 @@ import secrets
 import string
 from datetime import datetime
 
-from .settings import JOB_DIR, TITLE, TAIPEI_TIME_ZONE
-from .web_interface import build_footer, build_header
-from .web_interface import left_column
+from . import js
+from .settings import FIGURE_1, JOB_DIR, TITLE, TAIPEI_TIME_ZONE
+from .base import build_footer, build_header, build_last_updated
 from .request import request2info, build_session_url
 
 from pymongo import MongoClient
@@ -13,6 +13,23 @@ from pymongo import MongoClient
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
+
+
+def left_column():
+    overall_acc = 83.6
+    gjb2_acc = 98.7
+    ryr1_acc = 97.0
+
+    intro = (
+        "A DNN-based foundation model designed for disease-specific pathogenicity prediction of missense variants. "
+        "It integrates protein dynamics with sequence, chemical, and structural features and uses transfer learning "
+        "to refine models for specific diseases. Trained on ~20,000 variants, it achieves high accuracy in general "
+        f"predictions ({overall_acc:.1f}%) and excels in disease-specific contexts, reaching {gjb2_acc:.1f}% accuracy "
+        f"for GJB2 and {ryr1_acc:.1f}% for RYR1, surpassing tools like Rhapsody and AlphaMissense. TANDEM-DIMPLE "
+        "supports clinicians and geneticists in classifying new variants and improving diagnostic tools for genetic disorders."
+    )
+    gr.Markdown(f"### What is TANDEM-DIMPLE?\n{intro}")
+    gr.Image(value=FIGURE_1, label="", show_label=False, width=None)
 
 class HomeTab:
     def __init__(self, folder):
@@ -33,38 +50,36 @@ class HomeTab:
                 with gr.Group():
                     gr.Markdown("### User session", elem_classes="h3")
                     placeholder = "Start a new session or paste an existing session ID"
-                    self.session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder, interactive=True, buttons=["copy"], elem_classes="gr-textbox",)
-                    self.session_btn = gr.Button("▶️ Start / Resume a Session", elem_classes="gr-button")
-                    self.session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start / Resume a Session'")
+                    self.session_id = gr.Textbox(show_label=True, placeholder=placeholder, interactive=True, buttons=["copy"], elem_classes="gr-textbox",)
+                    self.session_btn = gr.Button("▶️ Start or Resume a Session", elem_classes="gr-button")
+                    self.session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start or Resume a Session'")
                     self.session_status = gr.Markdown("")
                 
         self._bind_events()
         return self
 
     def _bind_events(self):
-        direct2sessionurl_js = """
-            (url) => {
-                if (!url) return;
-                window.location.assign(url);
-            }
-        """
-        # Generate/resume session
         self.session_btn.click(fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
-        ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=direct2sessionurl_js
+        ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=js.direct2url_refresh
         )
 
         self.session_id.submit(fn=self.on_home_session, inputs=[self.session_id, self.param_state], outputs=[self.session_id, self.param_state, self.session_url_state],
-        ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=direct2sessionurl_js
+        ).then(fn=None, inputs=[self.session_url_state], outputs=[], js=js.direct2url_refresh
         )
     
-    def save_session_id(self, session_id, ip=None) -> None:
-        collections.update_one(
-            {"session_id": session_id},
+    def save_session_id(self, session_id, ip=None, geo_info=None) -> None:
+        geo_info = geo_info or {}
+        collections.update_one({"session_id": session_id},
             {
                 "$setOnInsert": {
                     "session_id": session_id,
                     "status": "created",
                     "IP": ip,
+                    "geo_info": geo_info,
+                    "city": geo_info.get("city", ""),
+                    "region": geo_info.get("region", ""),
+                    "country": geo_info.get("country", ""),
+                    "continent": geo_info.get("continent", ""),
                     "created_at": datetime.now(TAIPEI_TIME_ZONE).strftime('%H%M%S%d%m%Y'),
                 }
             },
@@ -78,12 +93,17 @@ class HomeTab:
     def on_home_session(self, _session_id, param, request: gr.Request):
         old_session_ids = collections.distinct("session_id")
         _session_id = _session_id.strip()
-        ip, _ = request2info(request)
+        ip, _, geo_info = request2info(request)
         param_udt = param.copy()
         param_udt['status'] = None
         param_udt["session_id"] = None
         param_udt["session_url"] = ""
         param_udt["IP"] = ip
+        param_udt["geo_info"] = geo_info
+        param_udt["city"] = geo_info.get("city", "")
+        param_udt["region"] = geo_info.get("region", "")
+        param_udt["country"] = geo_info.get("country", "")
+        param_udt["continent"] = geo_info.get("continent", "")
         session_url_udt = ""
 
         # Case 1: Empty input → Generate a new unique session ID
@@ -93,7 +113,7 @@ class HomeTab:
                 new_id = self.generate_token(length=10) 
                 # if new_id overlap with old one --> redo
                 if new_id not in old_session_ids:
-                    self.save_session_id(new_id, ip=ip)
+                    self.save_session_id(new_id, ip=ip, geo_info=geo_info)
                     session_id_udt = gr.update(value=new_id, interactive=False)
                     param_udt["session_id"] = new_id
                     session_url_udt = build_session_url(new_id)
@@ -120,6 +140,7 @@ def home_page():
         build_header(TITLE, current_page="home")
         with gr.Column(elem_id="main-content"):
             HomeTab(JOB_DIR).build()
+            build_last_updated()
         build_footer()
 
     return page

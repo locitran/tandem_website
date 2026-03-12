@@ -2,6 +2,7 @@ import os
 import shutil
 import json
 import html
+import time
 import pandas as pd 
 import gradio as gr
 from pymongo import MongoClient
@@ -9,14 +10,141 @@ from pymongo import MongoClient
 from . import js
 from .settings import JOB_DIR, TITLE
 from .request import build_session_url, build_job_url, passthrough_url, job_exists, request2session_and_job
-from .job import update_submit_status, update_process_status, update_timer
-from .web_interface import build_footer, build_header, tandem_output
-from .web_interface import build_qa, build_licence, build_tutorial
+from .base import build_footer, build_header
 from .logger import LOGGER
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
+
+
+def on_sav_set_select(selection, folds):
+    return folds[selection]
+
+
+def tandem_output():
+    with gr.Group(visible=False) as output_section:
+        gr.Markdown("### Results", elem_classes="h3")
+
+        with gr.Group(visible=False) as inf_output_secion:
+            with gr.Row():
+                with gr.Column():
+                    pred_table = gr.Dataframe(
+                        interactive=False,
+                        max_height=340,
+                        show_label=False,
+                        column_widths=[60, 150, "auto", "auto"],
+                    )
+                with gr.Column():
+                    image_viewer = gr.Image(height=340, show_label=False, buttons=["fullscreen"])
+
+        with gr.Group(visible=False) as tf_output_secion:
+            with gr.Row():
+                with gr.Column():
+                    folds_state = gr.State(value={})
+                    fold_dropdown = gr.Dropdown(
+                        label="View SAV set",
+                        choices=[],
+                        interactive=True,
+                        elem_classes="gr-button",
+                        elem_id="sav_dropdown",
+                        show_label=False,
+                    )
+                    sav_textbox = gr.Textbox(
+                        lines=1,
+                        interactive=False,
+                        show_label=False,
+                        elem_classes="gr-textbox",
+                        elem_id="sav_textbox",
+                        autoscroll=False,
+                    )
+                    fold_dropdown.change(fn=on_sav_set_select, inputs=[fold_dropdown, folds_state], outputs=sav_textbox)
+                    test_evaluation = gr.Dataframe(interactive=False, max_height=250, show_label=False)
+                loss_image = gr.Image(label="", show_label=False, height=364, buttons=["fullscreen"])
+            model_save = gr.Markdown(elem_classes="gr-p")
+
+        result_zip = gr.File(label="Download Results")
+        focus_refresh_btn = gr.Button(elem_id="focus_refresh_btn", visible=False)
+        gr.HTML(
+            """
+        <script>
+        (() => {
+            if (window.__tandem_focus_refresh_bound__) return;
+            window.__tandem_focus_refresh_bound__ = true;
+
+            let lastTrigger = 0;
+            const throttleMs = 500;
+            const triggerRefresh = () => {
+            const now = Date.now();
+            if (now - lastTrigger < throttleMs) return;
+            lastTrigger = now;
+
+            const btn = document.getElementById("focus_refresh_btn");
+            if (btn) btn.click();
+            };
+
+            document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) triggerRefresh();
+            });
+            window.addEventListener("focus", triggerRefresh);
+        })();
+        </script>
+        """
+        )
+
+    return (
+        output_section,
+        inf_output_secion,
+        tf_output_secion,
+        pred_table,
+        image_viewer,
+        folds_state,
+        fold_dropdown,
+        sav_textbox,
+        loss_image,
+        test_evaluation,
+        model_save,
+        result_zip,
+        focus_refresh_btn,
+    )
+
+
+def update_process_status(param, search_db: bool):
+    process_status_udt = gr.update()
+    param_udt = param.copy() if param else param
+
+    if not param:
+        return process_status_udt, param_udt
+
+    session_id = param.get("session_id")
+    job_name = param.get("job_name")
+    if not session_id or not job_name:
+        return process_status_udt, param_udt
+
+    if search_db:
+        updated = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 0})
+        if not updated:
+            return process_status_udt, param_udt
+        param_udt = updated
+
+    job_status = param_udt.get("status")
+    job_start = param_udt.get("job_start")
+
+    if job_status == "pending":
+        process_status_udt = gr.update(value="⏳ Waiting in queue...", visible=True)
+    elif job_status == "processing" and job_start:
+        elapsed = int(time.time() - job_start)
+        emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
+        icon = emoji_frames[elapsed % len(emoji_frames)]
+        msg = f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed."
+        process_status_udt = gr.update(value=msg, visible=True)
+    elif job_status == "finished":
+        job_end = param_udt.get("job_end")
+        if job_start and job_end:
+            runtime = int(job_end - job_start)
+            process_status_udt = gr.update(value=f"✅ Finished in {runtime}s", visible=True)
+
+    return process_status_udt, param_udt
 
 class ResultPage:
     def __init__(self, folder):
@@ -54,7 +182,7 @@ class ResultPage:
 
         self.session_box.click(None, js=js.session_box) # Click = copy to clipboard
 
-        self.focus_refresh_btn.click(fn=update_submit_status, inputs=[self.param_state], outputs=[self.submit_status],
+        self.focus_refresh_btn.click(fn=self.update_submit_status, inputs=[self.param_state], outputs=[self.submit_status],
         ).then(fn=update_process_status, inputs=[self.param_state, gr.State(True)], outputs=[self.process_status, self.param_state],
         ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
             outputs=[self.output_section,self.result_zip,self.inf_output_secion,self.pred_table,self.image_viewer,self.tf_output_secion,self.folds_state,self.fold_dropdown,self.sav_textbox,self.loss_image,self.test_evaluation,self.model_save,self.job_folder,],
@@ -225,7 +353,7 @@ class ResultPage:
             first_image = os.path.join(tandem_shap, list_images[0]) if list_images else None
             image_viewer_udt = gr.update(value=first_image, visible=bool(list_images))
         # ----------- Transfer Learning mode -----------
-        elif _mode == "Transfer Learning":
+        elif _mode in {"Training", "Transfer Learning"}:
             tf_output_secion_udt = gr.update(visible=True)
 
             folds_path = os.path.join(job_folder, "cross_validation_SAVs.json")
@@ -333,7 +461,7 @@ def results_page():
         ).then(fn=ui.render_job_html, inputs=[ui.param_state], outputs=[ui.job_dropdown]
         ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state],# queue=False,
             outputs=[ui.output_section, ui.result_zip, ui.inf_output_secion, ui.pred_table, ui.image_viewer, ui.tf_output_secion, ui.folds_state, ui.fold_dropdown, ui.sav_textbox, ui.loss_image, ui.test_evaluation, ui.model_save, ui.job_folder,],
-        ).then(fn=update_timer, inputs=[ui.param_state], outputs=[ui.timer], queue=False,
+        ).then(fn=ui.update_timer, inputs=[ui.param_state], outputs=[ui.timer], queue=False,
         )
 
     return page

@@ -1,7 +1,7 @@
 import gradio as gr
 
 from .settings import TITLE, MOUNT_POINT
-from .web_interface import build_footer, build_header
+from .base import build_footer, build_header
 
 
 def _error_content(request: gr.Request):

@@ -40,7 +40,7 @@
   "GJB2 demo": {
     "session_id": "test",
     "job_name": "GJB2_demo",
-    "mode": "Transfer Learning",
+    "mode": "Training",
     "refresh": true,
     "str_check": true,
     "str_file": "/gradio_app/examples/8QA2_opm.pdb",
@@ -51,7 +51,7 @@
   "PKD1/2 demo": {
     "session_id": "test",
     "job_name": "PKD_demo",
-    "mode": "Transfer Learning",
+    "mode": "Training",
     "refresh": true,
     "str_check": true,
     "str_file": "/gradio_app/examples/PKD1-PKD2-opm-complex.pdb",

@@ -124,7 +124,7 @@ def handle_SAV(mode: str, SAV_input: str) -> np.ndarray | None:
             gr.Warning(f"{line}: WT and mutant are identical")
             return data
 
-        if mode == "Transfer Learning":
+        if mode == "Training":
             if int(m.group("label")) not in (0, 1):
                 gr.Warning(f"{line}: label must be 0 or 1")
                 return data
@@ -215,23 +215,13 @@ def handle_STR(_str_txt: str):
 
 def on_clear_param():
     job_name_udt = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
-    inf_sav_txt_udt     = gr.update(value='')
-    (inf_sav_btn_udt, inf_sav_file_udt) = on_clear_file()
+    inf_sav_txt_udt = gr.update(value="")
+    tf_sav_txt_udt = gr.update(value="")
+    str_txt_udt = gr.update(value="")
+    str_btn_udt, str_file_udt = on_clear_file()
+    job_name_txt_udt = gr.update(value=job_name_udt)
 
-    tf_sav_txt_udt      = gr.update(value='')
-    (tf_sav_btn_udt, tf_sav_file_udt) = on_clear_file()
-
-    str_txt_udt         = gr.update(value='')
-    (str_btn_udt, str_file_udt) = on_clear_file()
-    job_name_txt_udt    = gr.update(value=job_name_udt)
-    email_txt_udt       = gr.update('')
-
-    return (
-        inf_sav_txt_udt, inf_sav_btn_udt, inf_sav_file_udt,
-        tf_sav_txt_udt, tf_sav_btn_udt, tf_sav_file_udt,
-        str_txt_udt, str_btn_udt, str_file_udt,
-        job_name_txt_udt, email_txt_udt,
-    )
+    return (inf_sav_txt_udt, tf_sav_txt_udt, str_txt_udt, str_btn_udt, str_file_udt, job_name_txt_udt,)
 
 if __name__ == "__main__":
     pass

@@ -20,6 +20,15 @@ def _get_job_time(data: dict):
         or ""
     )
 
+
+def _get_geo_field(data: dict, key: str):
+    if data.get(key):
+        return data.get(key, "")
+    geo_info = data.get("geo_info", {})
+    if isinstance(geo_info, dict):
+        return geo_info.get(key, "")
+    return ""
+
 def on_save_job(json_text, df_jobs):
     df_jobs_udt = gr.update()
 
@@ -43,7 +52,7 @@ def on_save_job(json_text, df_jobs):
 
         # ---- Update dataframe (append or update) ----
         df_jobs_copy = df_jobs.copy()
-        headers = ["time", "IP", "session_id", "job_name", "mode", "status"]
+        headers = ["time", "IP", "city", "region", "country", "continent", "session_id", "job_name", "mode", "status"]
 
         saved_idx = df_jobs_copy[
             (df_jobs_copy["session_id"] == session_id) &
@@ -55,11 +64,17 @@ def on_save_job(json_text, df_jobs):
             df_jobs_copy.loc[saved_idx, "time"] = _get_job_time(data)
             for h in ["IP", "session_id", "job_name", "mode", "status"]:
                 df_jobs_copy.loc[saved_idx, h] = data.get(h, "")
+            for h in ["city", "region", "country", "continent"]:
+                df_jobs_copy.loc[saved_idx, h] = _get_geo_field(data, h)
         else:
             # New job → append
             new_row = {
                 "time": _get_job_time(data),
                 "IP": data.get("IP", ""),
+                "city": _get_geo_field(data, "city"),
+                "region": _get_geo_field(data, "region"),
+                "country": _get_geo_field(data, "country"),
+                "continent": _get_geo_field(data, "continent"),
                 "session_id": session_id,
                 "job_name": job_name,
                 "mode": data.get("mode", ""),
@@ -131,6 +146,10 @@ def on_refresh(status, keyword):
         [
             _get_job_time(j),
             j.get("IP", ""),
+            _get_geo_field(j, "city"),
+            _get_geo_field(j, "region"),
+            _get_geo_field(j, "country"),
+            _get_geo_field(j, "continent"),
             j.get("session_id", ""),
             j.get("job_name", ""),
             j.get("mode", ""),
@@ -225,7 +244,7 @@ def manager_tab():
             new_job_btn = gr.Button("➕ New Job")
 
         # ---- Job Table ----
-        headers = ["time", "IP", "session_id","job_name","mode","status",]
+        headers = ["time", "IP", "city", "region", "country", "continent", "session_id","job_name","mode","status",]
         df_jobs = gr.Dataframe(headers=headers, interactive=False, wrap=True)
         # ---- State: selected job ----
         selected_session = gr.State(None)
