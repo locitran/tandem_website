@@ -396,7 +396,7 @@ h3 {
   width: 100%;
   margin: 0 auto;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.35;
   color: var(--body-text-color-subdued, var(--body-text-color));
   opacity: 0.8;
@@ -560,87 +560,150 @@ h3 {
   }
 }
 
-/* ---------- Tutorial container ---------- */
+/* ---------- Tutorial ---------- */
 .tutorial-container {
-  max-width: 960px;
-  margin: auto;
-  padding: 12px;
-  font-family: Arial, Helvetica, sans-serif;
-  line-height: 1.9;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 20px 32px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: var(--body-text-color);
+  line-height: 1.75;
+  font-size: 18px;
+}
+
+.tutorial-container ul li b {
+  font-size: calc(1em + 2px);
 }
 
 .tutorial-container h2 {
   text-align: center;
-  margin-bottom: 24px;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  line-height: 1.15;
+  font-weight: 800;
+  margin: 0 0 14px;
+  letter-spacing: -0.02em;
 }
 
 .tutorial-container h3 {
-  margin-top: 24px;
+  font-size: clamp(1.6rem, 2.2vw, 2.2rem);
+  line-height: 1.2;
+  font-weight: 750;
+  margin: 40px 0 14px;
+  letter-spacing: -0.015em;
 }
 
-.tutorial-container pre {
-  background: #f6f8fa;
-  padding: 10px;
-  border-radius: 6px;
-  font-size: 0.9em;
-  overflow-x: auto;
+.tutorial-container h4 {
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
+  line-height: 1.25;
+  font-weight: 700;
+  margin: 28px 0 10px;
+}
+
+.tutorial-container p {
+  margin: 0 0 18px;
+  font-size: 1.18rem;
+  line-height: 1.8;
+}
+
+.tutorial-container ul {
+  margin: 0 0 24px 1.4rem;
+  padding: 0;
+}
+
+.tutorial-container li {
+  margin-bottom: 12px;
+  padding-left: 0.2rem;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.tutorial-container b,
+.tutorial-container strong {
+  font-weight: 800;
+}
+
+.tutorial-container em {
+  font-style: italic;
 }
 
 .tutorial-container .note {
-  font-size: 0.9em;
-  color: #555;
+  font-size: 0.98rem;
+  color: var(--body-text-color-subdued);
 }
 
-/* ---------- Shared figure base ---------- */
-.s2-figure,
-.s3-figure,
-.s4-figure, .s1-figure {
-  text-align: center;
-  margin: 16px 0;
+/* ---------- Figures ---------- */
+.tutorial-container figure {
+  margin: 22px auto 34px;
 }
 
-.s2-figure img,
-.s3-figure img,
-.s4-figure img, .s1-figure img {
-  height: auto;
-  display: inline-block;
+.tutorial-container .theme-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* ---------- Section-specific figures ---------- */
-.s1-figure img {
-  max-width: 80%;
+.tutorial-container .theme-image .img-dark {
+  display: none;
 }
 
-.s2-figure img,
-.s3-figure img,
-.s4-figure img {
-  max-width: 50%;
+.tutorial-container .theme-image .img-light {
+  display: block;
 }
 
-.s1-figure {
-  text-align: center;
-  margin: 1.5rem auto;
+.dark .tutorial-container .theme-image .img-light {
+  display: none;
 }
 
-.s1-figure img {
-  display: inline-block;
-  max-width: 900px;
+.dark .tutorial-container .theme-image .img-dark {
+  display: block;
+}
+
+.tutorial-container figure img {
+  display: block;
   width: 100%;
   height: auto;
+  margin: 0 auto;
+  border-radius: 10px;
 }
 
-.theme-image .img-dark {
-  display: none;
+.tutorial-container .s1-figure img {
+  max-width: 1120px;
 }
 
-.theme-image .img-light {
-  display: block;
+.tutorial-container .s2-figure img,
+.tutorial-container .s3-figure img,
+.tutorial-container .s4-figure img,
+.tutorial-container .s5-figure img,
+.tutorial-container .s6-figure img,
+.tutorial-container .s7-figure img {
+  max-width: 920px;
 }
 
-.dark .theme-image .img-light {
-  display: none;
+.tutorial-container .s8-figure img,
+.tutorial-container .s9-figure img,
+.tutorial-container .s10-figure img {
+  max-width: 1120px;
 }
 
-.dark .theme-image .img-dark {
-  display: block;
+/* Legacy JPG figure kept for the status panel section */
+.tutorial-container .status-figure img {
+  max-width: 860px;
+}
+
+@media (max-width: 900px) {
+  .tutorial-container {
+    padding: 16px 14px 28px;
+    font-size: 16px;
+  }
+  .tutorial-container p,
+.tutorial-container li {
+    font-size: 1rem;
+    line-height: 1.72;
+  }
+  .tutorial-container figure {
+    margin: 18px auto 26px;
+  }
+  .tutorial-container figure img {
+    border-radius: 8px;
+  }
 }
