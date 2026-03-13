@@ -7,6 +7,9 @@
   color: var(--body-text-color);
   padding: 5px 10px;
   z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 
   a {
     color: var(--link-text-color);
@@ -45,4 +48,15 @@
 .footer-title {
   font-weight: 600;
   margin-bottom: 4px;
+}
+
+.footer-note {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--body-text-color-subdued, var(--body-text-color));
+  opacity: 0.8;
 }

@@ -22,7 +22,12 @@ def build_header(title, current_page="home"):
 
 def build_footer():
     filepath = os.path.join(HTML_DIR, "footer.html")
-    html = js.build_html_text(filepath)
+    html = js.build_html_text(
+        filepath,
+        licence_url=f"/{MOUNT_POINT}/licence/",
+        yang_lab_url="https://dyn.life.nthu.edu.tw/",
+        ibsb_url="https://cls.site.nthu.edu.tw/index.php?Lang=en",
+    )
     return gr.HTML(html, elem_classes="footer")
 
 def build_qa():

@@ -50,7 +50,7 @@ class HomeTab:
                 with gr.Group():
                     gr.Markdown("### User session", elem_classes="h3")
                     placeholder = "Start a new session or paste an existing session ID"
-                    self.session_id = gr.Textbox(value=" ", show_label=True, placeholder=placeholder, interactive=True, buttons=["copy"], elem_classes="gr-textbox",)
+                    self.session_id = gr.Textbox(label=" ", show_label=True, placeholder=placeholder, interactive=True, buttons=["copy"], elem_classes="gr-textbox",)
                     self.session_btn = gr.Button("▶️ Start or Resume a Session", elem_classes="gr-button")
                     self.session_mkd = gr.Markdown("##### Please find the input/output examples by clicking this 'Start or Resume a Session'")
                     self.session_status = gr.Markdown("")

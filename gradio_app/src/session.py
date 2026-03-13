@@ -96,7 +96,7 @@ class SessionPage:
                     self.inf_examples_html = gr.HTML(inf_examples_html)
 
                 choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
-                self.model_dropdown = gr.Dropdown(value="TANDEM", label="Select model for prediction", choices=choices, interactive=True, filterable=False,)
+                self.model_dropdown = gr.Dropdown(value="TANDEM", label="Select a model for prediction", choices=choices, interactive=True, filterable=False,)
 
             with gr.Group(visible=False) as self.tf_section:
                 label = "Paste single amino acid variants for one or multiple proteins (≤4) and the corresponding labels"
