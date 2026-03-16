@@ -1,225 +1,268 @@
 <div class="tutorial-container">
 
     <h2>Tutorials</h2>
-    <p>The TANDEM-DIMPLE web server provides two core functions:</p>
 
-    <ul>
-        <li>
-            <b>Inferencing</b>: Predicting the pathogenicity of single amino acid variants (SAVs) using pre-trained models.
-        </li>
-        <li>
-            <b>Training</b>: Training gene/disease-specific models using user-curated variant datasets to improve prediction accuracy from gene/disease-general models.
-        </li>
-    </ul>
+    <nav class="tutorial-toc" aria-label="Tutorial contents">
+        <h3>Contents</h3>
+        <ul>
+            <li><a href="#intro" onclick="document.getElementById('intro').open = true;">Overview</a></li>
+            <li><a href="#step1" onclick="document.getElementById('step1').open = true;">Step 1: Create or resume a session</a></li>
+            <li><a href="#step2" onclick="document.getElementById('step2').open = true;">Step 2: Configure and submit a job</a></li>
+            <li><a href="#step3" onclick="document.getElementById('step3').open = true;">Step 3: Monitor job status</a></li>
+            <li><a href="#step4" onclick="document.getElementById('step4').open = true;">Step 4: Analyze results</a></li>
+            <li><a href="#pkd-demo" onclick="document.getElementById('pkd-demo').open = true;">PKD1/2 demonstration</a></li>
+            <li><a href="#tutorial-references">References</a></li>
+        </ul>
+    </nav>
 
-    <figure class="s1-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_1_light.svg"
-            alt="Overview of the TANDEM-DIMPLE web interface">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_1_dark.svg"
-            alt="Overview of the TANDEM-DIMPLE web interface">
-    </figure>
+    <details class="tutorial-item" id="intro" open>
+        <summary>Overview</summary>
+        <div class="tutorial-panel">
+            <p>The TANDEM-DIMPLE web server provides two core functions:</p>
 
+            <ul>
+                <li>
+                    <b>Inferencing</b>: Predicting the pathogenicity of single amino acid variants (SAVs) using pre-trained models.
+                </li>
+                <li>
+                    <b>Training</b>: Training gene/disease-specific models using user-curated variant datasets to improve prediction accuracy from gene/disease-general models.
+                </li>
+            </ul>
 
-    <p>Below is a step-by-step guide to using the webserver.</p>
+            <figure class="s1-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_1_light.svg"
+                    alt="Overview of the TANDEM-DIMPLE web interface">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_1_dark.svg"
+                    alt="Overview of the TANDEM-DIMPLE web interface">
+            </figure>
 
-    <h3>Step 1: Create a new session or resume a previous one by entering a session ID. </h3>
+            <p>Below is a step-by-step guide to using the webserver.</p>
+        </div>
+    </details>
 
-    <p>The session ID functions like a user ID. Under one session ID, you can manage several jobs.</p>
-    <figure class="s2-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_2_light.svg"
-            alt="Session creation and session resume interface">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_2_dark.svg"
-            alt="Session creation and session resume interface">
-    </figure>
+    <details class="tutorial-item" id="step1">
+        <summary>Step 1: Create a new session or resume a previous one by entering a session ID.</summary>
+        <div class="tutorial-panel">
+            <p>The session ID functions like a user ID. Under one session ID, you can manage several jobs.</p>
+            <figure class="s2-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_2_light.svg"
+                    alt="Session creation and session resume interface">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_2_dark.svg"
+                    alt="Session creation and session resume interface">
+            </figure>
+        </div>
+    </details>
 
-    <h3>Step 2: Configure and Submit a Job</h3>
+    <details class="tutorial-item" id="step2">
+        <summary>Step 2: Configure and Submit a Job</summary>
+        <div class="tutorial-panel">
+            <p>
+                Select a mode: “Inferencing” or “Training” (as defined above).
+                Enter SAV queries in the text field, separated by new lines.
+                For “Training” mode, each SAV must include a label, 1 for pathogenic and 0 for benign.
+            </p>
+            <figure class="s3-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_3_light.svg"
+                    alt="Mode selection and SAV input interface">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_3_dark.svg"
+                    alt="Mode selection and SAV input interface">
+            </figure>
 
-    <p>
-        Select a mode: “Inferencing” or “Training” (as defined above). 
-        Enter SAV queries in the text field, separated by new lines. 
-        For “Training” mode, each SAV must include a label, 1 for pathogenic and 0 for benign.
-    </p>
-    <figure class="s3-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_3_light.svg"
-            alt="Mode selection and SAV input interface">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_3_dark.svg"
-            alt="Mode selection and SAV input interface">
-    </figure>
-    
-    <p>Select an example and click “Load Input” to fill the fields. Click “View output” to open the results. Click “Clear all” to reset the inputs.</p>
-    <figure class="s4-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_4_light.svg"
-            alt="Example selector and input helper controls">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_4_dark.svg"
-            alt="Example selector and input helper controls">
-    </figure>
-    
-    <p>
-        Select a model from the dropdown menu (Inferencing only). 
-        Available models include TANDEM, TANDEM-DIMPLE for GJB2, and TANDEM-DIMPLE for RYR1. 
-        Models trained in previous jobs will also appear in the list.
-    </p>
-    <figure class="s5-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_5_light.svg"
-            alt="Model selection dropdown for inferencing jobs">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_5_dark.svg"
-            alt="Model selection dropdown for inferencing jobs">
-    </figure>
+            <p>Select an example and click “Load Input” to fill the fields. Click “View output” to open the results. Click “Clear all” to reset the inputs.</p>
+            <figure class="s4-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_4_light.svg"
+                    alt="Example selector and input helper controls">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_4_dark.svg"
+                    alt="Example selector and input helper controls">
+            </figure>
 
-    <p>
-        Provide a PDB or AlphaFold2 ID or upload a coordinate file for SAV feature generation (optional). 
-        If no structure is provided, the system automatically selects a representative structure 
-        from UniProt based on sequence coverage, resolution, and deposition date.
-    </p>
-    <figure class="s6-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_6_light.svg"
-            alt="Optional structure input field and upload interface">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_6_dark.svg"
-            alt="Optional structure input field and upload interface">
-    </figure>
+            <p>
+                Select a model from the dropdown menu (Inferencing only).
+                Available models include TANDEM, TANDEM-DIMPLE for GJB2, and TANDEM-DIMPLE for RYR1.
+                Models trained in previous jobs will also appear in the list.
+            </p>
+            <figure class="s5-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_5_light.svg"
+                    alt="Model selection dropdown for inferencing jobs">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_5_dark.svg"
+                    alt="Model selection dropdown for inferencing jobs">
+            </figure>
 
-    <p>Assign a job name and submit your job!</p>
-    <figure class="s7-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_7_light.svg"
-            alt="Job naming and submission controls">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_7_dark.svg"
-            alt="Job naming and submission controls">
-    </figure>
+            <p>
+                Provide a PDB or AlphaFold2 ID or upload a coordinate file for SAV feature generation (optional).
+                If no structure is provided, the system automatically selects a representative structure
+                from UniProt based on sequence coverage, resolution, and deposition date.
+            </p>
+            <figure class="s6-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_6_light.svg"
+                    alt="Optional structure input field and upload interface">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_6_dark.svg"
+                    alt="Optional structure input field and upload interface">
+            </figure>
 
-    <h3>Step 3: Monitor Job Status (This section is under revision)</h3>
+            <p>Assign a job name and submit your job!</p>
+            <figure class="s7-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_7_light.svg"
+                    alt="Job naming and submission controls">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_7_dark.svg"
+                    alt="Job naming and submission controls">
+            </figure>
+        </div>
+    </details>
 
-    <figure class="status-figure">
-        <img src="./gradio_api/file=assets/images/tutorial_figure_3.jpg"
-             alt="Job monitoring panel showing submission status, processing status, and new job control">
-    </figure>
+    <details class="tutorial-item" id="step3">
+        <summary>Step 3: Monitor Job Status (This section is under revision)</summary>
+        <div class="tutorial-panel">
+            <figure class="status-figure">
+                <img src="./gradio_api/file=assets/images/tutorial_figure_3.jpg"
+                     alt="Job monitoring panel showing submission status, processing status, and new job control">
+            </figure>
 
-    <ul>
-        <li><b>Submission Status</b>: Displays all submitted parameters or reports errors.</li>
-        <li><b>Processing Status</b>: Shows real-time execution progress.</li>
-        <li>Click <b>New Job</b> to start a new job.</li>
-    </ul>
+            <ul>
+                <li><b>Submission Status</b>: Displays all submitted parameters or reports errors.</li>
+                <li><b>Processing Status</b>: Shows real-time execution progress.</li>
+                <li>Click <b>New Job</b> to start a new job.</li>
+            </ul>
+        </div>
+    </details>
 
-    <h3>Step 4: Analyze Results</h3>
+    <details class="tutorial-item" id="step4">
+        <summary>Step 4: Analyze Results</summary>
+        <div class="tutorial-panel">
+            <h4>Inferencing Results</h4>
+            <p>Model inference results produced by the gene-general TANDEM predictor.
+                Pathogenicity probabilities and binary classifications are summarized for queried
+                SAVs spanning multiple proteins (UniProt IDs O00189, O00194, O00204, and O00206).
+                Variants are classified as pathogenic if the predicted probability is ≥ 0.5 and benign if the probability is &lt; 0.5.
+                Interactive SHAP visualization enables inspection of feature contributions for individual variants (example shown for O00189-R271H).
+            </p>
+            <figure class="s8-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_8_light.svg"
+                    alt="Inferencing results page with prediction table and SHAP analysis">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_8_dark.svg"
+                    alt="Inferencing results page with prediction table and SHAP analysis">
+            </figure>
 
-    <h4>Inferencing Results</h4>
-    <p>Model inference results produced by the gene-general TANDEM predictor. 
-        Pathogenicity probabilities and binary classifications are summarized for queried 
-        SAVs spanning multiple proteins (UniProt IDs O00189, O00194, O00204, and O00206). 
-        Variants are classified as pathogenic if the predicted probability is ≥ 0.5 and benign if the probability is < 0.5. 
-        Interactive SHAP visualization enables inspection of feature contributions for individual variants (example shown for O00189-R271H).
-    </p>
-    <figure class="s8-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_8_light.svg"
-            alt="Inferencing results page with prediction table and SHAP analysis">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_8_dark.svg"
-            alt="Inferencing results page with prediction table and SHAP analysis">
-    </figure>
+            <h4>Training Results</h4>
+            <p>Training interface showing SAV dataset partitions,
+                comparative performance metrics before and after the fine-tuning (left),
+                and training/validation loss curves across epochs (right), allowing users to evaluate the model convergence and potential overfitting.
+            </p>
 
-    <h4>Training Results</h4>
-    <p>Training interface showing SAV dataset partitions, 
-        comparative performance metrics before and after the fine-tuning (left), 
-        and training/validation loss curves across epochs (right), allowing users to evaluate the model convergence and potential overfitting.
-    </p>
-    
-    <figure class="s9-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_9_light.svg"
-            alt="Training results page with SAV sets, evaluation metrics, and loss curves">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_9_dark.svg"
-            alt="Training results page with SAV sets, evaluation metrics, and loss curves">
-    </figure>
+            <figure class="s9-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_9_light.svg"
+                    alt="Training results page with SAV sets, evaluation metrics, and loss curves">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_9_dark.svg"
+                    alt="Training results page with SAV sets, evaluation metrics, and loss curves">
+            </figure>
+        </div>
+    </details>
 
-    <h3>Demonstration of transfer learning utility of TANDEM-DIMPLE website</h3>
+    <details class="tutorial-item" id="pkd-demo">
+        <summary>The Performance of TANDEM-DIMPLE Model of PKD1/2 on PKD Pathogenicity Predictions</summary>
+        <div class="tutorial-panel">
+            <p>
+                To demonstrate the training utility of the website, we use clinically validated SAVs from
+                the proteins Polycystin-1 and Polycystin-2 (PC1 and PC2, also known as PKD1 and PKD2),
+                which are etiologically linked to autosomal dominant polycystic kidney disease (ADPKD).
+                In the human body, these two proteins form a heteromeric receptor-channel complex essential
+                for mechanosensitive calcium signaling in renal primary cilia. The dataset comprises 153
+                pathogenic and 101 benign SAVs collected from a previous study
+                (<a href="#tutorial-ref-1">Yu et al., 2022</a>)
+                and from two public databases (ClinVar and LOVD). Here, we use these SAVs to fine-tune the gene-general TANDEM
+                model and examine the improvement before and after training with the TANDEM-DIMPLE web server.
+            </p>
 
-    <p>
-        To demonstrate the training utility of the website, we use clinically validated SAVs from
-        the proteins Polycystin-1 and Polycystin-2 (PC1 and PC2, also known as PKD1 and PKD2),
-        which are etiologically linked to autosomal dominant polycystic kidney disease (ADPKD).
-        In the human body, these two proteins form a heteromeric receptor-channel complex essential
-        for mechanosensitive calcium signaling in renal primary cilia. The dataset comprises 153
-        pathogenic and 101 benign SAVs collected from a previous study
-        (<a href="https://doi.org/10.1038/s41525-022-00309-w" target="_blank" rel="noopener noreferrer">Yu et al., 2022</a>)
-        and from two public databases (ClinVar and LOVD). Here, we use these SAVs to fine-tune the gene-general TANDEM
-        model and examine the improvement before and after training with the TANDEM-DIMPLE web server.
-    </p>
+            <p><b>Input:</b></p>
+            <ul>
+                <li>
+                    <b>SAVs:</b>
+                    <a href="./gradio_api/file=examples/PKD1-PKD2-SAVs-with-labels.txt" download>
+                        PKD1-PKD2-SAVs-with-labels.txt
+                    </a>
+                </li>
+                <li>
+                    <b>PKD1/2 structure:</b>
+                    <a href="./gradio_api/file=examples/PKD1-PKD2-opm-complex.pdb" download>
+                        PKD1-PKD2-opm-complex.pdb
+                    </a>
+                </li>
+            </ul>
 
-    <p><b>Input:</b></p>
-    <ul>
-        <li>
-            <b>SAVs:</b>
-            <a href="./gradio_api/file=examples/PKD1-PKD2-SAVs-with-labels.txt" download>
-                PKD1-PKD2-SAVs-with-labels.txt
-            </a>
-        </li>
-        <li>
-            <b>PKD1/2 structure:</b>
-            <a href="./gradio_api/file=examples/PKD1-PKD2-opm-complex.pdb" download>
-                PKD1-PKD2-opm-complex.pdb
-            </a>
-        </li>
-    </ul>
+            <p>
+                <b>Output:</b>
+                <a href="./results/?session_id=test&job_name=PKD_demo">
+                    https://dyn.life.nthu.edu.tw/TANDEM/results/?session_id=test&job_name=PKD_demo
+                </a>
+            </p>
 
-    <p><b>Output:</b></p>
-    <ul>
-        <li>
-            <a href="./results/?session_id=test&job_name=PKD_demo">
-                https://dyn.life.nthu.edu.tw/TANDEM/results/?session_id=test&job_name=PKD_demo
-            </a>
-        </li>
-    </ul>
+            <p>
+                Following the same protocol applied to GJB2 and RYR1, variants were partitioned into
+                training sets (30%), validation sets (60%; training stopped when validation loss no longer
+                declined), and a hold-out test set (10%), generating 15 PKD1/2-specific TANDEM-DIMPLE
+                models. As a default, our TANDEM website shows both gene-general and gene-specific
+                results for a gene-specific test set, where the gene-general model may still be
+                recommended if it outperforms a gene-specific model.
+            </p>
 
-    <p>
-        Following the same protocol applied to GJB2 and RYR1, variants were partitioned into
-        training sets (30%), validation sets (60%; training stopped when validation loss no longer
-        declined), and a hold-out test set (10%), generating 15 PKD1/2-specific TANDEM-DIMPLE
-        models. As a default, our TANDEM website shows both gene-general and gene-specific 
-        results for a gene-specific test set, where the gene-general model may still be 
-        recommended if it outperforms a gene-specific model.
-    </p>
+            <figure class="s10-figure theme-image">
+                <img
+                    class="img-light"
+                    src="./gradio_api/file=assets/images/tutorial_figure_10_light.svg"
+                    alt="PKD1 and PKD2 training demonstration results and analysis">
+                <img
+                    class="img-dark"
+                    src="./gradio_api/file=assets/images/tutorial_figure_10_dark.svg"
+                    alt="PKD1 and PKD2 training demonstration results and analysis">
+            </figure>
+        </div>
+    </details>
 
-    <figure class="s10-figure theme-image">
-        <img
-            class="img-light"
-            src="./gradio_api/file=assets/images/tutorial_figure_10_light.svg"
-            alt="PKD1 and PKD2 training demonstration results and analysis">
-        <img
-            class="img-dark"
-            src="./gradio_api/file=assets/images/tutorial_figure_10_dark.svg"
-            alt="PKD1 and PKD2 training demonstration results and analysis">
-    </figure>
+    <section class="tutorial-reference-section" id="tutorial-references">
+        <h3>References</h3>
+        <ol class="tutorial-references">
+            <li id="tutorial-ref-1">
+                C. C. Yu, A. F. Lee, S. Kohl, et al., “PKD2 founder mutation is the most common mutation of polycystic kidney disease in Taiwan,”
+                <i>NPJ Genom Med</i> 7, no. 1 (2022): 40.
+                <a href="https://doi.org/10.1038/s41525-022-00309-w" target="_blank" rel="noopener noreferrer">https://doi.org/10.1038/s41525-022-00309-w</a>
+            </li>
+        </ol>
+    </section>
+
 </div>

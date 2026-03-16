@@ -2,137 +2,328 @@
 
     <h2>TANDEM-DIMPLE Webserver - Q&amp;A</h2>
 
-    <div class="q1-item">
-        <div class="q1-text">
-            <h3>Q1: What is a single amino acid variant (SAV)?</h3>
+    <nav class="qa-toc" aria-label="Q and A contents">
+        <h3>Contents</h3>
+        <ul>
+            <li><a href="#q1" onclick="document.getElementById('q1').open = true;">Q1. What is a single amino acid variant (SAV)?</a></li>
+            <li><a href="#q2" onclick="document.getElementById('q2').open = true;">Q2. What is the prediction of protein pathogenicity?</a></li>
+            <li><a href="#q3" onclick="document.getElementById('q3').open = true;">Q3. What is transfer learning?</a></li>
+            <li><a href="#q4" onclick="document.getElementById('q4').open = true;">Q4. What is SHAP analysis?</a></li>
+            <li><a href="#q5" onclick="document.getElementById('q5').open = true;">Q5. What features are used in TANDEM-DIMPLE?</a></li>
+            <li><a href="#references">References</a></li>
+        </ul>
+    </nav>
+
+    <details class="qa-item" id="q1" open>
+        <summary>Q1: What is a single amino acid variant (SAV)?</summary>
+        <div class="qa-panel">
+            <div class="q1-item">
+                <div class="q1-text">
+                    <p>
+                        A SAV refers to a change in a protein's primary sequence caused by
+                        a nucleotide substitution that alters the encoded amino acid.
+                        TANDEM website records each SAV using the UniProt ID followed by
+                        the amino acid substitution (e.g., P29033 Y217D).
+                        To identify the correct UniProt ID for a gene or protein, please
+                        refer to <a href="https://www.uniprot.org/" target="_blank" rel="noopener noreferrer">UniProt</a>.
+                    </p>
+                </div>
+
+                <figure class="q1-figure">
+                    <img src="./gradio_api/file=assets/images/SAV_definition.png"
+                        alt="SAV definition">
+                    <figcaption>
+                        Figure 1. SAV definition.
+                    </figcaption>
+                </figure>
+            </div>
+        </div>
+    </details>
+
+    <details class="qa-item" id="q2">
+        <summary>Q2: What is the prediction of protein pathogenicity?</summary>
+        <div class="qa-panel">
             <p>
-                A SAV refers to a change in a protein's primary sequence caused by 
-                a nucleotide substitution that alters the encoded amino acid. 
-                TANDEM website records each SAV using the UniProt ID followed by 
-                the amino acid substitution (e.g., P29033 Y217D). 
-                To identify the correct UniProt ID for a gene or protein, please 
-                refer to <a href="https://www.uniprot.org/" target="_blank">UniProt</a>.
+                The protein pathogenicity prediction gives the probability of a specific SAV is
+                disease-causing (pathogenic) or harmless (benign) by considering its effects
+                on protein sequence, structure, dynamics, and biological function.
+            </p>
+            <p>
+                These probabilities can be generated using either <b>TANDEM</b> (gene/disease-general model)
+                or <b>TANDEM-DIMPLE</b> (gene/disease-specific models), trained on corresponding general
+                or curated gene/disease-specific datasets.
             </p>
         </div>
+    </details>
 
-        <figure class="q1-figure">
-            <img src="./gradio_api/file=assets/images/SAV_definition.png"
-                alt="SAV definition">
-            <figcaption>
-                Figure 1. SAV definition.
-            </figcaption>
-        </figure>
-    </div>
+    <details class="qa-item" id="q3">
+        <summary>Q3: What is transfer learning?</summary>
+        <div class="qa-panel">
+            <p>
+                Transfer learning is a machine-learning strategy in which a model pretrained on a large,
+                general dataset is further fine-tuned using a smaller, gene/disease-specific dataset.
+                This approach leverages previously learned knowledge to improve prediction accuracy for
+                specific genes or diseases, especially when labeled data are limited.
+            </p>
+        </div>
+    </details>
 
-    <div class="q2-item">
-        <h3>Q2: What is the prediction of protein pathogenicity?</h3>
-        <p>
-            The protein pathogenicity prediction gives the probability of a specific SAV is 
-            disease-causing (pathogenic) or harmless (benign) by considering its effects 
-            on protein sequence, structure, dynamics, and biological function.
-        </p>
-        <p>
-            These probabilities can be generated using either <b>TANDEM</b> (gene/disease-general model) 
-            or <b>TANDEM-DIMPLE</b> (gene/disease-specific models), trained on corresponding general 
-            or curated gene/disease-specific datasets.
-        </p>
-    </div>
+    <details class="qa-item" id="q4">
+        <summary>Q4: What is SHAP analysis?</summary>
+        <div class="qa-panel">
+            <p>
+                A SHapley Additive exPlanations (SHAP) value measures a feature's contribution to a model's
+                prediction. It is derived from the Shapley value in cooperative game theory, which defines how
+                to distribute a game's payout among players such that each player's payout is proportional to that
+                player's contribution <a href="#ref-1">[1]</a>. In our setting, the game's payout is the model output for a given input
+                SAV; the players are protein features associated with that SAV; and each player's payout
+                corresponds to the contribution of that feature to the predicted output.
+            </p>
+            <p>
+                Formally, consider a predictive model <i>f</i>: ℝ<sup>n</sup> → ℝ evaluated at a specific input
+                <b>x</b> = (x<sub>1</sub>, ..., x<sub>n</sub>), and let <i>N</i> = {1, ..., n} index the
+                x<sub>i</sub> features. The marginal contribution of feature <i>i</i> to <i>S</i>, a subset of
+                other features which does not contain <i>i</i> (<i>S</i> ⊆ <i>N</i> \ {<i>i</i>}), is defined as
+            </p>
+            <div class="qa-equation-block" aria-label="Equation 1">
+                <div class="qa-equation-text">
+                    &Delta;(<i>i</i>, <i>S</i>) = <i>f</i>(x<sub>S&cup;{i}</sub>) - <i>f</i>(x<sub>S</sub>)
+                </div>
+                <span class="qa-equation-number">Equation 1</span>
+            </div>
+            <p>
+                , where x<sub>S</sub> denotes the input that keeps the features in <i>S</i> the same as in
+                <b>x</b> while all other non-<i>S</i> features are replaced by reference values or dataset averages.
+                <i>S</i> ∪ {<i>i</i>} means the set including the features in <i>S</i> and feature <i>i</i>.
+                Intuitively, Δ(<i>i</i>, <i>S</i>) quantifies how much feature <i>i</i> adds to the model's
+                output when it is "switched on" (present) in the context of the other features in <i>S</i>.
+                The Shapley value for feature <i>i</i> is then defined as the weighted average of the marginal
+                contributions of feature <i>i</i> over all possible subsets <i>S</i> ⊆ <i>N</i> \ {<i>i</i>},
+                given by
+            </p>
+            <div class="qa-equation-block" aria-label="Equation 2">
+                <div class="qa-equation-text">
+                    &varphi;<sub>i</sub> = &Sigma;<sub>S&sube;N\{i}</sub> &alpha;<sub>S</sub>&Delta;(<i>i</i>, <i>S</i>)
+                </div>
+                <span class="qa-equation-number">Equation 2</span>
+            </div>
+            <p>
+                , where α<sub>S</sub> = |S|!(n−|S|−1)! / n! denotes the weight of each term, corresponding to the
+                fraction of permutations of <i>N</i> in which <i>i</i> appears after exactly the elements of
+                <i>S</i>. To explain individual predictions, SHAP then formulates the explanation model
+                <i>g</i> as a linear function of binary variables, with coefficients equal to the Shapley values
+                (or SHAP values)
+            </p>
+            <div class="qa-equation-block" aria-label="Equation 3">
+                <div class="qa-equation-text">
+                    <i>g</i>(x') = &varphi;<sub>0</sub> + &Sigma;<sup>n</sup><sub>i=1</sub> &varphi;<sub>i</sub>x'<sub>i</sub>
+                </div>
+                <span class="qa-equation-number">Equation 3</span>
+            </div>
+            <p>
+                , where x' ∈ {0,1}<sup>n</sup> is a binary indicator vector denoting which features are present and
+                ϕ<sub>0</sub> = <i>f</i>(x<sub>∅</sub>) is the model's output with no features present. For specific
+                input <b>x</b>, where all features are present (i.e., x'<sub>i</sub> = 1 ∀i), the explanation model
+                equals the true model output
+            </p>
+            <div class="qa-equation-block" aria-label="Equation 4">
+                <div class="qa-equation-text">
+                    <i>f</i>(x) = &varphi;<sub>0</sub> + &Sigma;<sup>n</sup><sub>i=1</sub> &varphi;<sub>i</sub>
+                </div>
+                <span class="qa-equation-number">Equation 4</span>
+            </div>
+            <p>
+                This additive decomposition of <i>f</i>(x) is the essence of a SHAP explanation: each
+                ϕ<sub>i</sub> quantifies how much feature <i>i</i> pushed the prediction up or down relative to the
+                baseline ϕ<sub>0</sub>. To examine global feature contribution across <i>M</i> data points, we
+                average the absolute SHAP values per feature
+            </p>
+            <div class="qa-equation-block" aria-label="Equation 5">
+                <div class="qa-equation-text">
+                    I<sub>i</sub> = 1/M &Sigma;<sup>M</sup><sub>j=1</sub> | &varphi;<sub>i</sub><sup>(j)</sup> |
+                </div>
+                <span class="qa-equation-number">Equation 5</span>
+            </div>
+            <p>
+                , where ϕ<sub>i</sub><sup>(j)</sup> is the SHAP value of feature <i>i</i> for input <i>j</i>. A larger
+                I<sub>i</sub> indicates that feature <i>i</i> contributes more strongly to the model's predictions.
+                In our work, we use the KernelSHAP method as implemented in the <i>shap</i> python package
+                (version 0.41.0) to approximate these SHAP values.
+            </p>
+        </div>
+    </details>
 
-    <div class="q3-item">
-        <h3>Q3: What is transfer learning?</h3>
-        <p>
-            Transfer learning is a machine-learning strategy in which a model pretrained on a large, 
-            general dataset is further fine-tuned using a smaller, gene/disease-specific dataset. 
-            This approach leverages previously learned knowledge to improve prediction accuracy for 
-            specific genes or diseases, especially when labeled data are limited.
-        </p>
-    </div>
+    <details class="qa-item" id="q5">
+        <summary>Q5: What are the TANDEM feature set?</summary>
+        <div class="qa-panel">
+            <table class="q5-table">
+                <thead>
+                    <tr>
+                        <th colspan="2">Protein feature</th>
+                        <th>Descriptions</th>
+                        <th>Reference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="q5-group" rowspan="5">Dynamics</td>
+                        <td class="q5-feature"><i>&lambda;</i><sub>1</sub>, <i>&lambda;</i><sub>2</sub></td>
+                        <td>The 1<sup>st</sup> and 2<sup>nd</sup> GNM eigenvalues</td>
+                        <td><a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">||<i>V</i><sub>1,i</sub>||, ||<i>V</i><sub>2,i</sub>||, rank(||<i>V</i><sub>1,i</sub>||), rank(||<i>V</i><sub>2,i</sub>||)</td>
+                        <td>Magnitude and rank of residue <i>i</i> in the 1<sup>st</sup> and 2<sup>nd</sup> GNM slowest modes</td>
+                        <td><a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">rank(||<i>c</i><sub>i,i</sub>||)</td>
+                        <td>Rank of GNM fluctuation variance of residue <i>i</i></td>
+                        <td><a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">Effectiveness*</td>
+                        <td>Ability of a residue to transmit mechanical signals</td>
+                        <td><a href="#ref-4">[4]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">Stiffness*</td>
+                        <td>Residue’s resistance to uniaxial tension.</td>
+                        <td><a href="#ref-5">[5]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-group" rowspan="9">Structure</td>
+                        <td class="q5-feature">L<sub>side</sub>, &Delta;L<sub>side</sub></td>
+                        <td>Side chain length and mutation-induced change</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">%Loop, %Helix, %Sheet</td>
+                        <td>Percentage of secondary structure</td>
+                        <td><a href="#ref-6">[6]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">Disorderliness</td>
+                        <td>Predicted intrinsic disorder</td>
+                        <td><a href="#ref-7">[7]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">SA</td>
+                        <td>Relative solvent accessibility</td>
+                        <td><a href="#ref-8">[8]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">R<sub>G</sub></td>
+                        <td>Radius of gyration</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">D<sub>com</sub></td>
+                        <td>Distance to center of mass</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">AG<sub>1</sub>, AG<sub>3</sub>, AG<sub>5</sub></td>
+                        <td>Average residue contacts excluding neighbors within &plusmn;1, &plusmn;2, and &plusmn;3 positions</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">N<sub>SS-bond</sub></td>
+                        <td>Number of disulfide bonds</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">N<sub>H-bond</sub>, &Delta;N<sub>H-bond</sub></td>
+                        <td>Number of hydrogen bonds and mutation-induced change</td>
+                        <td><a href="#ref-9">[9]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-group" rowspan="4">Sequence &amp; Chemical</td>
+                        <td class="q5-feature">&Delta;Polarity</td>
+                        <td>Mutation-induced change in polarity</td>
+                        <td><a href="#ref-10">[10]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">&Delta;Charge</td>
+                        <td>Mutation-induced change in charge residue</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">ConSurf and ACNR</td>
+                        <td>Relative conservation score and average ConSurf scores of neighboring residues</td>
+                        <td><a href="#ref-11">[11]</a>, <a href="#ref-12">[12]</a></td>
+                    </tr>
+                    <tr>
+                        <td class="q5-feature">wtPSIC*, &Delta;PSIC*</td>
+                        <td>Position-specific evolutionary conservation and mutation-induced change</td>
+                        <td><a href="#ref-13">[13]</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </details>
 
-    <div class="q4-item">
-        <h3>Q4: What is SHAP analysis?</h3>
-        <p>
-            SHAP (SHapley Additive exPlanations) analysis is a model-interpretability method 
-            that explains how each input feature contributes to a model's prediction. 
-            In the context of protein pathogenicity prediction, SHAP analysis shows 
-            which features (e.g., sequence & chemical, structure, or dynamical features) 
-            push a variant's prediction toward pathogenic or benign. 
-            This helps users understand why a specific SAV receives a particular predicted probability, 
-            improving transparency and biological interpretability of the model's decisions.
-        </p>
-    </div>
-
-    <div class="q5-item">
-        <h3>Q5: What features are used in TANDEM-DIMPLE?</h3>
-        <p>
-            TANDEM-DIMPLE (v1.1) uses 33 features grouped into 3 categories:
-        </p>
-        <style>
-            .q5-table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 8px;
-                font-size: 14px;
-            }}
-            .q5-table th, .q5-table td {{
-                border: 1px solid #d4d4d8;
-                padding: 8px 10px;
-                vertical-align: top;
-            }}
-            .q5-table th {{
-                background: #f4f4f5;
-                text-align: left;
-                font-weight: 700;
-            }}
-            .q5-cat {{
-                width: 52px;
-                writing-mode: vertical-rl;
-                transform: rotate(180deg);
-                text-align: center !important;
-                font-weight: 700;
-                letter-spacing: 0.4px;
-                background: #fafafa;
-            }}
-            .q5-feats {{
-                line-height: 1.45;
-            }}
-        </style>
-        <table class="q5-table">
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    <th>Feature Count</th>
-                    <th>Features</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="q5-cat">Dynamics</td>
-                    <td>9</td>
-                    <td class="q5-feats">
-                        GNM_co_rank_full, ANM_stiffness_chain, GNM_V2_full, GNM_V1_full,
-                        GNM_Eigval1_full, GNM_rankV2_full, GNM_Eigval2_full,
-                        GNM_rankV1_full, ANM_effectiveness_chain
-                    </td>
-                </tr>
-                <tr>
-                    <td class="q5-cat">Structure</td>
-                    <td>15</td>
-                    <td class="q5-feats">
-                        SASA, loop_percent, AG1, Dcom, AG5, AG3, SSbond, Hbond,
-                        DELTA_Hbond, sheet_percent, helix_percent, Rg, IDRs, Lside,
-                        deltaLside
-                    </td>
-                </tr>
-                <tr>
-                    <td class="q5-cat">Sequence</td>
-                    <td>9</td>
-                    <td class="q5-feats">
-                        entropy, wtPSIC, deltaPSIC, consurf, ACNR, BLOSUM, ranked_MI,
-                        deltaPolarity, deltaCharge
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <section class="qa-references" id="references">
+        <h3>References</h3>
+        <ol>
+            <li id="ref-1">
+                S. M. Lundberg, and S.-I. Lee, “A unified approach to interpreting model predictions,”
+                <i>Advances in neural information processing systems</i> 30, no. (2017):
+            </li>
+            <li id="ref-2">
+                H. Li, S. Sakuraba, A. Chandrasekaran, and L. W. Yang, “Molecular binding sites are located near the interface of intrinsic dynamics domains (IDDs),”
+                <i>Journal of Chemical Information and Modeling</i> 54, no. 8 (2014): 2275.
+                <a href="https://doi.org/10.1021/ci500261z" target="_blank" rel="noopener noreferrer">https://doi.org/10.1021/ci500261z</a>
+            </li>
+            <li id="ref-3">
+                H. Li, Y. Y. Chang, J. Y. Lee, I. Bahar, and L. W. Yang, “DynOmics: dynamics of structural proteome and beyond,”
+                <i>Nucleic acids research</i> 45, no. W1 (2017): W374.
+                <a href="https://doi.org/10.1093/nar/gkx385" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/nar/gkx385</a>
+            </li>
+            <li id="ref-4">
+                C. Atilgan, and A. R. Atilgan, “Perturbation-response scanning reveals ligand entry-exit mechanisms of ferric binding protein,”
+                <i>PLoS computational biology</i> 5, no. 10 (2009): e1000544.
+            </li>
+            <li id="ref-5">
+                E. Eyal, and I. Bahar, “Toward a molecular understanding of the anisotropic response of proteins to external forces: insights from elastic network models,”
+                <i>Biophysical journal</i> 94, no. 9 (2008): 3424.
+            </li>
+            <li id="ref-6">
+                W. Kabsch, and C. Sander, “Dictionary of protein secondary structure: pattern recognition of hydrogen-bonded and geometrical features,”
+                <i>Biopolymers</i> 22, no. 12 (1983): 2577.
+                <a href="https://doi.org/10.1002/bip.360221211" target="_blank" rel="noopener noreferrer">https://doi.org/10.1002/bip.360221211</a>
+            </li>
+            <li id="ref-7">
+                Z. R. Yang, R. Thomson, P. McNeil, and R. M. Esnouf, “RONN: the bio-basis function neural network technique applied to the detection of natively disordered regions in proteins,”
+                <i>Bioinformatics</i> 21, no. 16 (2005): 3369.
+                <a href="https://doi.org/10.1093/bioinformatics/bti534" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/bti534</a>
+            </li>
+            <li id="ref-8">
+                S. J. Hubbard, and J. M. Thornton, NACCESS. 2.1.1 ed.; Department of Biochemistry and Molecular Biology, University College London.: <b>1993</b>.
+            </li>
+            <li id="ref-9">
+                I. K. McDonald, and J. M. Thornton, “Satisfying hydrogen bonding potential in proteins,”
+                <i>Journal of molecular biology</i> 238, no. 5 (1994): 777.
+            </li>
+            <li id="ref-10">
+                R. Grantham, “Amino acid difference formula to help explain protein evolution,”
+                <i>Science</i> 185, no. 4154 (1974): 862.
+                <a href="https://doi.org/10.1126/science.185.4154.862" target="_blank" rel="noopener noreferrer">https://doi.org/10.1126/science.185.4154.862</a>
+            </li>
+            <li id="ref-11">
+                A. Ben Chorin, G. Masrati, A. Kessel, et al., “ConSurf‐DB: An accessible repository for the evolutionary conservation patterns of the majority of PDB proteins,”
+                <i>Protein Science</i> 29, no. 1 (2020): 258.
+            </li>
+            <li id="ref-12">
+                O. Goldenberg, E. Erez, G. Nimrod, and N. Ben-Tal, “The ConSurf-DB: pre-calculated evolutionary conservation profiles of protein structures,”
+                <i>Nucleic acids research</i> 37, no. suppl_1 (2009): D323.
+            </li>
+            <li id="ref-13">
+                S. R. Sunyaev, F. Eisenhaber, I. V. Rodchenkov, B. Eisenhaber, V. G. Tumanyan, and E. N. Kuznetsov, “PSIC: profile extraction from sequence alignments with position-specific counts of independent observations,”
+                <i>Protein Engineering</i> 12, no. 5 (1999): 387.
+                <a href="https://doi.org/10.1093/protein/12.5.387" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/protein/12.5.387</a>
+            </li>
+        </ol>
+    </section>
 
 </div>
