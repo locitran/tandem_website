@@ -1,31 +1,63 @@
 <div class="qa-container">
 
-    <h2>TANDEM-DIMPLE Webserver - Q&amp;A</h2>
+    <h2>Questions and Answers</h2>
 
     <nav class="qa-toc" aria-label="Q and A contents">
         <h3>Contents</h3>
-        <ul>
-            <li><a href="#q1" onclick="document.getElementById('q1').open = true;">Q1. What is a single amino acid variant (SAV)?</a></li>
-            <li><a href="#q2" onclick="document.getElementById('q2').open = true;">Q2. What is the prediction of protein pathogenicity?</a></li>
-            <li><a href="#q3" onclick="document.getElementById('q3').open = true;">Q3. What is transfer learning?</a></li>
-            <li><a href="#q4" onclick="document.getElementById('q4').open = true;">Q4. What is SHAP analysis?</a></li>
-            <li><a href="#q5" onclick="document.getElementById('q5').open = true;">Q5. What features are used in TANDEM-DIMPLE?</a></li>
+        <ol>
+            <li><a href="#q1" onclick="document.getElementById('q1').open = true;">What is TANDEM-DIMPLE?</a></li>
+            <li><a href="#q2" onclick="document.getElementById('q2').open = true;">What is a single amino acid variant (SAV)?</a></li>
+            <li><a href="#q3" onclick="document.getElementById('q3').open = true;">How long does the job take to run? (This section is under revision)</a></li>
+            <li><a href="#q4" onclick="document.getElementById('q4').open = true;">What is an Error job status? (This section is under revision)</a></li>
+            <li><a href="#q5" onclick="document.getElementById('q5').open = true;">What do the results look like?</a></li>
+            <li><a href="#q6" onclick="document.getElementById('q6').open = true;">How TANDEM-DIMPLE model was trained? (This section is under revision)</a></li>
+            <li><a href="#q7" onclick="document.getElementById('q7').open = true;">What is SHAP analysis?</a></li>
+            <li><a href="#q8" onclick="document.getElementById('q8').open = true;">What features are we using in the TANDEM-DIMPLE models?</a></li>
+            <li><a href="#q9" onclick="document.getElementById('q9').open = true;">How do I reference TANDEM-DIMPLE? (This section is under revision)</a></li>
             <li><a href="#references">References</a></li>
-        </ul>
+        </ol>
     </nav>
 
     <details class="qa-item" id="q1" open>
-        <summary>Q1: What is a single amino acid variant (SAV)?</summary>
+        <summary>What is TANDEM-DIMPLE?</summary>
+        <div class="qa-panel">
+            <p>
+                TANDEM-DIMPLE is a pathogenicity prediction webserver developed by the Yang Lab at National Tsinghua University, Taiwan.
+            </p>
+            <p>
+                Inspired by AlphaMissense, leveraging structural embeddings (<a href="#ref-15">Cheng et al., 2023</a>), and Rhapsody web server, 
+                incorporating protein dynamics (<a href="#ref-14">Ponzoni et al., 2020</a>), we integrated structural and dynamics-based features 
+                alongside sequence conservation signals to train our gene/disease-general DNN classifier for SAV pathogenicity 
+                prediction. This gene-general model (hereafter “TANDEM”) is sufficiently deep to achieve high predictive accuracy, 
+                outperforming AlphaMissense by 6% on a test set of more than 2,000 SAVs from the Rhapsody dataset, yet lightweight 
+                enough (&lt;5,000 parameters) to support gene/disease-specific transfer learning (the resulting model is termed “TANDEM-DIMPLE).
+                Specially, after transfer learning on clinically labeled SAVs for two genes, <i>RYR1</i> and <i>GJB2</i>, 
+                whose variants cause malignant hyperthermia and hearing loss, respectively, our model achieves 98.7% accuracy 
+                for <i>GJB2</i> and 97.0% for <i>RYR1</i>, surpassing AlphaMissense's 80.0% and 66.7%, respectively.
+                With these efforts, our web server now serves SAV pathogenicity inferencing for general disease as well as 
+                for specific genes/diseases using user-uploaded clinically labeled SAVs, where the gene-specific models 
+                are automatically trained in our website for private or public uses.
+            </p>
+            <figure class="q1-figure">
+                <img src="./gradio_api/file=assets/images/qa_figure_1.svg"
+                    alt="Overview figure for TANDEM-DIMPLE">
+            </figure>
+        </div>
+    </details>
+
+    <details class="qa-item" id="q2" open>
+        <summary>What is a single amino acid variant (SAV)?</summary>
         <div class="qa-panel">
             <div class="q1-item">
                 <div class="q1-text">
                     <p>
-                        A SAV refers to a change in a protein's primary sequence caused by
-                        a nucleotide substitution that alters the encoded amino acid.
-                        TANDEM website records each SAV using the UniProt ID followed by
-                        the amino acid substitution (e.g., P29033 Y217D).
-                        To identify the correct UniProt ID for a gene or protein, please
-                        refer to <a href="https://www.uniprot.org/" target="_blank" rel="noopener noreferrer">UniProt</a>.
+                        A SAV refers to a change in a protein’s primary sequence caused by a nucleotide substitution that 
+                        alters the encoded amino acid. Although most SAVs are harmless to the host, some are so deleterious 
+                        that they cause embryonic or early lethality, making such variants absent from the human genome, 
+                        while a small subset impairs protein function just enough to cause diseases without preventing 
+                        survival to reproductive age. TANDEM website records each SAV using the UniProt ID followed by 
+                        the amino acid substitution (e.g., P29033 Y217D). To identify the correct UniProt ID for a gene 
+                        or protein, please refer to <a href="https://www.uniprot.org/" target="_blank" rel="noopener noreferrer">UniProt</a>.
                     </p>
                 </div>
 
@@ -40,36 +72,57 @@
         </div>
     </details>
 
-    <details class="qa-item" id="q2">
-        <summary>Q2: What is the prediction of protein pathogenicity?</summary>
-        <div class="qa-panel">
-            <p>
-                The protein pathogenicity prediction gives the probability of a specific SAV is
-                disease-causing (pathogenic) or harmless (benign) by considering its effects
-                on protein sequence, structure, dynamics, and biological function.
-            </p>
-            <p>
-                These probabilities can be generated using either <b>TANDEM</b> (gene/disease-general model)
-                or <b>TANDEM-DIMPLE</b> (gene/disease-specific models), trained on corresponding general
-                or curated gene/disease-specific datasets.
-            </p>
-        </div>
-    </details>
 
     <details class="qa-item" id="q3">
-        <summary>Q3: What is transfer learning?</summary>
+        <summary>How long does the job take to run? (This section is under revision)</summary>
         <div class="qa-panel">
             <p>
-                Transfer learning is a machine-learning strategy in which a model pretrained on a large,
-                general dataset is further fine-tuned using a smaller, gene/disease-specific dataset.
-                This approach leverages previously learned knowledge to improve prediction accuracy for
-                specific genes or diseases, especially when labeled data are limited.
+                ...
             </p>
         </div>
     </details>
 
     <details class="qa-item" id="q4">
-        <summary>Q4: What is SHAP analysis?</summary>
+        <summary>What is an Error job status? (This section is under revision)</summary>
+        <div class="qa-panel">
+            <p>
+                ...
+            </p>
+        </div>
+    </details>
+
+    <details class="qa-item" id="q5">
+        <summary>What do the results look like?</summary>
+        <div class="qa-panel">
+            <p>
+                You can view example output pages for both inferencing and training directly from the demo jobs below.
+            </p>
+            <p>
+                <b>Inferencing example output:</b>
+                <a href="../results/?session_id=test&job_name=Inference_test_1p">
+                    Open inferencing example result
+                </a>
+            </p>
+            <p>
+                <b>Training example output:</b>
+                <a href="../results/?session_id=test&job_name=PKD_demo">
+                    Open training example result
+                </a>
+            </p>
+        </div>
+    </details>
+
+    <details class="qa-item" id="q6">
+        <summary>How TANDEM-DIMPLE model was trained? (This section is under revision)</summary>
+        <div class="qa-panel">
+            <p>
+                ...
+            </p>
+        </div>
+    </details>
+
+    <details class="qa-item" id="q7">
+        <summary>What is SHAP analysis?</summary>
         <div class="qa-panel">
             <p>
                 A SHapley Additive exPlanations (SHAP) value measures a feature's contribution to a model's
@@ -153,8 +206,8 @@
         </div>
     </details>
 
-    <details class="qa-item" id="q5">
-        <summary>Q5: What are the TANDEM feature set?</summary>
+    <details class="qa-item" id="q8">
+        <summary>What features are we using in the TANDEM-DIMPLE models?</summary>
         <div class="qa-panel">
             <table class="q5-table">
                 <thead>
@@ -263,6 +316,14 @@
         </div>
     </details>
 
+    
+    <details class="qa-item" id="q9">
+        <summary>How do I reference TANDEM-DIMPLE? (This section is under revision)</summary>
+        <div class="qa-panel">
+            <p>Our work is under submission.</p>
+        </div>
+    </details>
+
     <section class="qa-references" id="references">
         <h3>References</h3>
         <ol>
@@ -322,6 +383,16 @@
                 S. R. Sunyaev, F. Eisenhaber, I. V. Rodchenkov, B. Eisenhaber, V. G. Tumanyan, and E. N. Kuznetsov, “PSIC: profile extraction from sequence alignments with position-specific counts of independent observations,”
                 <i>Protein Engineering</i> 12, no. 5 (1999): 387.
                 <a href="https://doi.org/10.1093/protein/12.5.387" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/protein/12.5.387</a>
+            </li>
+            <li id="ref-14">
+                L. Ponzoni, D. A. Penaherrera, Z. N. Oltvai, and I. Bahar, “Rhapsody: predicting the pathogenicity of human missense variants,”
+                <i>Bioinformatics</i> 36, no. 10 (2020): 3084-3092.
+                <a href="https://doi.org/10.1093/bioinformatics/btaa127" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/btaa127</a>
+            </li>
+            <li id="ref-15">
+                J. Cheng, G. Novati, J. Pan, C. Bycroft, A. Zemgulyte, T. Applebaum, A. Pritzel, L. H. Wong, M. Zielinski, T. Sargeant, R. G. Schneider, A. W. Senior, J. Jumper, D. Hassabis, P. Kohli, and Z. Avsec, “Accurate proteome-wide missense variant effect prediction with AlphaMissense,”
+                <i>Science</i> 381, no. 6664 (2023): eadg7492.
+                <a href="https://doi.org/10.1126/science.adg7492" target="_blank" rel="noopener noreferrer">https://doi.org/10.1126/science.adg7492</a>
             </li>
         </ol>
     </section>
