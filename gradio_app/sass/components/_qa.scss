@@ -123,6 +123,61 @@
   padding: 22px 24px 24px;
 }
 
+.qa-container .qa-inline-trigger {
+  cursor: pointer;
+  display: inline;
+  border: 0;
+  background: transparent;
+  font-size: 0.98em;
+  font-weight: 600;
+  line-height: inherit;
+  user-select: none;
+  color: #0d6efd;
+  text-decoration: underline;
+  text-underline-offset: 0.08em;
+}
+
+.qa-container .qa-inline-trigger:hover,
+.qa-container .qa-inline-trigger:focus-visible {
+  color: #0a58ca;
+  outline: none;
+}
+
+.qa-container .qa-inline-note-body {
+  display: none;
+  margin: -6px 0 12px;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(108, 117, 125, 0.55);
+  border-left: 4px solid rgba(13, 202, 240, 0.95);
+  border-radius: 0.5rem;
+  background: rgba(13, 202, 240, 0.18);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--body-text-color);
+}
+
+.qa-container .qa-inline-note-body.is-open {
+  display: block;
+}
+
+.dark .qa-container .qa-inline-trigger {
+  color: #66b3ff;
+}
+
+.dark .qa-container .qa-inline-trigger:hover,
+.dark .qa-container .qa-inline-trigger:focus-visible {
+  color: #8ec5ff;
+}
+
+.dark .qa-container .qa-inline-note-body {
+  background: rgba(13, 202, 240, 0.12);
+  border-color: rgba(173, 181, 189, 0.42);
+  border-left-color: rgba(13, 202, 240, 0.9);
+}
+
 .qa-container .q1-item {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.9fr);
@@ -155,7 +210,7 @@
   margin-top: 10px;
   font-size: 0.98rem;
   line-height: 1.5;
-  color: var(--body-text-color-subdued);
+  color: color-mix(in srgb, var(--body-text-color) 82%, var(--background-fill-primary) 18%);
 }
 
 .qa-container .qa-equation-block {

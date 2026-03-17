@@ -33,9 +33,126 @@ html, body {
   margin-bottom: 0 !important;
 }
 
+.results-top-row {
+  margin-bottom: 2px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.results-top-row .html-container,
+.results-top-row .prose {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.results-top-row:empty {
+  display: none;
+}
+
+.results-top-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(320px, auto) minmax(0, 1fr);
+  column-gap: 32px;
+  align-items: center;
+  padding: 0 2px;
+}
+
+.results-left-group,
+.results-right-group {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.results-left-group {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.results-right-group {
+  justify-content: flex-end;
+  gap: 18px;
+  min-width: 0;
+}
+
+.result-status-banner,
+.result-refresh-hint {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.result-status-banner {
+  white-space: nowrap;
+}
+
+.status-text {
+  margin-left: 4px;
+}
+
+.status-dots {
+  display: inline-block;
+  width: 3ch;
+  overflow: hidden;
+  vertical-align: bottom;
+  animation: status-dots 1.2s steps(4, end) infinite;
+}
+
+@keyframes status-dots {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 3ch;
+  }
+}
+
+.result-refresh-hint {
+  color: var(--body-text-color-subdued);
+  white-space: nowrap;
+}
+
+.session-row,
+.job-row {
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.session-id {
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.session-id:hover {
+  background: color-mix(in srgb, var(--color-accent-soft) 14%, transparent);
+}
+
+.session-id.copied {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.28);
+}
+
+.copy-hint {
+  font-size: 12px;
+  color: var(--body-text-color-subdued);
+  transition: color 0.2s ease;
+}
+
+.copy-hint.copied {
+  color: #16a34a;
+}
+
 .new-job-row {
   display: flex;
-  justify-content: flex-start;
+  flex: 0 0 auto;
 }
 
 .mini-action-link {
@@ -58,6 +175,25 @@ html, body {
   text-decoration: none;
   border-color: var(--color-accent-soft) !important;
   background: color-mix(in srgb, var(--color-accent-soft) 12%, transparent);
+}
+
+@media (max-width: 1100px) {
+  .results-top-grid {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+  .results-left-group,
+.results-right-group {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .results-left-group,
+.results-right-group {
+    gap: 10px;
+  }
 }
 
 body {
@@ -310,6 +446,86 @@ h3 {
   border-radius: 6px;
 }
 
+.header-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.header-dropdown-toggle {
+  list-style: none;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--body-text-color);
+  font: inherit;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-dropdown-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.header-dropdown-toggle:hover,
+.header-dropdown-toggle:focus-visible {
+  text-decoration: underline;
+  background: color-mix(in srgb, var(--body-text-color) 8%, transparent);
+  outline: none;
+}
+
+.header-caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform 0.18s ease;
+}
+
+.header-dropdown[open] .header-caret {
+  transform: rotate(180deg);
+}
+
+.header-dropdown-menu {
+  list-style: none;
+  margin: 0;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  display: none;
+  flex-direction: column;
+  padding: 8px;
+  border: 1px solid var(--border-color-primary);
+  border-radius: 10px;
+  background: var(--background-fill-primary);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+  z-index: 1200;
+}
+
+.header-dropdown-menu li {
+  margin: 0;
+  padding: 0;
+}
+
+.header-dropdown-menu a {
+  display: block;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.header-dropdown[open] .header-dropdown-menu {
+  display: flex;
+}
+
 .header-tabs a.is-active {
   text-decoration: underline;
   background: color-mix(in srgb, var(--body-text-color) 12%, transparent);
@@ -337,6 +553,10 @@ h3 {
   .header-tabs {
     font-size: 0.92rem;
     gap: 0.15rem 0.35rem;
+  }
+  .header-dropdown-menu {
+    left: 0;
+    transform: none;
   }
 }
 
@@ -610,6 +830,61 @@ h3 {
   padding: 22px 24px 24px;
 }
 
+.qa-container .qa-inline-trigger {
+  cursor: pointer;
+  display: inline;
+  border: 0;
+  background: transparent;
+  font-size: 0.98em;
+  font-weight: 600;
+  line-height: inherit;
+  user-select: none;
+  color: #0d6efd;
+  text-decoration: underline;
+  text-underline-offset: 0.08em;
+}
+
+.qa-container .qa-inline-trigger:hover,
+.qa-container .qa-inline-trigger:focus-visible {
+  color: #0a58ca;
+  outline: none;
+}
+
+.qa-container .qa-inline-note-body {
+  display: none;
+  margin: -6px 0 12px;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(108, 117, 125, 0.55);
+  border-left: 4px solid rgba(13, 202, 240, 0.95);
+  border-radius: 0.5rem;
+  background: rgba(13, 202, 240, 0.18);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--body-text-color);
+}
+
+.qa-container .qa-inline-note-body.is-open {
+  display: block;
+}
+
+.dark .qa-container .qa-inline-trigger {
+  color: #66b3ff;
+}
+
+.dark .qa-container .qa-inline-trigger:hover,
+.dark .qa-container .qa-inline-trigger:focus-visible {
+  color: #8ec5ff;
+}
+
+.dark .qa-container .qa-inline-note-body {
+  background: rgba(13, 202, 240, 0.12);
+  border-color: rgba(173, 181, 189, 0.42);
+  border-left-color: rgba(13, 202, 240, 0.9);
+}
+
 .qa-container .q1-item {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.9fr);
@@ -642,7 +917,7 @@ h3 {
   margin-top: 10px;
   font-size: 0.98rem;
   line-height: 1.5;
-  color: var(--body-text-color-subdued);
+  color: color-mix(in srgb, var(--body-text-color) 82%, var(--background-fill-primary) 18%);
 }
 
 .qa-container .qa-equation-block {

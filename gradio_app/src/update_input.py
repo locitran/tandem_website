@@ -9,12 +9,9 @@ from io import StringIO
 from datetime import datetime
 from pymongo import MongoClient
 from .logger import LOGGER
-from .settings import time_zone
+from .settings import TAIPEI_TIME_ZONE
 from .request import request2info
 
-TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) # ./tandem_website
-jobs_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'tandem/jobs')
-tmp_folder = os.path.join(TANDEM_WEBSITE_ROOT, 'gradio_app/tmp')
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
@@ -214,7 +211,7 @@ def handle_STR(_str_txt: str):
     return None
 
 def on_clear_param():
-    job_name_udt = datetime.now(time_zone).strftime("%Y-%m-%d_%H-%M-%S")
+    job_name_udt = datetime.now(TAIPEI_TIME_ZONE).strftime("%Y-%m-%d_%H-%M-%S")
     inf_sav_txt_udt = gr.update(value="")
     tf_sav_txt_udt = gr.update(value="")
     str_txt_udt = gr.update(value="")

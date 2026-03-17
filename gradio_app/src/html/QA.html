@@ -10,10 +10,11 @@
             <li><a href="#q3" onclick="document.getElementById('q3').open = true;">How long does the job take to run? (This section is under revision)</a></li>
             <li><a href="#q4" onclick="document.getElementById('q4').open = true;">What is an Error job status? (This section is under revision)</a></li>
             <li><a href="#q5" onclick="document.getElementById('q5').open = true;">What do the results look like?</a></li>
-            <li><a href="#q6" onclick="document.getElementById('q6').open = true;">How TANDEM-DIMPLE model was trained? (This section is under revision)</a></li>
-            <li><a href="#q7" onclick="document.getElementById('q7').open = true;">What is SHAP analysis?</a></li>
-            <li><a href="#q8" onclick="document.getElementById('q8').open = true;">What features are we using in the TANDEM-DIMPLE models?</a></li>
-            <li><a href="#q9" onclick="document.getElementById('q9').open = true;">How do I reference TANDEM-DIMPLE? (This section is under revision)</a></li>
+            <li><a href="#q6" onclick="document.getElementById('q6').open = true;">How does TANDEM-DIMPLE Website work?</a></li>
+            <li><a href="#q7" onclick="document.getElementById('q7').open = true;">How TANDEM-DIMPLE model was trained?</a></li>
+            <li><a href="#q8" onclick="document.getElementById('q8').open = true;">What is SHAP analysis?</a></li>
+            <li><a href="#q9" onclick="document.getElementById('q9').open = true;">What features are we using in the TANDEM-DIMPLE models?</a></li>
+            <li><a href="#q10" onclick="document.getElementById('q10').open = true;">How do I reference TANDEM-DIMPLE? (This section is under revision)</a></li>
             <li><a href="#references">References</a></li>
         </ol>
     </nav>
@@ -25,8 +26,8 @@
                 TANDEM-DIMPLE is a pathogenicity prediction webserver developed by the Yang Lab at National Tsinghua University, Taiwan.
             </p>
             <p>
-                Inspired by AlphaMissense, leveraging structural embeddings (<a href="#ref-15">Cheng et al., 2023</a>), and Rhapsody web server, 
-                incorporating protein dynamics (<a href="#ref-14">Ponzoni et al., 2020</a>), we integrated structural and dynamics-based features 
+                Inspired by AlphaMissense, leveraging structural embeddings (<a href="#ref-4">Cheng et al., 2023</a>), and Rhapsody web server, 
+                incorporating protein dynamics (<a href="#ref-18">Ponzoni et al., 2020</a>), we integrated structural and dynamics-based features 
                 alongside sequence conservation signals to train our gene/disease-general DNN classifier for SAV pathogenicity 
                 prediction. This gene-general model (hereafter “TANDEM”) is sufficiently deep to achieve high predictive accuracy, 
                 outperforming AlphaMissense by 6% on a test set of more than 2,000 SAVs from the Rhapsody dataset, yet lightweight 
@@ -39,8 +40,16 @@
                 are automatically trained in our website for private or public uses.
             </p>
             <figure class="q1-figure">
-                <img src="./gradio_api/file=assets/images/qa_figure_1.svg"
+                <img src="./gradio_api/file=assets/images/qa_TANDEM-DIMPLE_performance.svg"
                     alt="Overview figure for TANDEM-DIMPLE">
+                <figcaption>
+                    <b>Comparison of model performance.</b> The results of gene-general and gene-specific models are shown
+                    in panels (A) and (B), respectively. R20000<sub>test</sub>, GJB2<sub>knw</sub>, RYR<sub>knw</sub>, 
+                    GJB2<sub>test</sub> and RYR<sub>test</sub> sets are also defined in Q7. AlphaMissense predictions 
+                    were retrieved from the public database (<a href="#ref-4">Cheng et al., 2023</a>), while Rhapsody 
+                    predictions were computed using the authors-released code. Asterisks denote Student’s t-test 
+                    p-values &lt; 0.05 for comparisons between two groups.
+                </figcaption>
             </figure>
         </div>
     </details>
@@ -113,22 +122,123 @@
     </details>
 
     <details class="qa-item" id="q6">
-        <summary>How TANDEM-DIMPLE model was trained? (This section is under revision)</summary>
+        <summary>How does TANDEM-DIMPLE Website work?</summary>
         <div class="qa-panel">
             <p>
-                ...
+                The website is deployed as a five-component pipeline, frontend, database, dispatcher, feature generation,
+                and inference/transfer-learning, packaged as containers and run together with Docker Compose
+                (<a href="https://www.docker.com" target="_blank" rel="noopener noreferrer">https://www.docker.com</a>).
+                Compose-managed containers simplify deployment and scaling (e.g., running multiple workers) while keeping
+                the application stack reproducible. The frontend is implemented in Python using the Gradio package
+                (<a href="#ref-22">Abid et al., 2019</a>), which builds the website interface to receive user requests and
+                render either inferencing outputs or transfer learning results. Upon submission, the frontend sends a job
+                request to MongoDB using PyMongo driver, which communicates over MongoDB’s native wire protocol
+                (<a href="https://www.mongodb.com" target="_blank" rel="noopener noreferrer">https://www.mongodb.com</a>),
+                and the new job is recorded with status “pending”. A background dispatcher then claims the pending job with
+                earliest creation times from the database using a find-and-update operation in PyMongo and updates its
+                status to “processing”. The dispatcher serializes the job payload and forwards it via HTTP to next container,
+                which generates 33 features in the TANDEM feature set, and then to the inference/transfer-learning module.
+                A summary of the website workflow is presented below.
             </p>
+            <figure class="q6-figure">
+                <img
+                    src="./gradio_api/file=assets/images/qa_TANDEM-DIMPLE_website_architecture.svg"
+                    alt="TANDEM-DIMPLE web portal architecture">
+                <figcaption>
+                    <b>TANDEM-DIMPLE web portal.</b> <b>(A)</b> Overview of the TANDEM-DIMPLE web architecture. Each user
+                    session is assigned a unique session ID and supports two analysis modes: Job #1 (Model inference) for
+                    predicting pathogenicity of submitted single amino acid variants (SAVs) using pretrained models, and
+                    Job #2 (Transfer learning) for fine-tuning gene-specific predictors using clinically labeled SAV
+                    datasets. Submitted jobs are recorded in a MongoDB database and dispatched to worker nodes, where
+                    feature generation, model execution, and result aggregation are performed.
+                </figcaption>
+            </figure>
         </div>
     </details>
 
     <details class="qa-item" id="q7">
+        <summary>How TANDEM-DIMPLE model was trained?</summary>
+        <div class="qa-panel">
+            <p>
+                TANDEM models were trained using deep neural networks (DNNs) on the R20000 set with the TANDEM feature set
+                (<a
+                    href="#"
+                    class="qa-inline-trigger"
+                    aria-controls="r20000-help"
+                    onclick="
+                        const box = document.getElementById('r20000-help');
+                        if (!box) return false;
+                        box.classList.toggle('is-open');
+                        this.setAttribute('aria-expanded', box.classList.contains('is-open') ? 'true' : 'false');
+                        return false;
+                    "
+                >?</a>). The input features were standardized prior to training.
+                The network comprises 5 hidden layers with GeLU
+                activation: four layers have 33 neurons, and the last layer has 10, which is connected to the two-neuron
+                output layer that uses the softmax function to report the pathogenicity probabilities for a SAV. Training
+                used a mini-batch size of 300, Xavier uniform initialization, the Nadam optimizer, and cross-entropy loss
+                with L2 regularization (1e-4). The training was stopped when the validation loss does not get lower after
+                50 consecutive epochs. The model had 4,850 trainable parameters and was implemented in TensorFlow v2.17.0.
+                The trained weights from 5 TANDEM models were then used to initialize gene-specific training on
+                GJB2<sub>knw</sub> and RYR1<sub>knw</sub> datasets, producing 15 TANDEM-DIMPLE models for <i>GJB2</i>
+                and 15 for <i>RYR1</i>, respectively.
+                The gene-specific models used the same architecture and hyperparameters as described above.
+            </p>
+            <div id="r20000-help" class="qa-inline-note-body">
+                Taken from the Rhapsody (<a href="#ref-18">Ponzoni et al., 2020</a>), the 20,361 clinically annotated
+                SAVs of 2,423 genes comprises 13,626 pathogenic and 6,735 benign variants, referred as R20000 set.
+                The dataset integrates information from five publicly available datasets with refined annotations and
+                pathogenic/benign labels using three well-known databases UniProtKB (UniProt, 2023), ClinVar
+                (Landrum et al., 2020), and HuVarBase (Ganesan et al., 2019). All SAVs have the corresponding
+                UniProt IDs, including a total of 2,423 UniProt protein sequences, each of which can harbor one or
+                multiple SAVs.
+            </div>
+            <p>
+                Performance was evaluated by averaging over 5 TANDEM or 15 TANDEM-DIMPLE models using 5 metrics:
+                Accuracy, Area Under Curve Receiver Operating Characteristic (AUC ROC or AUC), Precision, Recall, and F1.
+            </p>
+            <p>
+                We coined TANDEM as gene/disease-general model and TANDEM-DIMPLE as gene/disease-specific model.
+            </p>
+            <figure class="q6-figure">
+                <img
+                    src="./gradio_api/file=assets/images/qa_how_TANDEM-DIMPLE_was_trained.svg"
+                    alt="TANDEM-DIMPLE architecture and training scheme">
+                <figcaption>
+                    <b>TANDEM-DIMPLE architecture and training scheme.</b> <b>(A)</b> Clustering and data splitting procedure for
+                    gene-general and gene-specific datasets. For the gene-general dataset, R20000, 2,423 proteins are
+                    clustered at 30% sequence identity, yielding 1,778 clusters. These clusters are sorted by SAV count
+                    and assigned sequentially into five folds with about 18% of the SAVs per fold, and a hold-out test
+                    set, comprising about 10% of the SAVs. In each cross-validation iteration, a fold serves as validation
+                    and the remaining four folds as training (R20000<sub>train</sub>); the test set is never used for training. This
+                    creates 5 train-validation partitions for TANDEM. <b>(B)</b> TANDEM feature set used in this study consists of
+                    33 features spanning protein sequence, chemical, structure, and dynamics. Structural features cover local
+                    interactions, secondary structure/disorder, and global geometry etc. (Table S1). Dynamics features are
+                    derived from a Cα-based coarse-grained elastic network model (ENM) to capture protein global motion
+                    <b>(<a href="#ref-2">Bahar et al., 1997</a>; <a href="#ref-12">Li et al., 2017</a>;
+                    <a href="#ref-13">Li et al., 2020</a>; <a href="#ref-20">Yang et al., 2006</a>)</b>.
+                    <b>(C)</b> The gene-general TANDEM model employs a deep neural network that takes 33 input features, processes
+                    them through four hidden layers with 33 neurons each followed by an additional hidden layer of 10 neurons,
+                    and outputs a two-neuron layer representing the predicted probabilities of pathogenicity and benignity.
+                    <b>(D)</b> For the gene-specific dataset, GJB2<sub>knw</sub> SAVs are partitioned into three folds with 30% SAVs per fold
+                    plus a test set, comprising 10% of the SAVs, thereby creating 3 train-validation partitions for
+                    TANDEM-DIMPLE 1 to 3 (TD1-TD3). The trained weights of gene-general models are used to initialize
+                    gene-specific training over corresponding gene-specific datasets, yielding the gene-specific TANDEM-DIMPLE
+                    (TD) models. For each TANDEM or TD model, A SAV is classified as pathogenic if the predicted pathogenicity
+                    probability ≥ 0.5, and benign otherwise.
+                </figcaption>
+            </figure>
+        </div>
+    </details>
+
+    <details class="qa-item" id="q8">
         <summary>What is SHAP analysis?</summary>
         <div class="qa-panel">
             <p>
                 A SHapley Additive exPlanations (SHAP) value measures a feature's contribution to a model's
                 prediction. It is derived from the Shapley value in cooperative game theory, which defines how
                 to distribute a game's payout among players such that each player's payout is proportional to that
-                player's contribution <a href="#ref-1">[1]</a>. In our setting, the game's payout is the model output for a given input
+                player's contribution (<a href="#ref-15">Lundberg &amp; Lee, 2017</a>). In our setting, the game's payout is the model output for a given input
                 SAV; the players are protein features associated with that SAV; and each player's payout
                 corresponds to the contribution of that feature to the predicted output.
             </p>
@@ -206,9 +316,33 @@
         </div>
     </details>
 
-    <details class="qa-item" id="q8">
+    <details class="qa-item" id="q9">
         <summary>What features are we using in the TANDEM-DIMPLE models?</summary>
+        
         <div class="qa-panel">
+            <p>
+                For each SAV, we derived 33 protein features, grouped into three categories: 
+                9 sequence chemical features, 15 structure features, and 9 dynamics features. 
+                Among these, 7 features were identical to the ones used in the Rhapsody study 
+                (<a href="#ref-18">Ponzoni et al., 2020</a>). Dynamics features were computed using Gaussian Network 
+                Models (GNM) (<a href="#ref-2">Bahar et al., 1997</a>; <a href="#ref-20">Yang et al., 2006</a>) to capture the residue 
+                fluctuations and global motion of protein structures. For proteins that have 
+                interaction partners such as membrane proteins or protein-nucleic acid complexes, 
+                we used envGNM (<a href="#ref-12">Li et al., 2017</a>; <a href="#ref-13">Li et al., 2020</a>), which models proteins' 
+                surrounding contacts as the “environment” that includes lipid membrane, other 
+                oligomers or nucleic acids/ large ligands. Structure features describe the global 
+                and local topology of the protein in 3D space such as radius of gyration or distance 
+                to the center of mass, secondary structures, intrinsic disorder regions, and 
+                solvent-accessible surface area, along with local interactions such as residue 
+                contacts, hydrogen bonds, and disulfide bonds were also computed. Sequence and 
+                chemical features included residue-level physicochemical properties such as polarity, 
+                charge, residue conservation that was assessed using ConSurf 
+                (<a href="#ref-3">Ben Chorin et al., 2020</a>; <a href="#ref-7">Goldenberg et al., 2009</a>), 
+                BLOSUM62 (<a href="#ref-9">Henikoff &amp; Henikoff, 1992</a>), 
+                and PSIC (<a href="#ref-19">Sunyaev et al., 1999</a>). 
+                Both the ConSurf score of the SAV site of interest and that of its spatial neighbors in 3D were calculated.
+            </p>
+
             <table class="q5-table">
                 <thead>
                     <tr>
@@ -222,27 +356,27 @@
                         <td class="q5-group" rowspan="5">Dynamics</td>
                         <td class="q5-feature"><i>&lambda;</i><sub>1</sub>, <i>&lambda;</i><sub>2</sub></td>
                         <td>The 1<sup>st</sup> and 2<sup>nd</sup> GNM eigenvalues</td>
-                        <td><a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a></td>
+                        <td><a href="#ref-2">[2]</a>, <a href="#ref-20">[20]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">||<i>V</i><sub>1,i</sub>||, ||<i>V</i><sub>2,i</sub>||, rank(||<i>V</i><sub>1,i</sub>||), rank(||<i>V</i><sub>2,i</sub>||)</td>
                         <td>Magnitude and rank of residue <i>i</i> in the 1<sup>st</sup> and 2<sup>nd</sup> GNM slowest modes</td>
-                        <td><a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a></td>
+                        <td><a href="#ref-2">[2]</a>, <a href="#ref-20">[20]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">rank(||<i>c</i><sub>i,i</sub>||)</td>
                         <td>Rank of GNM fluctuation variance of residue <i>i</i></td>
-                        <td><a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a></td>
+                        <td><a href="#ref-2">[2]</a>, <a href="#ref-20">[20]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">Effectiveness*</td>
                         <td>Ability of a residue to transmit mechanical signals</td>
-                        <td><a href="#ref-4">[4]</a></td>
+                        <td><a href="#ref-1">[1]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">Stiffness*</td>
                         <td>Residue’s resistance to uniaxial tension.</td>
-                        <td><a href="#ref-5">[5]</a></td>
+                        <td><a href="#ref-6">[6]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-group" rowspan="9">Structure</td>
@@ -253,17 +387,17 @@
                     <tr>
                         <td class="q5-feature">%Loop, %Helix, %Sheet</td>
                         <td>Percentage of secondary structure</td>
-                        <td><a href="#ref-6">[6]</a></td>
+                        <td><a href="#ref-11">[11]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">Disorderliness</td>
                         <td>Predicted intrinsic disorder</td>
-                        <td><a href="#ref-7">[7]</a></td>
+                        <td><a href="#ref-21">[21]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">SA</td>
                         <td>Relative solvent accessibility</td>
-                        <td><a href="#ref-8">[8]</a></td>
+                        <td><a href="#ref-10">[10]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">R<sub>G</sub></td>
@@ -288,13 +422,13 @@
                     <tr>
                         <td class="q5-feature">N<sub>H-bond</sub>, &Delta;N<sub>H-bond</sub></td>
                         <td>Number of hydrogen bonds and mutation-induced change</td>
-                        <td><a href="#ref-9">[9]</a></td>
+                        <td><a href="#ref-17">[17]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-group" rowspan="4">Sequence &amp; Chemical</td>
                         <td class="q5-feature">&Delta;Polarity</td>
                         <td>Mutation-induced change in polarity</td>
-                        <td><a href="#ref-10">[10]</a></td>
+                        <td><a href="#ref-8">[8]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">&Delta;Charge</td>
@@ -304,12 +438,12 @@
                     <tr>
                         <td class="q5-feature">ConSurf and ACNR</td>
                         <td>Relative conservation score and average ConSurf scores of neighboring residues</td>
-                        <td><a href="#ref-11">[11]</a>, <a href="#ref-12">[12]</a></td>
+                        <td><a href="#ref-3">[3]</a>, <a href="#ref-7">[7]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">wtPSIC*, &Delta;PSIC*</td>
                         <td>Position-specific evolutionary conservation and mutation-induced change</td>
-                        <td><a href="#ref-13">[13]</a></td>
+                        <td><a href="#ref-19">[19]</a></td>
                     </tr>
                 </tbody>
             </table>
@@ -317,10 +451,20 @@
     </details>
 
     
-    <details class="qa-item" id="q9">
+    <details class="qa-item" id="q10">
         <summary>How do I reference TANDEM-DIMPLE? (This section is under revision)</summary>
         <div class="qa-panel">
-            <p>Our work is under submission.</p>
+            <p>
+                Our work is under submission.
+            </p>
+            <p>
+                Please cite TANDEM-DIMPLE as:
+                Loc Dinh Quang Tran<sup>†</sup>, Chen-Hua Lu<sup>†</sup>, Cheng-Yu Tsai,
+                Wei-Hsiang Shen, Chun-Biu Li, Tong-You Lin, Chi-Chun Lee, Pei-Lung Chen,
+                Chen-Chi Wu, Lee-Wei Yang*.
+                <em>TANDEM-DIMPLE Makes Correct Gene-Specific Pathogenicity Predictions for Missense Variants</em>.
+                (Under submission, <sup>†</sup>Co-first authors; <sup>*</sup>Corresponding author)
+            </p>
         </div>
     </details>
 
@@ -328,71 +472,109 @@
         <h3>References</h3>
         <ol>
             <li id="ref-1">
-                S. M. Lundberg, and S.-I. Lee, “A unified approach to interpreting model predictions,”
-                <i>Advances in neural information processing systems</i> 30, no. (2017):
+                Atilgan, C., &amp; Atilgan, A. R. (2009). Perturbation-response scanning reveals ligand entry-exit mechanisms of ferric binding protein.
+                <i>PLoS computational biology</i>, <i>5</i>(10), e1000544.
             </li>
             <li id="ref-2">
-                H. Li, S. Sakuraba, A. Chandrasekaran, and L. W. Yang, “Molecular binding sites are located near the interface of intrinsic dynamics domains (IDDs),”
-                <i>Journal of Chemical Information and Modeling</i> 54, no. 8 (2014): 2275.
-                <a href="https://doi.org/10.1021/ci500261z" target="_blank" rel="noopener noreferrer">https://doi.org/10.1021/ci500261z</a>
+                Bahar, I., Atilgan, A. R., &amp; Erman, B. (1997). Direct evaluation of thermal fluctuations in proteins using a single-parameter harmonic potential.
+                <i>Fold Des</i>, <i>2</i>(3), 173-181.
+                <a href="https://doi.org/10.1016/S1359-0278(97)00024-2" target="_blank" rel="noopener noreferrer">https://doi.org/10.1016/S1359-0278(97)00024-2</a>
             </li>
             <li id="ref-3">
-                H. Li, Y. Y. Chang, J. Y. Lee, I. Bahar, and L. W. Yang, “DynOmics: dynamics of structural proteome and beyond,”
-                <i>Nucleic acids research</i> 45, no. W1 (2017): W374.
-                <a href="https://doi.org/10.1093/nar/gkx385" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/nar/gkx385</a>
+                Ben Chorin, A., Masrati, G., Kessel, A., Narunsky, A., Sprinzak, J., Lahav, S., Ashkenazy, H., &amp; Ben‐Tal, N. (2020).
+                ConSurf‐DB: An accessible repository for the evolutionary conservation patterns of the majority of PDB proteins.
+                <i>Protein Science</i>, <i>29</i>(1), 258-267.
             </li>
             <li id="ref-4">
-                C. Atilgan, and A. R. Atilgan, “Perturbation-response scanning reveals ligand entry-exit mechanisms of ferric binding protein,”
-                <i>PLoS computational biology</i> 5, no. 10 (2009): e1000544.
+                Cheng, J., Novati, G., Pan, J., Bycroft, C., Zemgulyte, A., Applebaum, T., Pritzel, A., Wong, L. H., Zielinski, M., Sargeant, T.,
+                Schneider, R. G., Senior, A. W., Jumper, J., Hassabis, D., Kohli, P., &amp; Avsec, Z. (2023).
+                Accurate proteome-wide missense variant effect prediction with AlphaMissense.
+                <i>Science</i>, <i>381</i>(6664), eadg7492.
+                <a href="https://doi.org/10.1126/science.adg7492" target="_blank" rel="noopener noreferrer">https://doi.org/10.1126/science.adg7492</a>
             </li>
             <li id="ref-5">
-                E. Eyal, and I. Bahar, “Toward a molecular understanding of the anisotropic response of proteins to external forces: insights from elastic network models,”
-                <i>Biophysical journal</i> 94, no. 9 (2008): 3424.
+                Dunn, S. D., Wahl, L. M., &amp; Gloor, G. B. (2008). Mutual information without the influence of phylogeny or entropy dramatically improves residue contact prediction.
+                <i>Bioinformatics</i>, <i>24</i>(3), 333-340.
+                <a href="https://doi.org/10.1093/bioinformatics/btm604" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/btm604</a>
             </li>
             <li id="ref-6">
-                W. Kabsch, and C. Sander, “Dictionary of protein secondary structure: pattern recognition of hydrogen-bonded and geometrical features,”
-                <i>Biopolymers</i> 22, no. 12 (1983): 2577.
-                <a href="https://doi.org/10.1002/bip.360221211" target="_blank" rel="noopener noreferrer">https://doi.org/10.1002/bip.360221211</a>
+                Eyal, E., &amp; Bahar, I. (2008). Toward a molecular understanding of the anisotropic response of proteins to external forces:
+                insights from elastic network models. <i>Biophysical journal</i>, <i>94</i>(9), 3424-3435.
             </li>
             <li id="ref-7">
-                Z. R. Yang, R. Thomson, P. McNeil, and R. M. Esnouf, “RONN: the bio-basis function neural network technique applied to the detection of natively disordered regions in proteins,”
-                <i>Bioinformatics</i> 21, no. 16 (2005): 3369.
-                <a href="https://doi.org/10.1093/bioinformatics/bti534" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/bti534</a>
+                Goldenberg, O., Erez, E., Nimrod, G., &amp; Ben-Tal, N. (2009). The ConSurf-DB: pre-calculated evolutionary conservation profiles of protein structures.
+                <i>Nucleic acids research</i>, <i>37</i>(suppl_1), D323-D327.
             </li>
             <li id="ref-8">
-                S. J. Hubbard, and J. M. Thornton, NACCESS. 2.1.1 ed.; Department of Biochemistry and Molecular Biology, University College London.: <b>1993</b>.
-            </li>
-            <li id="ref-9">
-                I. K. McDonald, and J. M. Thornton, “Satisfying hydrogen bonding potential in proteins,”
-                <i>Journal of molecular biology</i> 238, no. 5 (1994): 777.
-            </li>
-            <li id="ref-10">
-                R. Grantham, “Amino acid difference formula to help explain protein evolution,”
-                <i>Science</i> 185, no. 4154 (1974): 862.
+                Grantham, R. (1974). Amino acid difference formula to help explain protein evolution.
+                <i>Science</i>, <i>185</i>(4154), 862-864.
                 <a href="https://doi.org/10.1126/science.185.4154.862" target="_blank" rel="noopener noreferrer">https://doi.org/10.1126/science.185.4154.862</a>
             </li>
+            <li id="ref-9">
+                Henikoff, S., &amp; Henikoff, J. G. (1992). Amino acid substitution matrices from protein blocks.
+                <i>Proceedings of the National Academy of Sciences of the United States of America</i>, <i>89</i>(22), 10915-10919.
+                <a href="https://doi.org/10.1073/pnas.89.22.10915" target="_blank" rel="noopener noreferrer">https://doi.org/10.1073/pnas.89.22.10915</a>
+            </li>
+            <li id="ref-10">
+                Hubbard, S. J., &amp; Thornton, J. M. (1993). <i>NACCESS</i>. In (Version 2.1.1) Department of Biochemistry and Molecular Biology, University College London.
+            </li>
             <li id="ref-11">
-                A. Ben Chorin, G. Masrati, A. Kessel, et al., “ConSurf‐DB: An accessible repository for the evolutionary conservation patterns of the majority of PDB proteins,”
-                <i>Protein Science</i> 29, no. 1 (2020): 258.
+                Kabsch, W., &amp; Sander, C. (1983). Dictionary of protein secondary structure: pattern recognition of hydrogen-bonded and geometrical features.
+                <i>Biopolymers</i>, <i>22</i>(12), 2577-2637.
+                <a href="https://doi.org/10.1002/bip.360221211" target="_blank" rel="noopener noreferrer">https://doi.org/10.1002/bip.360221211</a>
             </li>
             <li id="ref-12">
-                O. Goldenberg, E. Erez, G. Nimrod, and N. Ben-Tal, “The ConSurf-DB: pre-calculated evolutionary conservation profiles of protein structures,”
-                <i>Nucleic acids research</i> 37, no. suppl_1 (2009): D323.
+                Li, H., Chang, Y. Y., Lee, J. Y., Bahar, I., &amp; Yang, L. W. (2017). DynOmics: dynamics of structural proteome and beyond.
+                <i>Nucleic acids research</i>, <i>45</i>(W1), W374-W380.
+                <a href="https://doi.org/10.1093/nar/gkx385" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/nar/gkx385</a>
             </li>
             <li id="ref-13">
-                S. R. Sunyaev, F. Eisenhaber, I. V. Rodchenkov, B. Eisenhaber, V. G. Tumanyan, and E. N. Kuznetsov, “PSIC: profile extraction from sequence alignments with position-specific counts of independent observations,”
-                <i>Protein Engineering</i> 12, no. 5 (1999): 387.
-                <a href="https://doi.org/10.1093/protein/12.5.387" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/protein/12.5.387</a>
+                Li, H., Doruker, P., Hu, G., &amp; Bahar, I. (2020). Modulation of toroidal proteins dynamics in favor of functional mechanisms upon ligand binding.
+                <i>Biophysical Journal</i>, <i>118</i>(7), 1782-1794.
             </li>
             <li id="ref-14">
-                L. Ponzoni, D. A. Penaherrera, Z. N. Oltvai, and I. Bahar, “Rhapsody: predicting the pathogenicity of human missense variants,”
-                <i>Bioinformatics</i> 36, no. 10 (2020): 3084-3092.
-                <a href="https://doi.org/10.1093/bioinformatics/btaa127" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/btaa127</a>
+                Li, H., Sakuraba, S., Chandrasekaran, A., &amp; Yang, L. W. (2014). Molecular binding sites are located near the interface of intrinsic dynamics domains (IDDs).
+                <i>Journal of Chemical Information and Modeling</i>, <i>54</i>(8), 2275-2285.
+                <a href="https://doi.org/10.1021/ci500261z" target="_blank" rel="noopener noreferrer">https://doi.org/10.1021/ci500261z</a>
             </li>
             <li id="ref-15">
-                J. Cheng, G. Novati, J. Pan, C. Bycroft, A. Zemgulyte, T. Applebaum, A. Pritzel, L. H. Wong, M. Zielinski, T. Sargeant, R. G. Schneider, A. W. Senior, J. Jumper, D. Hassabis, P. Kohli, and Z. Avsec, “Accurate proteome-wide missense variant effect prediction with AlphaMissense,”
-                <i>Science</i> 381, no. 6664 (2023): eadg7492.
-                <a href="https://doi.org/10.1126/science.adg7492" target="_blank" rel="noopener noreferrer">https://doi.org/10.1126/science.adg7492</a>
+                Lundberg, S. M., &amp; Lee, S.-I. (2017). A unified approach to interpreting model predictions.
+                <i>Advances in neural information processing systems</i>, <i>30</i>.
+            </li>
+            <li id="ref-16">
+                Martin, L. C., Gloor, G. B., Dunn, S. D., &amp; Wahl, L. M. (2005). Using information theory to search for co-evolving residues in proteins.
+                <i>Bioinformatics</i>, <i>21</i>(22), 4116-4124.
+                <a href="https://doi.org/10.1093/bioinformatics/bti671" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/bti671</a>
+            </li>
+            <li id="ref-17">
+                McDonald, I. K., &amp; Thornton, J. M. (1994). Satisfying hydrogen bonding potential in proteins.
+                <i>Journal of molecular biology</i>, <i>238</i>(5), 777-793.
+            </li>
+            <li id="ref-18">
+                Ponzoni, L., Penaherrera, D. A., Oltvai, Z. N., &amp; Bahar, I. (2020). Rhapsody: predicting the pathogenicity of human missense variants.
+                <i>Bioinformatics</i>, <i>36</i>(10), 3084-3092.
+                <a href="https://doi.org/10.1093/bioinformatics/btaa127" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/btaa127</a>
+            </li>
+            <li id="ref-19">
+                Sunyaev, S. R., Eisenhaber, F., Rodchenkov, I. V., Eisenhaber, B., Tumanyan, V. G., &amp; Kuznetsov, E. N. (1999).
+                PSIC: profile extraction from sequence alignments with position-specific counts of independent observations.
+                <i>Protein Engineering</i>, <i>12</i>(5), 387-394.
+                <a href="https://doi.org/10.1093/protein/12.5.387" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/protein/12.5.387</a>
+            </li>
+            <li id="ref-20">
+                Yang, L. W., Rader, A. J., Liu, X., Jursa, C. J., Chen, S. C., Karimi, H. A., &amp; Bahar, I. (2006). oGNM: online computation of structural dynamics using the Gaussian Network Model.
+                <i>Nucleic acids research</i>, <i>34</i>(Web Server issue), W24-31.
+                <a href="https://doi.org/10.1093/nar/gkl084" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/nar/gkl084</a>
+            </li>
+            <li id="ref-21">
+                Yang, Z. R., Thomson, R., McNeil, P., &amp; Esnouf, R. M. (2005). RONN: the bio-basis function neural network technique applied to the detection of natively disordered regions in proteins.
+                <i>Bioinformatics</i>, <i>21</i>(16), 3369-3376.
+                <a href="https://doi.org/10.1093/bioinformatics/bti534" target="_blank" rel="noopener noreferrer">https://doi.org/10.1093/bioinformatics/bti534</a>
+            </li>
+            <li id="ref-22">
+                Abid, A., Abdalla, A., Abid, A., Khan, D., Alfozan, A., Zou, J., Zhou, A., McDuff, D., Kim, E., Kim, S., &amp; Rubin, J. (2019).
+                Gradio: Hassle-free sharing and testing of ML models in the wild.
+                <i>arXiv</i>.
             </li>
         </ol>
     </section>

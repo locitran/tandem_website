@@ -16,7 +16,7 @@ from .request import (
     request2session_id,
     session_exists,
 )
-from .settings import EXAMPLES_JSON, FIGURE_1, HTML_DIR, JOB_DIR, TITLE, TAIPEI_TIME_ZONE
+from .settings import EXAMPLES_JSON, FIGURE_1, HTML_DIR, JOB_DIR, TITLE, TAIPEI_TIME_ZONE, TMP_DIR
 from .update_input import handle_SAV, handle_STR, on_clear_file, upload_file
 from .base import build_footer, build_header, build_last_updated
 
@@ -24,8 +24,6 @@ client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
 
-TANDEM_WEBSITE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-tmp_folder = os.path.join(TANDEM_WEBSITE_ROOT, "gradio_app/tmp")
 READ_ONLY_SESSION_ID = "test"
 
 with open(EXAMPLES_JSON, "r", encoding="utf-8") as f:
@@ -244,7 +242,7 @@ class SessionPage:
 
         if str_file and os.path.isfile(str_file):
             basename = os.path.basename(str_file)
-            tmpfile = os.path.join(tmp_folder, basename)
+            tmpfile = os.path.join(TMP_DIR, basename)
             shutil.copy2(str_file, tmpfile)
             str_value = tmpfile
         elif str_txt is None or str_txt.strip() == "":

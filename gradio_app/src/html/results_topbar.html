@@ -1,0 +1,42 @@
+<div class="results-top-grid">
+    <div class="results-left-group">
+        <div class="result-status-banner">
+            <b>Status:</b>
+            <span class="status-text status-{job_status_class}">{job_status_text}</span>{job_status_dots}
+        </div>
+        <div class="result-refresh-hint">Refresh the page in 10s</div>
+    </div>
+    <div class="results-right-group">
+        <div class="session-row">
+            <span class="session-label">Session:</span>
+            <span
+                class="session-id"
+                onclick="
+                    navigator.clipboard?.writeText(this.textContent?.trim() || '');
+                    this.classList.add('copied');
+                    const hint = this.parentElement.querySelector('.copy-hint');
+                    if (hint) {{
+                        hint.textContent = '(copied)';
+                        hint.classList.add('copied');
+                    }}
+                    setTimeout(() => {{
+                        this.classList.remove('copied');
+                        if (hint) {{
+                            hint.textContent = '(click to copy)';
+                            hint.classList.remove('copied');
+                        }}
+                    }}, 900);
+                "
+                title="Click to copy"
+            >{session_id}</span>
+            <span class="copy-hint">(click to copy)</span>
+        </div>
+        <div class="job-row">
+            <label class="job-label" for="job-select">Job:</label>
+            <select id="job-select" class="example-select" onchange="if (this.value) window.location.assign(this.value);">
+                {options}
+            </select>
+        </div>
+        {new_job_html}
+    </div>
+</div>

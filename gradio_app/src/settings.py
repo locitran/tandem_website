@@ -1,7 +1,6 @@
 import os 
 from zoneinfo import ZoneInfo
 
-time_zone = ZoneInfo("Asia/Taipei")
 TAIPEI_TIME_ZONE = ZoneInfo("Asia/Taipei")
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # ./tandem_website
 
