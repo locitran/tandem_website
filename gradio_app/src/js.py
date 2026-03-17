@@ -43,7 +43,30 @@ return [v];
 }
 """
 
+focus_refresh = """
+<script>
+    (() => {
+        if (window.__tandem_focus_refresh_bound__) return;
+        window.__tandem_focus_refresh_bound__ = true;
 
+        let lastTrigger = 0;
+        const throttleMs = 500;
+        const triggerRefresh = () => {
+        const now = Date.now();
+        if (now - lastTrigger < throttleMs) return;
+        lastTrigger = now;
+
+        const btn = document.getElementById("focus_refresh_btn");
+        if (btn) btn.click();
+        };
+
+        document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) triggerRefresh();
+        });
+        window.addEventListener("focus", triggerRefresh);
+    })();
+</script>
+"""
 def build_html_text(filepath, **keys) -> str:
     if not os.path.isfile(filepath):
         LOGGER.warn(f"{filepath} is not a file")

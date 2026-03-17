@@ -3,7 +3,7 @@ from datetime import datetime
 import gradio as gr
 
 from . import js
-from .settings import HTML_DIR, TITLE, MOUNT_POINT, TAIPEI_TIME_ZONE
+from .settings import HTML_DIR, TITLE, MOUNT_POINT, TAIPEI_TIME_ZONE, GRADIO_DIR
 
 def build_header(title, current_page="home"):
     filepath = os.path.join(HTML_DIR, "header.html")
@@ -49,6 +49,9 @@ def build_last_updated():
     latest_ts = max(
         os.path.getmtime(os.path.join(HTML_DIR, "header.html")),
         os.path.getmtime(os.path.join(HTML_DIR, "footer.html")),
+        os.path.getmtime(os.path.join(GRADIO_DIR, "src/results.py")),
+        os.path.getmtime(os.path.join(GRADIO_DIR, "src/session.py")),
+        os.path.getmtime(os.path.join(GRADIO_DIR, "src/home.py")),
         os.path.getmtime(__file__),
     )
     updated = datetime.fromtimestamp(latest_ts, tz=TAIPEI_TIME_ZONE).strftime("%Y-%m-%d %H:%M")

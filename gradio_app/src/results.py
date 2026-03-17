@@ -18,9 +18,92 @@ db = client["app_db"]
 collections = db["input_queue"]
 
 
-def on_sav_set_select(selection, folds):
-    return folds[selection]
+def _job_folder_from_param(param):
+    if not isinstance(param, dict):
+        return ""
 
+    session_id = param.get("session_id")
+    job_name = param.get("job_name")
+    if not session_id or not job_name:
+        return ""
+
+    return os.path.join(JOB_DIR, session_id, job_name)
+
+def _read_user_log_events(job_folder):
+    if not job_folder:
+        return []
+
+    userlog_path = os.path.join(job_folder, "user_log.jsonl")
+    if not os.path.exists(userlog_path):
+        return []
+
+    events = []
+    with open(userlog_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return events
+
+
+def _build_user_log_message(event):
+    if not isinstance(event, dict):
+        return ""
+
+    level = str(event.get("level", "")).lower()
+    message = event.get("message", "")
+    action = event.get("action", "")
+
+    if not message:
+        return ""
+
+    if level == "error":
+        prefix = "❌"
+    elif level == "warning":
+        prefix = "⚠️"
+    else:
+        prefix = "ℹ️"
+
+    parts = [f"{prefix} {message}"]
+    if action:
+        parts.append(str(action))
+    return "\n".join(parts)
+
+
+def _build_user_log_history(events):
+    if not events:
+        return ""
+
+    rows = []
+    for event in events:
+        msg = _build_user_log_message(event)
+        if msg:
+            rows.append(msg)
+    return "\n\n".join(rows)
+
+
+def _status_from_param_and_event(job_status, latest_event):
+    level = str((latest_event or {}).get("level", "")).lower()
+    if level == "error":
+        return "error"
+    if job_status == "finished":
+        return "done"
+    if job_status in {"pending", "processing"}:
+        return "running"
+    return "running"
+
+
+def _build_status_banner(job_status_label):
+    return (
+        "<div class='result-status-banner'>"
+        f"<b>Status:</b> {html.escape(job_status_label)}<br>"
+        "Refresh the page in 10s ..."
+        "</div>"
+    )
 
 def tandem_output():
     with gr.Group(visible=False) as output_section:
@@ -29,12 +112,7 @@ def tandem_output():
         with gr.Group(visible=False) as inf_output_secion:
             with gr.Row():
                 with gr.Column():
-                    pred_table = gr.Dataframe(
-                        interactive=False,
-                        max_height=340,
-                        show_label=False,
-                        column_widths=[60, 150, "auto", "auto"],
-                    )
+                    pred_table = gr.Dataframe(interactive=False,max_height=340,show_label=False,column_widths=[60, 150, "auto", "auto"],)
                 with gr.Column():
                     image_viewer = gr.Image(height=340, show_label=False, buttons=["fullscreen"])
 
@@ -42,55 +120,15 @@ def tandem_output():
             with gr.Row():
                 with gr.Column():
                     folds_state = gr.State(value={})
-                    fold_dropdown = gr.Dropdown(
-                        label="View SAV set",
-                        choices=[],
-                        interactive=True,
-                        elem_classes="gr-button",
-                        elem_id="sav_dropdown",
-                        show_label=False,
-                    )
-                    sav_textbox = gr.Textbox(
-                        lines=1,
-                        interactive=False,
-                        show_label=False,
-                        elem_classes="gr-textbox",
-                        elem_id="sav_textbox",
-                        autoscroll=False,
-                    )
-                    fold_dropdown.change(fn=on_sav_set_select, inputs=[fold_dropdown, folds_state], outputs=sav_textbox)
+                    fold_dropdown = gr.Dropdown(label="View SAV set", choices=[], interactive=True, elem_classes="gr-button", elem_id="sav_dropdown", show_label=False,)
+                    sav_textbox = gr.Textbox(lines=1,interactive=False,show_label=False,elem_classes="gr-textbox",elem_id="sav_textbox",autoscroll=False,)
                     test_evaluation = gr.Dataframe(interactive=False, max_height=250, show_label=False)
                 loss_image = gr.Image(label="", show_label=False, height=364, buttons=["fullscreen"])
             model_save = gr.Markdown(elem_classes="gr-p")
 
         result_zip = gr.File(label="Download Results")
         focus_refresh_btn = gr.Button(elem_id="focus_refresh_btn", visible=False)
-        gr.HTML(
-            """
-        <script>
-        (() => {
-            if (window.__tandem_focus_refresh_bound__) return;
-            window.__tandem_focus_refresh_bound__ = true;
-
-            let lastTrigger = 0;
-            const throttleMs = 500;
-            const triggerRefresh = () => {
-            const now = Date.now();
-            if (now - lastTrigger < throttleMs) return;
-            lastTrigger = now;
-
-            const btn = document.getElementById("focus_refresh_btn");
-            if (btn) btn.click();
-            };
-
-            document.addEventListener("visibilitychange", () => {
-            if (!document.hidden) triggerRefresh();
-            });
-            window.addEventListener("focus", triggerRefresh);
-        })();
-        </script>
-        """
-        )
+        gr.HTML(js.focus_refresh)
 
     return (
         output_section,
@@ -108,51 +146,12 @@ def tandem_output():
         focus_refresh_btn,
     )
 
-
-def update_process_status(param, search_db: bool):
-    process_status_udt = gr.update()
-    param_udt = param.copy() if param else param
-
-    if not param:
-        return process_status_udt, param_udt
-
-    session_id = param.get("session_id")
-    job_name = param.get("job_name")
-    if not session_id or not job_name:
-        return process_status_udt, param_udt
-
-    if search_db:
-        updated = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 0})
-        if not updated:
-            return process_status_udt, param_udt
-        param_udt = updated
-
-    job_status = param_udt.get("status")
-    job_start = param_udt.get("job_start")
-
-    if job_status == "pending":
-        process_status_udt = gr.update(value="⏳ Waiting in queue...", visible=True)
-    elif job_status == "processing" and job_start:
-        elapsed = int(time.time() - job_start)
-        emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
-        icon = emoji_frames[elapsed % len(emoji_frames)]
-        msg = f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed."
-        process_status_udt = gr.update(value=msg, visible=True)
-    elif job_status == "finished":
-        job_end = param_udt.get("job_end")
-        if job_start and job_end:
-            runtime = int(job_end - job_start)
-            process_status_udt = gr.update(value=f"✅ Finished in {runtime}s", visible=True)
-
-    return process_status_udt, param_udt
-
 class ResultPage:
     def __init__(self, folder):
         self.folder = folder
 
-
     def build(self):
-        self.timer = gr.Timer(value=1, active=False)
+        self.timer = gr.Timer(value=10, active=False)
 
         self.session_id = gr.Textbox(value="", visible=False)
         self.job_name = gr.Textbox(value="", visible=False)
@@ -162,11 +161,12 @@ class ResultPage:
 
         self.param_state = gr.State({})
         self.jobs_folder_state = gr.State(self.folder)
+        self.result_status = gr.Markdown()
         with gr.Row(elem_classes="bg-row-column"):
             with gr.Column(scale=4):
                 self.submit_status = gr.Textbox(label="Submission Status",lines=2,interactive=False,elem_classes="gr-textbox",autoscroll=False,)
             with gr.Column(scale=4):
-                self.process_status = gr.Textbox(label="Processing Status",lines=2,interactive=False,elem_classes="gr-textbox",autoscroll=False,)
+                self.process_status = gr.Textbox(label="User Log", lines=8, interactive=False, elem_classes="gr-textbox", autoscroll=False,)
             with gr.Column(scale=2, elem_classes="results-side-panel"):
                 self.session_box = gr.HTML()
                 self.job_dropdown = gr.HTML()
@@ -179,21 +179,22 @@ class ResultPage:
 
     def _bind_events(self):
         self.pred_table.select(self.on_select_sav, inputs=[self.pred_table, self.job_folder], outputs=[self.image_viewer])
-
         self.session_box.click(None, js=js.session_box) # Click = copy to clipboard
 
         self.focus_refresh_btn.click(fn=self.update_submit_status, inputs=[self.param_state], outputs=[self.submit_status],
-        ).then(fn=update_process_status, inputs=[self.param_state, gr.State(True)], outputs=[self.process_status, self.param_state],
+        ).then(fn=self.update_process_status, inputs=[self.param_state, gr.State(True)], outputs=[self.result_status, self.process_status, self.param_state],
         ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
             outputs=[self.output_section,self.result_zip,self.inf_output_secion,self.pred_table,self.image_viewer,self.tf_output_secion,self.folds_state,self.fold_dropdown,self.sav_textbox,self.loss_image,self.test_evaluation,self.model_save,self.job_folder,],
         ).then(fn=self.update_timer, inputs=[self.param_state], outputs=[self.timer],
         )
 
-        self.timer.tick(fn=update_process_status, inputs=[self.param_state, gr.State(True)], outputs=[self.process_status, self.param_state],
+        self.timer.tick(fn=self.update_process_status, inputs=[self.param_state, gr.State(True)], outputs=[self.result_status, self.process_status, self.param_state],
         ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
             outputs=[self.output_section, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder,],
         ).then(fn=self.update_timer,inputs=[self.param_state],outputs=[self.timer],
         )
+
+        self.fold_dropdown.change(fn=self.on_sav_set_select, inputs=[self.fold_dropdown, self.folds_state], outputs=self.sav_textbox)
     
     def update_timer(self, param):
         _job_status = param.get('status', None)
@@ -305,9 +306,18 @@ class ResultPage:
             folder, param["session_id"], param["job_name"], 'tandem_shap', image_name)
         return gr.update(value=path, visible=True)
 
-    def render_finished_job(self, param, _mode, job_folder, _job_name):
+    def update_finished_job(self, param, folder):
+        _session_id = param.get("session_id")
+        _job_status = param.get("status")
+        _job_name = param.get("job_name")
+        _mode = param.get("mode")
 
         # ----------- defaults (IMPORTANT) -----------
+        if _job_status != "finished":
+            return [gr.update(visible=False) for _ in range(13)]
+
+        job_folder = os.path.join(folder, _session_id, _job_name)
+
         output_section_udt = gr.update(visible=True)
         result_zip_udt = gr.update(value=None, interactive=False, visible=False)
 
@@ -379,46 +389,10 @@ class ResultPage:
             test_eval_udt = gr.update(value=df_test_eval, visible=True)
             model_saved_udt = gr.update(value=f"Your models have been saved under name '{_job_name}'!", visible=True)
         return (
-            output_section_udt,
-            result_zip_udt,
-
-            inf_output_secion_udt,
-            pred_table_udt,
-            image_viewer_udt,
-
-            tf_output_secion_udt,
-            folds_state_udt,
-            
-            fold_dropdown_udt,
-            SAV_textbox_udt,
-
-            loss_image_udt,
-            test_eval_udt,
-            model_saved_udt,
-            job_folder_udt
+            output_section_udt,result_zip_udt, inf_output_secion_udt, pred_table_udt, image_viewer_udt,
+            tf_output_secion_udt, folds_state_udt, fold_dropdown_udt, SAV_textbox_udt,
+            loss_image_udt, test_eval_udt, model_saved_udt, job_folder_udt
         )
-
-    def update_finished_job(self, param, folder):
-        """
-        Handle output-related UI updates:
-        - output section visibility
-        - prediction table
-        - images
-        - training / evaluation artifacts
-        """
-        _session_id = param.get("session_id")
-        _job_status = param.get("status")
-        _job_name   = param.get("job_name")
-        _mode       = param.get("mode")
-        # Defaults: hide everything
-        def hide_all(n):
-            return [gr.update(visible=False) for _ in range(n)]
-
-        if _job_status == "finished":
-            job_folder = os.path.join(folder, _session_id, _job_name)
-            return self.render_finished_job(param, _mode, job_folder, _job_name)
-        else:
-            return hide_all(13)
 
     def update_submit_status(self, param):
         _session_id = param.get("session_id")
@@ -437,6 +411,72 @@ class ResultPage:
             
             submit_status_udt  = gr.update(value=msg, visible=True, lines=2)
         return submit_status_udt
+    
+    def update_process_status(self, param, search_db: bool):
+        status_banner_udt = gr.update()
+        process_status_udt = gr.update()
+        param_udt = param.copy() if param else param
+
+        if not param:
+            return status_banner_udt, process_status_udt, param_udt
+
+        session_id = param.get("session_id")
+        job_name = param.get("job_name")
+        if not session_id or not job_name:
+            return status_banner_udt, process_status_udt, param_udt
+
+        if search_db:
+            updated = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 0})
+            if not updated:
+                return status_banner_udt, process_status_udt, param_udt
+            param_udt = updated
+
+        job_status = param_udt.get("status")
+        job_start = param_udt.get("job_start")
+        job_end = param_udt.get("job_end")
+        job_folder = _job_folder_from_param(param_udt)
+        user_log_events = _read_user_log_events(job_folder)
+        latest_event = user_log_events[-1] if user_log_events else None
+        user_log_message = _build_user_log_message(latest_event)
+        user_log_history = _build_user_log_history(user_log_events)
+        status_banner_udt = gr.update(value=_build_status_banner(_status_from_param_and_event(job_status, latest_event)), visible=True)
+
+        if job_status == "pending":
+            msg = user_log_history or user_log_message or "⏳ Waiting in queue..."
+            process_status_udt = gr.update(value=msg, visible=True)
+        elif job_status == "processing" and job_start:
+            elapsed = int(time.time() - job_start)
+            emoji_frames = ["⏳", "🔄", "🔁", "🔃"]
+            icon = emoji_frames[elapsed % len(emoji_frames)]
+            elapsed_msg = f"{icon} Model is running... {elapsed} second{'s' if elapsed != 1 else ''} elapsed."
+            if user_log_history:
+                msg = f"{user_log_history}\n\n{elapsed_msg}"
+            elif user_log_message:
+                msg = f"{user_log_message}\n{elapsed_msg}"
+            else:
+                msg = elapsed_msg
+            process_status_udt = gr.update(value=msg, visible=True)
+        elif job_status == "finished":
+            if job_start and job_end:
+                runtime = int(job_end - job_start)
+                finished_msg = f"✅ Finished in {runtime}s"
+                if user_log_history:
+                    msg = f"{user_log_history}\n\n{finished_msg}"
+                elif user_log_message:
+                    msg = f"{user_log_message}\n{finished_msg}"
+                else:
+                    msg = finished_msg
+                process_status_udt = gr.update(value=msg, visible=True)
+            elif user_log_history:
+                process_status_udt = gr.update(value=user_log_history, visible=True)
+            elif user_log_message:
+                process_status_udt = gr.update(value=user_log_message, visible=True)
+        elif user_log_history:
+            process_status_udt = gr.update(value=user_log_history, visible=True)
+        elif user_log_message:
+            process_status_udt = gr.update(value=user_log_message, visible=True)
+
+        return status_banner_udt, process_status_udt, param_udt
 
 def _load_result_param(session_id, job_name):
     doc = collections.find_one({"session_id": session_id, "job_name": job_name}, {"_id": 0})
@@ -455,11 +495,11 @@ def results_page():
         ).then(fn=passthrough_url, inputs=[ui.error_url], outputs=[ui.error_url], js=js.direct2url_refresh, queue=False,
         ).then(fn=_load_result_param, inputs=[ui.session_id, ui.job_name], outputs=[ui.param_state, ui.new_job_btn], queue=False,
         ).then(fn=ui.update_submit_status, inputs=[ui.param_state], outputs=[ui.submit_status], queue=False,
-        ).then(fn=update_process_status, inputs=[ui.param_state, gr.State(False)], outputs=[ui.process_status, ui.param_state], queue=False,
+        ).then(fn=ui.update_process_status, inputs=[ui.param_state, gr.State(False)], outputs=[ui.result_status, ui.process_status, ui.param_state], queue=False,
         ).then(fn=ui.render_session_html, inputs=[ui.param_state], outputs=[ui.session_box]
         ).then(fn=ui.render_new_job_html, inputs=[ui.param_state], outputs=[ui.new_job_btn]
         ).then(fn=ui.render_job_html, inputs=[ui.param_state], outputs=[ui.job_dropdown]
-        ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state],# queue=False,
+        ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state],
             outputs=[ui.output_section, ui.result_zip, ui.inf_output_secion, ui.pred_table, ui.image_viewer, ui.tf_output_secion, ui.folds_state, ui.fold_dropdown, ui.sav_textbox, ui.loss_image, ui.test_evaluation, ui.model_save, ui.job_folder,],
         ).then(fn=ui.update_timer, inputs=[ui.param_state], outputs=[ui.timer], queue=False,
         )
