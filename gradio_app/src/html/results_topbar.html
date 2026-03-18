@@ -5,6 +5,7 @@
             <span class="status-text status-{job_status_class}">{job_status_text}</span>{job_status_dots}
         </div>
         <div class="result-refresh-hint">Refresh the page in 10s</div>
+        <div class="result-retention-note">Jobs are deleted automatically after 60 days.</div>
     </div>
     <div class="results-right-group">
         <div class="session-row">
@@ -37,6 +38,9 @@
                 {options}
             </select>
         </div>
-        {new_job_html}
+        <div class="result-actions-row">
+            {new_job_html}
+            {cancel_job_html}
+        </div>
     </div>
 </div>

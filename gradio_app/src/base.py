@@ -61,16 +61,20 @@ def qa_page():
     with gr.Blocks(title=TITLE) as page:
         build_header(TITLE, current_page="qa")
         with gr.Column(elem_id="main-content"):
+            hash_ready = gr.Textbox(value="", visible=False)
             build_qa()
         build_footer()
+        page.load(fn=lambda: "", inputs=None, outputs=[hash_ready], js=js.open_hash_details, queue=False)
     return page
 
 def tutorial_page():
     with gr.Blocks(title=TITLE) as page:
         build_header(TITLE, current_page="tutorial")
         with gr.Column(elem_id="main-content"):
+            hash_ready = gr.Textbox(value="", visible=False)
             build_tutorial()
         build_footer()
+        page.load(fn=lambda: "", inputs=None, outputs=[hash_ready], js=js.open_hash_details, queue=False)
     return page
 
 def licence_page():

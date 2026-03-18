@@ -5,21 +5,21 @@
     <nav class="qa-toc" aria-label="Q and A contents">
         <h3>Contents</h3>
         <ol>
-            <li><a href="#q1" onclick="document.getElementById('q1').open = true;">What is TANDEM-DIMPLE?</a></li>
-            <li><a href="#q2" onclick="document.getElementById('q2').open = true;">What is a single amino acid variant (SAV)?</a></li>
-            <li><a href="#q3" onclick="document.getElementById('q3').open = true;">How long does the job take to run? (This section is under revision)</a></li>
-            <li><a href="#q4" onclick="document.getElementById('q4').open = true;">What is an Error job status? (This section is under revision)</a></li>
-            <li><a href="#q5" onclick="document.getElementById('q5').open = true;">What do the results look like?</a></li>
-            <li><a href="#q6" onclick="document.getElementById('q6').open = true;">How does TANDEM-DIMPLE Website work?</a></li>
-            <li><a href="#q7" onclick="document.getElementById('q7').open = true;">How TANDEM-DIMPLE model was trained?</a></li>
-            <li><a href="#q8" onclick="document.getElementById('q8').open = true;">What is SHAP analysis?</a></li>
-            <li><a href="#q9" onclick="document.getElementById('q9').open = true;">What features are we using in the TANDEM-DIMPLE models?</a></li>
-            <li><a href="#q10" onclick="document.getElementById('q10').open = true;">How do I reference TANDEM-DIMPLE? (This section is under revision)</a></li>
+            <li><a href="#q1" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q1').open = true;">What is TANDEM-DIMPLE?</a></li>
+            <li><a href="#q2" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q2').open = true;">What is a single amino acid variant (SAV)?</a></li>
+            <li><a href="#q3" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q3').open = true;">How long does the job take to run? (This section is under revision)</a></li>
+            <li><a href="#q4" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q4').open = true;">What is an Error job status? (This section is under revision)</a></li>
+            <li><a href="#q5" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q5').open = true;">What do the results look like?</a></li>
+            <li><a href="#q6" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q6').open = true;">How does TANDEM-DIMPLE Website work?</a></li>
+            <li><a href="#q7" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q7').open = true;">How TANDEM-DIMPLE model was trained?</a></li>
+            <li><a href="#q8" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q8').open = true;">What is SHAP analysis?</a></li>
+            <li><a href="#q9" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q9').open = true;">What features are we using in the TANDEM-DIMPLE models?</a></li>
+            <li><a href="#q10" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q10').open = true;">How do I reference TANDEM-DIMPLE?</a></li>
             <li><a href="#references">References</a></li>
         </ol>
     </nav>
 
-    <details class="qa-item" id="q1" open>
+    <details class="qa-item" id="q1">
         <summary>What is TANDEM-DIMPLE?</summary>
         <div class="qa-panel">
             <p>
@@ -54,7 +54,7 @@
         </div>
     </details>
 
-    <details class="qa-item" id="q2" open>
+    <details class="qa-item" id="q2">
         <summary>What is a single amino acid variant (SAV)?</summary>
         <div class="qa-panel">
             <div class="q1-item">
@@ -118,6 +118,7 @@
                     Open training example result
                 </a>
             </p>
+            <p>For more information see <a href="../tutorial/#step4">Tutorial</a>.</p>
         </div>
     </details>
 
@@ -145,7 +146,7 @@
                     src="./gradio_api/file=assets/images/qa_TANDEM-DIMPLE_website_architecture.svg"
                     alt="TANDEM-DIMPLE web portal architecture">
                 <figcaption>
-                    <b>TANDEM-DIMPLE web portal.</b> <b>(A)</b> Overview of the TANDEM-DIMPLE web architecture. Each user
+                    <b>TANDEM-DIMPLE web portal.</b> Overview of the TANDEM-DIMPLE web architecture. Each user
                     session is assigned a unique session ID and supports two analysis modes: Job #1 (Model inference) for
                     predicting pathogenicity of submitted single amino acid variants (SAVs) using pretrained models, and
                     Job #2 (Transfer learning) for fine-tuning gene-specific predictors using clinically labeled SAV
@@ -452,18 +453,18 @@
 
     
     <details class="qa-item" id="q10">
-        <summary>How do I reference TANDEM-DIMPLE? (This section is under revision)</summary>
+        <summary>How do I reference TANDEM-DIMPLE?</summary>
         <div class="qa-panel">
             <p>
                 Our work is under submission.
             </p>
             <p>
-                Please cite TANDEM-DIMPLE as:
+                Please cite TANDEM-DIMPLE as: <br>
                 Loc Dinh Quang Tran<sup>†</sup>, Chen-Hua Lu<sup>†</sup>, Cheng-Yu Tsai,
                 Wei-Hsiang Shen, Chun-Biu Li, Tong-You Lin, Chi-Chun Lee, Pei-Lung Chen,
                 Chen-Chi Wu, Lee-Wei Yang*.
                 <em>TANDEM-DIMPLE Makes Correct Gene-Specific Pathogenicity Predictions for Missense Variants</em>.
-                (Under submission, <sup>†</sup>Co-first authors; <sup>*</sup>Corresponding author)
+                (<sup>†</sup>Co-first authors; <sup>*</sup>Corresponding author)
             </p>
         </div>
     </details>

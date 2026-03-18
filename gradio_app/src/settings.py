@@ -3,6 +3,8 @@ from zoneinfo import ZoneInfo
 
 TAIPEI_TIME_ZONE = ZoneInfo("Asia/Taipei")
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # ./tandem_website
+JOB_RETENTION_DAYS = 60
+JOB_RETENTION_SECONDS = JOB_RETENTION_DAYS * 24 * 60 * 60
 
 MOUNT_POINT = 'TANDEM-dev'  # https://dyn.life.nthu.edu.tw/TANDEM-dev
 TITLE = 'TANDEM-DIMPLE-DEV'

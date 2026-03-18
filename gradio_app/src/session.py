@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import time
 from datetime import datetime
 
 import gradio as gr
@@ -8,15 +9,8 @@ from pymongo import MongoClient
 
 from . import js
 from .logger import LOGGER
-from .request import (
-    build_job_url,
-    build_session_url,
-    passthrough_url,
-    request2info,
-    request2session_id,
-    session_exists,
-)
-from .settings import EXAMPLES_JSON, FIGURE_1, HTML_DIR, JOB_DIR, TITLE, TAIPEI_TIME_ZONE, TMP_DIR
+from .request import build_job_url,build_session_url,passthrough_url,request2info,request2session_id,session_exists
+from .settings import EXAMPLES_JSON, FIGURE_1, HTML_DIR, JOB_DIR, TITLE, TAIPEI_TIME_ZONE, TMP_DIR, JOB_RETENTION_SECONDS
 from .update_input import handle_SAV, handle_STR, on_clear_file, upload_file
 from .base import build_footer, build_header, build_last_updated
 
@@ -261,6 +255,10 @@ class SessionPage:
         param_udt["label"] = label
         param_udt["model"] = model_dropdown
         param_udt["job_name"] = job_name_full
+        delete_after_ts = time.time() + JOB_RETENTION_SECONDS
+        delete_after_str = datetime.fromtimestamp(delete_after_ts, tz=tz_final).strftime("%Y-%m-%d %H:%M")
+        param_udt["delete_after_ts"] = delete_after_ts
+        param_udt["delete_after_str"] = delete_after_str
         param_udt["email"] = None
         param_udt["STR"] = str_value
         param_udt["IP"] = ip

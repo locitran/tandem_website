@@ -5,17 +5,17 @@
     <nav class="tutorial-toc" aria-label="Tutorial contents">
         <h3>Contents</h3>
         <ul>
-            <li><a href="#intro" onclick="document.getElementById('intro').open = true;">Overview</a></li>
-            <li><a href="#step1" onclick="document.getElementById('step1').open = true;">Step 1: Create or resume a session</a></li>
-            <li><a href="#step2" onclick="document.getElementById('step2').open = true;">Step 2: Configure and submit a job</a></li>
-            <li><a href="#step3" onclick="document.getElementById('step3').open = true;">Step 3: Monitor job status</a></li>
-            <li><a href="#step4" onclick="document.getElementById('step4').open = true;">Step 4: Analyze results</a></li>
-            <li><a href="#pkd-demo" onclick="document.getElementById('pkd-demo').open = true;">PKD1/2 demonstration</a></li>
+            <li><a href="#intro" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('intro').open = true;">Overview</a></li>
+            <li><a href="#step1" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step1').open = true;">Step 1: Create or resume a session</a></li>
+            <li><a href="#step2" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step2').open = true;">Step 2: Configure and submit a job</a></li>
+            <li><a href="#step3" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step3').open = true;">Step 3: Monitor job status</a></li>
+            <li><a href="#step4" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step4').open = true;">Step 4: Analyze results</a></li>
+            <li><a href="#pkd-demo" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('pkd-demo').open = true;">PKD1/2 demonstration</a></li>
             <li><a href="#tutorial-references">References</a></li>
         </ul>
     </nav>
 
-    <details class="tutorial-item" id="intro" open>
+    <details class="tutorial-item" id="intro">
         <summary>Overview</summary>
         <div class="tutorial-panel">
             <p>The TANDEM-DIMPLE web server provides two core functions:</p>
@@ -227,7 +227,7 @@
 
             <p>
                 <b>Output:</b>
-                <a href="./results/?session_id=test&job_name=PKD_demo">
+                <a href="../results/?session_id=test&job_name=PKD_demo">
                     https://dyn.life.nthu.edu.tw/TANDEM/results/?session_id=test&job_name=PKD_demo
                 </a>
             </p>
@@ -235,10 +235,10 @@
             <p>
                 Following the same protocol applied to GJB2 and RYR1, variants were partitioned into
                 training sets (30%), validation sets (60%; training stopped when validation loss no longer
-                declined), and a hold-out test set (10%), generating 15 PKD1/2-specific TANDEM-DIMPLE
-                models. As a default, our TANDEM website shows both gene-general and gene-specific
-                results for a gene-specific test set, where the gene-general model may still be
-                recommended if it outperforms a gene-specific model.
+                declined), and a hold-out test set (10%), generating 15 PKD1/2-specific TANDEM-DIMPLE models. 
+                As a default, our TANDEM website shows both gene-general and gene-specific results for a 
+                gene-specific test set, where the gene-general model may still be recommended if it outperforms 
+                a gene-specific model. For more information see <a href="../QA/#q7">QA</a>.
             </p>
 
             <figure class="s10-figure theme-image">
