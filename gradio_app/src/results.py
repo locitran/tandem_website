@@ -9,13 +9,17 @@ from pymongo import MongoClient
 
 from . import js
 from .settings import JOB_DIR, TITLE, HTML_DIR
-from .request import build_session_url, build_job_url, passthrough_url, job_exists, request2session_and_job
+from .request import build_session_url, build_job_url, passthrough_url, job_exists, request2result_payload
 from .base import build_footer, build_header
 from .logger import LOGGER
+from .settings import EXAMPLES_JSON
 
 client = MongoClient("mongodb://mongodb:27017/")
 db = client["app_db"]
 collections = db["input_queue"]
+
+with open(EXAMPLES_JSON, "r", encoding="utf-8") as f:
+    EXAMPLES = json.load(f)
 
 def _read_user_log_events(job_folder):
     if not job_folder:
@@ -102,6 +106,9 @@ class ResultPage:
         self.timer = gr.Timer(value=10, active=False)
         self.session_id = gr.Textbox(value="", visible=False)
         self.job_name = gr.Textbox(value="", visible=False)
+        self.launch_session_id = gr.Textbox(value="", visible=False)
+        self.example_name = gr.Textbox(value="", visible=False)
+        self.example_action = gr.Textbox(value="", visible=False)
         self.session_url = gr.Textbox(value="", visible=False)
         self.error_url = gr.Textbox(value="", visible=False)
         self.job_folder = gr.Textbox(value="", visible=False)
@@ -211,8 +218,10 @@ class ResultPage:
 
         new_job_html = ""
         cancel_job_html = ""
-        if session_id != "test":
-            session_url = build_session_url(session_id)
+        launch_session_id = param.get("launch_session_id", "")
+        target_session_id = launch_session_id or session_id
+        if target_session_id != "test":
+            session_url = build_session_url(target_session_id)
             safe_url = html.escape(session_url, quote=True)
             new_job_html = f"""
             <div class="action-row">
@@ -479,6 +488,19 @@ class ResultPage:
         job_folder = os.path.join(JOB_DIR, session_id, job_name)
         return param, job_folder
 
+def resolve_result_request(session_id, job_name, example_name, example_action):
+    if job_name:
+        return session_id, job_name, ""
+
+    if example_action != "view_output" or not example_name:
+        return session_id, job_name, ""
+
+    ex = EXAMPLES.get(example_name, "")
+    if ex == "":
+        return session_id, job_name, ""
+
+    return ex.get("session_id", ""), ex.get("job_name", ""), session_id
+
 def results_page():
     with gr.Blocks(title=TITLE) as page:
         build_header(TITLE, current_page="home")
@@ -486,10 +508,12 @@ def results_page():
             ui = ResultPage(JOB_DIR).build()
         build_footer()
 
-        page.load(fn=request2session_and_job, inputs=None, outputs=[ui.session_id, ui.job_name], queue=False,
+        page.load(fn=request2result_payload, inputs=None, outputs=[ui.session_id, ui.job_name, ui.example_name, ui.example_action], queue=False,
+        ).then(fn=resolve_result_request, inputs=[ui.session_id, ui.job_name, ui.example_name, ui.example_action], outputs=[ui.session_id, ui.job_name, ui.launch_session_id], queue=False,
         ).then(fn=job_exists, inputs=[ui.session_id, ui.job_name], outputs=[ui.error_url], queue=False,
         ).then(fn=passthrough_url, inputs=[ui.error_url], outputs=[ui.error_url], js=js.direct2url_refresh, queue=False,
         ).then(fn=ui.search_param, inputs=[ui.session_id, ui.job_name], outputs=[ui.param_state, ui.job_folder], queue=False,
+        ).then(fn=lambda param, launch_session_id: ({**param, "launch_session_id": launch_session_id} if param else param), inputs=[ui.param_state, ui.launch_session_id], outputs=[ui.param_state], queue=False,
         ).then(fn=ui.update_process_status, inputs=[ui.param_state, ui.job_folder, gr.State(False)], outputs=[ui.top_bar, ui.process_status, ui.param_state], queue=False,
         ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state],
             outputs=[ui.output_section, ui.result_zip, ui.inf_output_secion, ui.pred_table, ui.image_viewer, ui.tf_output_secion, ui.folds_state, ui.fold_dropdown, ui.sav_textbox, ui.loss_image, ui.test_evaluation, ui.model_save, ui.job_folder,],

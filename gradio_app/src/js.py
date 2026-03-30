@@ -43,6 +43,13 @@ return [v];
 }
 """
 
+load_home_input = """
+() => {
+const v = document.getElementById('input_example_select')?.value || "";
+return [v];
+}
+"""
+
 focus_refresh = """
 <script>
     (() => {

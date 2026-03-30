@@ -9,7 +9,7 @@ from pymongo import MongoClient
 
 from . import js
 from .logger import LOGGER
-from .request import build_job_url,build_session_url,passthrough_url,request2info,request2session_id,session_exists
+from .request import build_job_url,build_session_url,passthrough_url,request2info,request2session_payload,session_exists
 from .settings import EXAMPLES_JSON, FIGURE_1, HTML_DIR, JOB_DIR, TITLE, TAIPEI_TIME_ZONE, TMP_DIR, JOB_RETENTION_SECONDS
 from .update_input import handle_SAV, handle_STR, on_clear_file, upload_file
 from .base import build_footer, build_header, build_last_updated
@@ -48,6 +48,8 @@ class SessionPage:
     def build(self):
         self.job_folder = gr.State()
         self.error_url = gr.Textbox(value="", visible=False)
+        self.example_name = gr.Textbox(value="", visible=False)
+        self.example_action = gr.Textbox(value="", visible=False)
 
         with gr.Row() as self.input_page:
             with gr.Column(scale=1):
@@ -168,7 +170,7 @@ class SessionPage:
     def on_tandem_refresh(self, param, example_name):
         param_udt = param.copy()
         param_udt["refresh"] = True
-        param_udt["GJB2_test"] = example_name == "GJB2 demo"
+        param_udt["GJB2_test"] = example_name == "GJB2 SAVs for transfer learning"
         return param_udt
 
     def on_view_example(self, example_name):
@@ -184,6 +186,70 @@ class SessionPage:
             return ""
 
         return build_job_url(session_id, job_name)
+
+    def apply_request_payload(self, example_name, example_action, param):
+        example_name = (example_name or "").strip()
+        example_action = (example_action or "").strip()
+        if example_action != "load_input" or not example_name:
+            return (
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                param,
+            )
+
+        ex = EXAMPLES.get(example_name, "")
+        if ex == "":
+            gr.Warning(f"No example configuration is available for '{example_name}'.")
+            return (
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                param,
+            )
+
+        mode = ex.get("mode", "Inferencing")
+        sav_value = "\n".join(ex["SAV"])
+        inf_sav_txt_udt = gr.update(value=sav_value if mode == "Inferencing" else "")
+        tf_sav_txt_udt = gr.update(value=sav_value if mode == "Training" else "")
+        str_check_value = bool(ex.get("str_check", False))
+        str_file_value = ex.get("str_file")
+        str_check_udt = gr.update(value=str_check_value)
+        structure_section_udt = gr.update(visible=str_check_value)
+        str_btn_udt = gr.update(visible=not str_check_value)
+        str_file_udt = gr.update(value=str_file_value, visible=bool(str_check_value and str_file_value))
+        job_name_udt = gr.update(value=ex["job_name"])
+
+        param_udt = param.copy()
+        param_udt["refresh"] = True
+        param_udt["GJB2_test"] = example_name == "GJB2 SAVs for transfer learning"
+        return (
+            gr.update(value=mode),
+            gr.update(visible=(mode == "Inferencing")),
+            gr.update(visible=(mode == "Training")),
+            inf_sav_txt_udt,
+            tf_sav_txt_udt,
+            str_check_udt,
+            structure_section_udt,
+            str_btn_udt,
+            str_file_udt,
+            job_name_udt,
+            param_udt,
+        )
 
     def on_clear_param(self):
         job_name_udt = datetime.now(TAIPEI_TIME_ZONE).strftime("%Y-%m-%d_%H-%M-%S")
@@ -321,10 +387,11 @@ def session_page():
             build_last_updated()
         build_footer()
 
-        page.load(fn=request2session_id, inputs=None, outputs=[ui.session_id], queue=False,
+        page.load(fn=request2session_payload, inputs=None, outputs=[ui.session_id, ui.example_name, ui.example_action], queue=False,
         ).then(fn=session_exists,inputs=[ui.session_id],outputs=[ui.error_url],queue=False,
         ).then(fn=passthrough_url,inputs=[ui.error_url],outputs=[ui.error_url],js=js.direct2url_refresh,queue=False,
         ).then(fn=on_session_id,inputs=ui.session_id,outputs=[ui.session_id, ui.session_status, ui.job_dropdown, ui.model_dropdown, ui.submit_btn],queue=False,
+        ).then(fn=ui.apply_request_payload,inputs=[ui.example_name, ui.example_action, ui.param_state], outputs=[ui.mode, ui.inf_section, ui.tf_section, ui.inf_sav_txt, ui.tf_sav_txt, ui.str_check, ui.structure_section, ui.str_btn, ui.str_file, ui.job_name_txt, ui.param_state], queue=False,
         )
 
     return page

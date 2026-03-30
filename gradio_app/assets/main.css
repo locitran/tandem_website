@@ -315,6 +315,9 @@ h3 {
 #inf_output_view,
 #tf_output_view,
 #inf_clear_btn,
+#input_example,
+#input_load,
+#output_view,
 #tf_clear_btn {
   display: none !important;
 }

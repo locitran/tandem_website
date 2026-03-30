@@ -1,0 +1,29 @@
+<div>
+    <label for="input_example_select" class="example-label"><b>Examples:</b></label>
+    <select id="input_example_select" class="example-select">
+        <option value="">-- Select --</option>
+        <option value="SAVs of multiple proteins for inferencing">SAVs of multiple proteins for inferencing</option>
+        <option value="PKD1/2 SAVs for transfer learning">PKD1/2 SAVs for transfer learning</option>
+        <option value="GJB2 SAVs for transfer learning">GJB2 SAVs for transfer learning</option>
+    </select>
+
+    <button class="view-output-btn" onclick="
+        const v = document.getElementById('input_example_select').value;
+        const bridge = document.getElementById('input_example');
+        if (!bridge) return;
+        bridge.value = v;
+        bridge.dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('input_load')?.click();">
+            Load input
+    </button>
+
+    <button class="view-output-btn" onclick="
+        const v = document.getElementById('input_example_select').value;
+        const bridge = document.getElementById('input_example');
+        if (!bridge) return;
+        bridge.value = v;
+        bridge.dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('output_view')?.click();">
+            View output
+    </button>
+</div>

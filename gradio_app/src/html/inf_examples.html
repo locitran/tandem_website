@@ -2,10 +2,7 @@
     <label for="inf_input_example_select" class="example-label"><b>Examples:</b></label>
     <select id="inf_input_example_select" class="example-select">
         <option value="">-- Select --</option>
-        <option value="1 protein">1 protein</option>
-        <option value="2 proteins">2 proteins</option>
-        <option value="3 proteins">3 proteins</option>
-        <option value="4 proteins">4 proteins</option>
+        <option value="SAVs of multiple proteins for inferencing">SAVs of multiple proteins for inferencing</option>
     </select>
 
     <button class="view-output-btn" onclick="
@@ -24,7 +21,70 @@
     </button>
 
     <button class="clear-input-btn"
-        onclick="document.getElementById('inf_clear_btn').click()">
+        onclick="
+            document.getElementById('inf_input_example_select').value = '';
+            document.getElementById('inf_clear_btn')?.click();
+        ">
         Clear all
     </button>
 </div>
+<script>
+    (() => {
+        if (window.__tandem_example_hash_bound__) return;
+        window.__tandem_example_hash_bound__ = true;
+
+        function selectHasOption(select, value) {
+            return !!select && Array.from(select.options).some((option) => option.value === value);
+        }
+
+        function consumePendingExample(attempts = 30) {
+            if (!window.location.pathname.includes('/session/')) return;
+
+            const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+            if (!hash) return;
+
+            const params = new URLSearchParams(hash);
+            const exampleName = params.get('example_name') || '';
+            const exampleAction = params.get('example_action') || '';
+            if (!exampleName || !exampleAction) return;
+
+            const infSelect = document.getElementById('inf_input_example_select');
+            const tfSelect = document.getElementById('tf_input_example_select');
+            const isInf = selectHasOption(infSelect, exampleName);
+            const isTf = selectHasOption(tfSelect, exampleName);
+            if (!isInf && !isTf) {
+                if (attempts <= 0) return;
+                window.setTimeout(() => consumePendingExample(attempts - 1), 150);
+                return;
+            }
+
+            const select = isInf ? infSelect : tfSelect;
+            const bridgeId = isInf ? 'inf_input_example' : 'tf_input_example';
+            const actionBtnId = isInf
+                ? (exampleAction === 'view_output' ? 'inf_output_view' : 'inf_input_load')
+                : (exampleAction === 'view_output' ? 'tf_output_view' : 'tf_input_load');
+            const bridge = document.getElementById(bridgeId);
+            const actionBtn = document.getElementById(actionBtnId);
+            if (!select || !bridge || !actionBtn) {
+                if (attempts <= 0) return;
+                window.setTimeout(() => consumePendingExample(attempts - 1), 150);
+                return;
+            }
+
+            select.value = exampleName;
+            bridge.value = exampleName;
+            bridge.dispatchEvent(new Event('input', { bubbles: true }));
+            window.setTimeout(() => actionBtn.click(), 0);
+
+            if (window.history?.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => consumePendingExample());
+        } else {
+            consumePendingExample();
+        }
+    })();
+</script>

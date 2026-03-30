@@ -14,11 +14,23 @@ db = client["app_db"]
 collections = db["input_queue"]
 IPWHOIS_URL = "https://ipwho.is/{ip}"
 
-def build_session_url(session_id):
-    return f"/{MOUNT_POINT}/session/?session_id={session_id}"
+def build_session_url(session_id, example_name="", example_action=""):
+    params = {"session_id": session_id}
+    if example_name:
+        params["example_name"] = example_name
+    if example_action:
+        params["example_action"] = example_action
+    return f"/{MOUNT_POINT}/session/?{urlencode(params)}"
 
-def build_job_url(session_id, job_name):
-    return f"/{MOUNT_POINT}/results/?session_id={session_id}&job_name={job_name}"
+def build_job_url(session_id, job_name, example_name="", example_action=""):
+    params = {"session_id": session_id}
+    if job_name:
+        params["job_name"] = job_name
+    if example_name:
+        params["example_name"] = example_name
+    if example_action:
+        params["example_action"] = example_action
+    return f"/{MOUNT_POINT}/results/?{urlencode(params)}"
 
 def build_error_url(kind, session_id="", job_name=""):
     params = {"kind": kind}
@@ -141,10 +153,23 @@ def request2info(request: gr.Request):
 def request2session_id(request: gr.Request):
     return request.query_params.get("session_id", "").strip()
 
+def request2session_payload(request: gr.Request):
+    session_id = (request.query_params.get("session_id", "") or "").strip()
+    example_name = (request.query_params.get("example_name", "") or "").strip()
+    example_action = (request.query_params.get("example_action", "") or "").strip()
+    return session_id, example_name, example_action
+
 def request2session_and_job(request: gr.Request):
     session_id = (request.query_params.get("session_id", "") or "").strip()
     job_name = (request.query_params.get("job_name", "") or "").strip()
     return session_id, job_name
+
+def request2result_payload(request: gr.Request):
+    session_id = (request.query_params.get("session_id", "") or "").strip()
+    job_name = (request.query_params.get("job_name", "") or "").strip()
+    example_name = (request.query_params.get("example_name", "") or "").strip()
+    example_action = (request.query_params.get("example_action", "") or "").strip()
+    return session_id, job_name, example_name, example_action
 
 def passthrough_url(url):
     return url

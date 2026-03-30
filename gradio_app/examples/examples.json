@@ -1,33 +1,5 @@
 {
-  "1 protein": {
-    "session_id": "test",
-    "job_name": "Inference_test_1p",
-    "mode": "Inferencing",
-    "refresh": true,
-    "str_check": false,
-    "str_file": null,
-    "SAV": ["O00187 R118C", "O00187 D120G", "O00187 T128M", "O00187 H155R"]
-  },
-  "2 proteins": {
-    "session_id": "test",
-    "job_name": "Inference_test_2p",
-    "mode": "Inferencing",
-    "refresh": true,
-    "str_check": false,
-    "str_file": null,
-    "SAV": ["O00206 T175A", "O00206 Q188R", "O00222 I265T", "O00222 R343Q"]
-  },
-  "3 proteins": {
-    "session_id": "test",
-    "job_name": "Inference_test_3p",
-    "mode": "Inferencing",
-    "refresh": true,
-    "str_check": false,
-    "str_file": null,
-    "SAV": ["A4D126 R126H", "A4D126 P149L", "O00214 R184S", "O00214 F19Y", "P01008 A91V", "P01008 Y95C"]
-  },
-
-  "4 proteins": {
+  "SAVs of multiple proteins for inferencing": {
     "session_id": "test",
     "mode": "Inferencing",
     "job_name": "Inference_test_4p",
@@ -37,7 +9,7 @@
     "SAV": ["O00189 R271H", "O00194 P138L", "O00194 A92T", "O00204 V240I", "O00204 L51S", "O00206 T175A", "O00206 Q188R", "O00206 C246S"]
   },
   
-  "GJB2 demo": {
+  "GJB2 SAVs for transfer learning": {
     "session_id": "test",
     "job_name": "GJB2_demo",
     "mode": "Training",
@@ -48,7 +20,7 @@
     "SAV": ["P29033 Y217D 0", "P29033 I215M 0", "P29033 L214V 0", "P29033 L210V 0", "P29033 I203T 0", "P29033 A197T 0", "P29033 N170K 0", "P29033 N170S 0", "P29033 K168R 0", "P29033 V156I 0", "P29033 V153I 0", "P29033 R127H 0", "P29033 T123N 0", "P29033 I121V 0", "P29033 F115V 0", "P29033 E114G 0", "P29033 I111T 0", "P29033 I107L 0", "P29033 H100Q 0", "P29033 F83L 0", "P29033 V27I 0", "P29033 H16Y 0", "P29033 G4V 0", "P29033 G4D 0", "P29033 R165W 0", "P29033 M34T 1", "P29033 V37I 1", "P29033 W44C 1", "P29033 W44S 1", "P29033 D50N 1", "P29033 G59A 1", "P29033 R75Q 1", "P29033 R75W 1", "P29033 V84L 1", "P29033 L90P 1", "P29033 V95M 1", "P29033 R143W 1", "P29033 R143Q 1", "P29033 F161S 1", "P29033 M163T 1", "P29033 D179N 1", "P29033 R184Q 1", "P29033 M195T 1", "P29033 A197S 1", "P29033 C202F 1", "P29033 L205V 1", "P29033 N206S 1"]
   },
 
-  "PKD1/2 demo": {
+  "PKD1/2 SAVs for transfer learning": {
     "session_id": "test",
     "job_name": "PKD_demo",
     "mode": "Training",
