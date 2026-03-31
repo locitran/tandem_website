@@ -50,6 +50,75 @@ return [v];
 }
 """
 
+session_example_sync = """
+<script>
+    (() => {
+        if (window.__tandem_example_hash_bound__) return;
+        window.__tandem_example_hash_bound__ = true;
+
+        function selectHasOption(select, value) {
+            return !!select && Array.from(select.options).some((option) => option.value === value);
+        }
+
+        function consumePendingExample(attempts = 30) {
+            if (!window.location.pathname.includes('/session/')) return;
+
+            const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+            if (!hash) return;
+
+            const params = new URLSearchParams(hash);
+            const exampleName = params.get('example_name') || '';
+            const exampleAction = params.get('example_action') || '';
+            if (!exampleName || !exampleAction) return;
+
+            const infSelect = document.getElementById('inf_input_example_select');
+            const tfSelect = document.getElementById('tf_input_example_select');
+            const isInf = selectHasOption(infSelect, exampleName);
+            const isTf = selectHasOption(tfSelect, exampleName);
+            if (!isInf && !isTf) {
+                if (attempts <= 0) return;
+                window.setTimeout(() => consumePendingExample(attempts - 1), 150);
+                return;
+            }
+
+            const infBridge = document.getElementById('inf_input_example');
+            const tfBridge = document.getElementById('tf_input_example');
+            const actionBtnId = isInf
+                ? (exampleAction === 'view_output' ? 'inf_output_view' : 'inf_input_load')
+                : (exampleAction === 'view_output' ? 'tf_output_view' : 'tf_input_load');
+            const actionBtn = document.getElementById(actionBtnId);
+            if ((!infSelect && !tfSelect) || (!infBridge && !tfBridge) || !actionBtn) {
+                if (attempts <= 0) return;
+                window.setTimeout(() => consumePendingExample(attempts - 1), 150);
+                return;
+            }
+
+            if (infSelect) infSelect.value = exampleName;
+            if (tfSelect) tfSelect.value = exampleName;
+            if (infBridge) {
+                infBridge.value = exampleName;
+                infBridge.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            if (tfBridge) {
+                tfBridge.value = exampleName;
+                tfBridge.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            window.setTimeout(() => actionBtn.click(), 0);
+
+            if (window.history?.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => consumePendingExample());
+        } else {
+            consumePendingExample();
+        }
+    })();
+</script>
+"""
+
 focus_refresh = """
 <script>
     (() => {

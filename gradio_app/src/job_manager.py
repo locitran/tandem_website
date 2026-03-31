@@ -1,4 +1,5 @@
 import jsonyx, json, os, shutil
+from datetime import datetime
 
 import gradio as gr
 from pymongo import MongoClient
@@ -10,8 +11,36 @@ collections = db["input_queue"]
 ADMIN_PASSWORD = "yanglab"
 JOBS_ROOT = "/tandem/jobs"
 
+def _format_job_time(raw_time):
+    if raw_time in (None, ""):
+        return ""
+
+    if isinstance(raw_time, (int, float)):
+        try:
+            return datetime.fromtimestamp(raw_time).strftime("%Y-%m-%d %H:%M:%S")
+        except (OverflowError, OSError, ValueError):
+            return str(raw_time)
+
+    text = str(raw_time).strip()
+    if not text:
+        return ""
+
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d_%H-%M-%S",
+        "%H%M%S%d%m%Y",
+    ):
+        try:
+            return datetime.strptime(text, fmt).strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+
+    return text
+
+
 def _get_job_time(data: dict):
-    return (
+    raw_time = (
         data.get("submitted_at")
         or data.get("job_start")
         or data.get("created_at")
@@ -19,6 +48,7 @@ def _get_job_time(data: dict):
         or data.get("time")
         or ""
     )
+    return _format_job_time(raw_time)
 
 
 def _get_geo_field(data: dict, key: str):

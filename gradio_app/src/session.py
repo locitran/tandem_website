@@ -108,6 +108,7 @@ class SessionPage:
                     filepath = os.path.join(HTML_DIR, "tf_examples.html")
                     tf_examples_html = js.build_html_text(filepath)
                     self.tf_examples_html = gr.HTML(tf_examples_html)
+            self.session_example_sync = gr.HTML(js.session_example_sync)
 
             self.str_check = gr.Checkbox(value=False,label="Provide PDB/AF2 ID or upload coordinate file (pdb/cif)",interactive=True,)
             with gr.Row(visible=False) as self.structure_section:
@@ -121,12 +122,9 @@ class SessionPage:
     def _bind_events(self):
         self.str_check.change(self.on_structure, self.str_check, [self.structure_section])
 
-        self.inf_input_load.click(fn=self.on_load_example, inputs=[self.inf_input_example], outputs=[self.inf_sav_txt, self.str_check, self.str_btn, self.str_file, self.job_name_txt], js=js.load_inf_input
-        ).then(fn=self.on_tandem_refresh, inputs=[self.param_state, self.job_name_txt], outputs=[self.param_state],
-        )
-        self.tf_input_load.click(fn=self.on_load_example, inputs=[self.tf_input_example], outputs=[self.tf_sav_txt, self.str_check, self.str_btn, self.str_file, self.job_name_txt], js=js.load_tf_input
-        ).then(fn=self.on_tandem_refresh, inputs=[self.param_state, self.job_name_txt], outputs=[self.param_state],
-        )
+        example_outputs = [self.mode, self.inf_section, self.tf_section, self.inf_sav_txt, self.tf_sav_txt, self.str_check, self.structure_section, self.str_btn, self.str_file, self.job_name_txt, self.param_state,]
+        self.inf_input_load.click(fn=self.on_load_examples, inputs=[self.inf_input_example, self.param_state], outputs=example_outputs, js=js.load_inf_input,)
+        self.tf_input_load.click(fn=self.on_load_examples,inputs=[self.tf_input_example, self.param_state],outputs=example_outputs,js=js.load_tf_input,)
 
         self.inf_output_view.click(fn=self.on_view_example,inputs=[self.inf_input_example],outputs=[self.inf_output_url],js=js.load_inf_input,
         ).then(fn=passthrough_url,inputs=[self.inf_output_url],outputs=[self.inf_output_url],js=js.direct2url_open,
@@ -139,8 +137,9 @@ class SessionPage:
         self.str_btn.upload(fn=upload_file, inputs=[self.str_btn], outputs=[self.str_btn, self.str_file])
         self.str_file.clear(fn=on_clear_file, inputs=[], outputs=[self.str_btn, self.str_file])
 
-        self.inf_clear_btn.click(fn=self.on_clear_param, inputs=[], outputs=[self.inf_sav_txt,self.tf_sav_txt,self.str_txt,self.str_btn,self.str_file,self.job_name_txt,])
-        self.tf_clear_btn.click(fn=self.on_clear_param, inputs=[], outputs=[self.inf_sav_txt,self.tf_sav_txt,self.str_txt,self.str_btn,self.str_file,self.job_name_txt,])
+        clear_outputs = [self.mode,self.inf_section,self.tf_section,self.inf_sav_txt,self.tf_sav_txt,self.str_check,self.structure_section,self.str_txt,self.str_btn,self.str_file,self.model_dropdown,self.job_name_txt,self.param_state,]
+        self.inf_clear_btn.click(fn=self.on_clear_param, inputs=[self.param_state], outputs=clear_outputs)
+        self.tf_clear_btn.click(fn=self.on_clear_param, inputs=[self.param_state], outputs=clear_outputs)
 
         self.submit_btn.click(fn=self.update_input_param, outputs=[self.param_state, self.job_url],
             inputs=[self.session_id,self.mode,self.inf_sav_txt,self.model_dropdown,self.tf_sav_txt,self.str_txt,self.str_file,self.job_name_txt,self.param_state,],
@@ -153,74 +152,18 @@ class SessionPage:
         ).then(fn=None,inputs=[self.job_url],outputs=[],js=js.direct2url_refresh,
         )
 
-    def on_load_example(self, example_name):
-        ex = EXAMPLES.get(example_name, "")
-        if ex == "":
-            return (gr.update(),) * 5
+    def empty_example_updates(self, param):
+        return (gr.update(),) * 10 + (param,)
 
-        sav_txt_udt = gr.update(value="\n".join(ex["SAV"]))
-        str_check_value = bool(ex.get("str_check", False))
-        str_file_value = ex.get("str_file")
-        str_check_udt = gr.update(value=str_check_value)
-        str_btn_udt = gr.update(visible=not str_check_value)
-        str_file_udt = gr.update(value=str_file_value, visible=bool(str_check_value and str_file_value))
-        job_name_udt = gr.update(value=ex["job_name"])
-        return sav_txt_udt, str_check_udt, str_btn_udt, str_file_udt, job_name_udt
-
-    def on_tandem_refresh(self, param, example_name):
-        param_udt = param.copy()
-        param_udt["refresh"] = True
-        param_udt["GJB2_test"] = example_name == "GJB2 SAVs for transfer learning"
-        return param_udt
-
-    def on_view_example(self, example_name):
-        ex = EXAMPLES.get(example_name, "")
-        if ex == "":
-            gr.Warning("Please select an example first.")
-            return ""
-
-        session_id = ex.get("session_id", "")
-        job_name = ex.get("job_name", "")
-        if not session_id or not job_name:
-            gr.Warning(f"No output example is configured for '{example_name}'.")
-            return ""
-
-        return build_job_url(session_id, job_name)
-
-    def apply_request_payload(self, example_name, example_action, param):
+    def on_load_examples(self, example_name, param):
         example_name = (example_name or "").strip()
-        example_action = (example_action or "").strip()
-        if example_action != "load_input" or not example_name:
-            return (
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                param,
-            )
+        if not example_name:
+            return self.empty_example_updates(param)
 
         ex = EXAMPLES.get(example_name, "")
         if ex == "":
             gr.Warning(f"No example configuration is available for '{example_name}'.")
-            return (
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                gr.update(),
-                param,
-            )
+            return self.empty_example_updates(param)
 
         mode = ex.get("mode", "Inferencing")
         sav_value = "\n".join(ex["SAV"])
@@ -251,14 +194,61 @@ class SessionPage:
             param_udt,
         )
 
-    def on_clear_param(self):
+    def on_tandem_refresh(self, param, example_name):
+        param_udt = param.copy()
+        param_udt["refresh"] = True
+        param_udt["GJB2_test"] = example_name == "GJB2 SAVs for transfer learning"
+        return param_udt
+
+    def on_view_example(self, example_name):
+        ex = EXAMPLES.get(example_name, "")
+        if ex == "":
+            gr.Warning("Please select an example first.")
+            return ""
+
+        session_id = ex.get("session_id", "")
+        job_name = ex.get("job_name", "")
+        if not session_id or not job_name:
+            gr.Warning(f"No output example is configured for '{example_name}'.")
+            return ""
+
+        return build_job_url(session_id, job_name)
+
+    def apply_request_payload(self, example_name, example_action, param):
+        example_name = (example_name or "").strip()
+        example_action = (example_action or "").strip()
+        if example_action != "load_input" or not example_name:
+            return self.empty_example_updates(param)
+
+        return self.on_load_examples(example_name, param)
+    
+    def on_clear_param(self, param):
         job_name_udt = datetime.now(TAIPEI_TIME_ZONE).strftime("%Y-%m-%d_%H-%M-%S")
+        param_udt = param.copy()
+        param_udt["GJB2_test"] = False
         inf_sav_txt_udt = gr.update(value="")
         tf_sav_txt_udt = gr.update(value="")
+        str_check_udt = gr.update(value=False)
+        structure_section_udt = gr.update(visible=False)
         str_txt_udt = gr.update(value="")
         str_btn_udt, str_file_udt = on_clear_file()
+        model_dropdown_udt = gr.update(value="TANDEM")
         job_name_txt_udt = gr.update(value=job_name_udt)
-        return inf_sav_txt_udt, tf_sav_txt_udt, str_txt_udt, str_btn_udt, str_file_udt, job_name_txt_udt
+        return (
+            gr.update(value="Inferencing"),
+            gr.update(visible=True),
+            gr.update(visible=False),
+            inf_sav_txt_udt,
+            tf_sav_txt_udt,
+            str_check_udt,
+            structure_section_udt,
+            str_txt_udt,
+            str_btn_udt,
+            str_file_udt,
+            model_dropdown_udt,
+            job_name_txt_udt,
+            param_udt,
+        )
 
     def on_mode(self, mode, param):
         param_udt = param.copy()
@@ -355,7 +345,6 @@ class SessionPage:
         if current_job not in job_names:
             job_names.append(current_job)
         return gr.update(visible=True, choices=sorted(job_names), value=current_job, interactive=True)
-
 
 def on_session_id(session_id):
     base_model_choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]

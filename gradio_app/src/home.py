@@ -115,11 +115,8 @@ class HomeTab:
                 self.save_session_id(new_id, ip=ip, geo_info=geo_info)
                 return new_id
 
-    def resolve_home_example(self, selected_example):
-        return (selected_example or "").strip()
-
     def on_load_example(self, selected_example, request: gr.Request):
-        example_name = self.resolve_home_example(selected_example)
+        example_name = (selected_example or "").strip()
         if not example_name:
             gr.Warning("Please select an example first.")
             return ""
@@ -134,7 +131,7 @@ class HomeTab:
         return build_session_url(session_id, example_name=example_name, example_action="load_input")
 
     def on_view_example(self, selected_example, request: gr.Request):
-        example_name = self.resolve_home_example(selected_example)
+        example_name = (selected_example or "").strip()
         if not example_name:
             gr.Warning("Please select an example first.")
             return ""
