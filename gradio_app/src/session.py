@@ -11,7 +11,7 @@ from . import js
 from .logger import LOGGER
 from .request import build_job_url,build_session_url,passthrough_url,request2info,request2session_payload,session_exists
 from .settings import EXAMPLES_JSON, FIGURE_1, HTML_DIR, JOB_DIR, TITLE, TAIPEI_TIME_ZONE, TMP_DIR, JOB_RETENTION_SECONDS
-from .update_input import handle_SAV, handle_STR, on_clear_file, upload_file
+from .update_input import handle_SAV, handle_STR
 from .base import build_footer, build_header, build_last_updated
 
 client = MongoClient("mongodb://mongodb:27017/")
@@ -22,6 +22,28 @@ READ_ONLY_SESSION_ID = "test"
 
 with open(EXAMPLES_JSON, "r", encoding="utf-8") as f:
     EXAMPLES = json.load(f)
+
+UPLOAD_ROW_HTML = """
+<div class="structure-upload-demo">
+    <div class="native-file-shell">
+        <span class="native-file-button">Choose File</span>
+        <span class="native-file-name">No file chosen</span>
+    </div>
+</div>
+"""
+
+
+def uploaded_row_html(filename: str) -> str:
+    return f"""
+<div class="structure-upload-demo">
+    <div class="native-file-shell">
+        <button class="clear-input-btn native-file-button" type="button" onclick="document.getElementById('str-clear-btn')?.click();">
+            Clear file
+        </button>
+        <span class="native-file-name">{filename}</span>
+    </div>
+</div>
+"""
 
 
 def left_column():
@@ -70,7 +92,8 @@ class SessionPage:
         return self
 
     def _build_input_section(self):
-        with gr.Group() as self.input_section:
+        
+        with gr.Group():
             self.mode = gr.Radio(["Inferencing", "Training"], value="Inferencing",label="Mode of Actions",)
             with gr.Group(visible=True) as self.inf_section:
                 label = "Paste single amino acid variants for one or multiple proteins (≤4)"
@@ -108,13 +131,16 @@ class SessionPage:
                     filepath = os.path.join(HTML_DIR, "tf_examples.html")
                     tf_examples_html = js.build_html_text(filepath)
                     self.tf_examples_html = gr.HTML(tf_examples_html)
-            self.session_example_sync = gr.HTML(js.session_example_sync)
-
-            self.str_check = gr.Checkbox(value=False,label="Provide PDB/AF2 ID or upload coordinate file (pdb/cif)",interactive=True,)
+            
+            label = "Provide PDB/AF2 ID or upload coordinate file (pdb/cif)"
+            self.str_check = gr.Checkbox(value=False,label=label,interactive=True,)
             with gr.Row(visible=False) as self.structure_section:
-                self.str_txt = gr.Textbox(value=None, label="Structure", placeholder="PDB ID (e.g., 1GOD) or AF2 ID (e.g., 014508)", interactive=True, show_label=False, scale=8,)
-                self.str_btn = gr.UploadButton("Upload file", file_count="single", elem_id="sav-btn", file_types=[".cif", ".pdb"], scale=3,)
-                self.str_file = gr.File(visible=False, scale=3, height=145)
+                placeholder="PDB ID (e.g., 1GOD) or AF2 ID (e.g., 014508)"
+                self.str_txt = gr.Textbox(value=None, label=label, placeholder=placeholder, interactive=True, show_label=False, scale=1)
+                self.upload_html = gr.HTML(UPLOAD_ROW_HTML)
+                self.str_btn = gr.UploadButton("str_btn", file_count="single", elem_id="str-upload-btn", file_types=[".cif", ".pdb"])
+                self.str_file = gr.Markdown(value="", elem_id="str-upload-file")
+                self.str_clear_btn = gr.Button(elem_id="str-clear-btn")
 
             self.job_name_txt = gr.Textbox(value="",label="Job name",placeholder="Enter job name",interactive=True,elem_classes="gr-textbox",)
             self.submit_btn = gr.Button("Submit", elem_classes="gr-button")
@@ -122,9 +148,13 @@ class SessionPage:
     def _bind_events(self):
         self.str_check.change(self.on_structure, self.str_check, [self.structure_section])
 
-        example_outputs = [self.mode, self.inf_section, self.tf_section, self.inf_sav_txt, self.tf_sav_txt, self.str_check, self.structure_section, self.str_btn, self.str_file, self.job_name_txt, self.param_state,]
-        self.inf_input_load.click(fn=self.on_load_examples, inputs=[self.inf_input_example, self.param_state], outputs=example_outputs, js=js.load_inf_input,)
-        self.tf_input_load.click(fn=self.on_load_examples,inputs=[self.tf_input_example, self.param_state],outputs=example_outputs,js=js.load_tf_input,)
+        example_outputs = [self.mode, self.inf_section, self.tf_section, self.inf_sav_txt, self.tf_sav_txt, self.str_check, self.structure_section, self.upload_html, self.str_btn, self.str_file, self.job_name_txt, self.param_state,]
+        
+        self.inf_input_load.click(fn=self.on_load_examples, inputs=[self.inf_input_example, self.param_state], outputs=example_outputs, js=js.load_inf_input,
+        ).then(fn=self.on_str_upload, inputs=[self.str_file], outputs=[self.upload_html, self.str_btn, self.str_file])
+        
+        self.tf_input_load.click(fn=self.on_load_examples,inputs=[self.tf_input_example, self.param_state],outputs=example_outputs,js=js.load_tf_input,
+        ).then(fn=self.on_str_upload, inputs=[self.str_file], outputs=[self.upload_html, self.str_btn, self.str_file])
 
         self.inf_output_view.click(fn=self.on_view_example,inputs=[self.inf_input_example],outputs=[self.inf_output_url],js=js.load_inf_input,
         ).then(fn=passthrough_url,inputs=[self.inf_output_url],outputs=[self.inf_output_url],js=js.direct2url_open,
@@ -134,10 +164,10 @@ class SessionPage:
         )
 
         self.mode.change(fn=self.on_mode,inputs=[self.mode, self.param_state],outputs=[self.inf_section, self.tf_section, self.param_state],)
-        self.str_btn.upload(fn=upload_file, inputs=[self.str_btn], outputs=[self.str_btn, self.str_file])
-        self.str_file.clear(fn=on_clear_file, inputs=[], outputs=[self.str_btn, self.str_file])
+        self.str_btn.upload(fn=self.on_str_upload, inputs=[self.str_btn], outputs=[self.upload_html, self.str_btn, self.str_file])
+        self.str_clear_btn.click(fn=self.on_str_clear, inputs=[], outputs=[self.upload_html, self.str_btn, self.str_file])
 
-        clear_outputs = [self.mode,self.inf_section,self.tf_section,self.inf_sav_txt,self.tf_sav_txt,self.str_check,self.structure_section,self.str_txt,self.str_btn,self.str_file,self.model_dropdown,self.job_name_txt,self.param_state,]
+        clear_outputs = [self.mode,self.inf_section,self.tf_section,self.inf_sav_txt,self.tf_sav_txt,self.str_check,self.structure_section,self.str_txt,self.upload_html,self.str_btn,self.str_file,self.model_dropdown,self.job_name_txt,self.param_state,]
         self.inf_clear_btn.click(fn=self.on_clear_param, inputs=[self.param_state], outputs=clear_outputs)
         self.tf_clear_btn.click(fn=self.on_clear_param, inputs=[self.param_state], outputs=clear_outputs)
 
@@ -153,7 +183,64 @@ class SessionPage:
         )
 
     def empty_example_updates(self, param):
-        return (gr.update(),) * 10 + (param,)
+        mode_udt = gr.update()
+        inf_section_udt = gr.update()
+        tf_section_udt = gr.update()
+        inf_sav_txt_udt = gr.update()
+        tf_sav_txt_udt = gr.update()
+        str_check_udt = gr.update()
+        structure_section_udt = gr.update()
+        upload_html_udt = gr.update()
+        str_btn_udt = gr.update()
+        str_file_udt = gr.update()
+        job_name_udt = gr.update()
+        param_udt = param
+        return (
+            mode_udt,
+            inf_section_udt,
+            tf_section_udt,
+            inf_sav_txt_udt,
+            tf_sav_txt_udt,
+            str_check_udt,
+            structure_section_udt,
+            upload_html_udt,
+            str_btn_udt,
+            str_file_udt,
+            job_name_udt,
+            param_udt,
+        )
+
+    def on_str_upload(self, file):
+        upload_html_udt = gr.update(value=UPLOAD_ROW_HTML, visible=True)
+        str_btn_udt = gr.update(visible=True)
+        str_file_udt = gr.update(value="")
+
+        if file is None:
+            return upload_html_udt, str_btn_udt, str_file_udt
+
+        filepath = str(file)
+        if not os.path.exists(filepath):
+            return upload_html_udt, str_btn_udt, str_file_udt
+
+        filename = os.path.basename(filepath)
+        upload_html_udt = gr.update(value=uploaded_row_html(filename), visible=True)
+        str_btn_udt = gr.update(visible=False)
+        str_file_udt = gr.update(value=filepath)
+        return (
+            upload_html_udt,
+            str_btn_udt,
+            str_file_udt,
+        )
+
+    def on_str_clear(self):
+        upload_html_udt = gr.update(value=UPLOAD_ROW_HTML, visible=True)
+        str_btn_udt = gr.update(value=None, visible=True)
+        str_file_udt = gr.update(value="")
+        return (
+            upload_html_udt,
+            str_btn_udt,
+            str_file_udt,
+        )
 
     def on_load_examples(self, example_name, param):
         example_name = (example_name or "").strip()
@@ -173,21 +260,26 @@ class SessionPage:
         str_file_value = ex.get("str_file")
         str_check_udt = gr.update(value=str_check_value)
         structure_section_udt = gr.update(visible=str_check_value)
-        str_btn_udt = gr.update(visible=not str_check_value)
-        str_file_udt = gr.update(value=str_file_value, visible=bool(str_check_value and str_file_value))
-        job_name_udt = gr.update(value=ex["job_name"])
+        upload_html_udt = gr.update(value=UPLOAD_ROW_HTML, visible=True)
+        str_btn_udt = gr.update(visible=True)
+        str_file_udt = gr.update(value=str_file_value or "")
+        job_name_udt = gr.update(value=example_name)
 
         param_udt = param.copy()
         param_udt["refresh"] = True
         param_udt["GJB2_test"] = example_name == "GJB2 SAVs for transfer learning"
+        mode_udt = gr.update(value=mode)
+        inf_section_udt = gr.update(visible=(mode == "Inferencing"))
+        tf_section_udt = gr.update(visible=(mode == "Training"))
         return (
-            gr.update(value=mode),
-            gr.update(visible=(mode == "Inferencing")),
-            gr.update(visible=(mode == "Training")),
+            mode_udt,
+            inf_section_udt,
+            tf_section_udt,
             inf_sav_txt_udt,
             tf_sav_txt_udt,
             str_check_udt,
             structure_section_udt,
+            upload_html_udt,
             str_btn_udt,
             str_file_udt,
             job_name_udt,
@@ -231,18 +323,22 @@ class SessionPage:
         str_check_udt = gr.update(value=False)
         structure_section_udt = gr.update(visible=False)
         str_txt_udt = gr.update(value="")
-        str_btn_udt, str_file_udt = on_clear_file()
+        upload_html_udt, str_btn_udt, str_file_udt = self.on_str_clear()
         model_dropdown_udt = gr.update(value="TANDEM")
         job_name_txt_udt = gr.update(value=job_name_udt)
+        mode_udt = gr.update(value="Inferencing")
+        inf_section_udt = gr.update(visible=True)
+        tf_section_udt = gr.update(visible=False)
         return (
-            gr.update(value="Inferencing"),
-            gr.update(visible=True),
-            gr.update(visible=False),
+            mode_udt,
+            inf_section_udt,
+            tf_section_udt,
             inf_sav_txt_udt,
             tf_sav_txt_udt,
             str_check_udt,
             structure_section_udt,
             str_txt_udt,
+            upload_html_udt,
             str_btn_udt,
             str_file_udt,
             model_dropdown_udt,
@@ -253,10 +349,13 @@ class SessionPage:
     def on_mode(self, mode, param):
         param_udt = param.copy()
         param_udt["GJB2_test"] = False
-        return (gr.update(visible=(mode == "Inferencing")), gr.update(visible=(mode == "Training")), param_udt,)
+        inf_section_udt = gr.update(visible=(mode == "Inferencing"))
+        tf_section_udt = gr.update(visible=(mode == "Training"))
+        return (inf_section_udt, tf_section_udt, param_udt,)
 
     def on_structure(self, checked: bool):
-        return gr.update(visible=checked)
+        structure_section_udt = gr.update(visible=checked)
+        return structure_section_udt
 
     def update_input_param(self, session_id, mode, inf_sav_txt, model_dropdown, tf_sav_txt, str_txt, str_file, job_name_txt, param, request: gr.Request):
         ip, tz_final, geo_info = request2info(request)
@@ -339,12 +438,14 @@ class SessionPage:
         session_id = param.get("session_id")
         current_job = param.get("job_name")
         if not session_id or not current_job or param.get("status") != "pending":
-            return gr.update()
+            job_dropdown_udt = gr.update()
+            return job_dropdown_udt
 
         job_names = collections.distinct("job_name", {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},)
         if current_job not in job_names:
             job_names.append(current_job)
-        return gr.update(visible=True, choices=sorted(job_names), value=current_job, interactive=True)
+        job_dropdown_udt = gr.update(visible=True, choices=sorted(job_names), value=current_job, interactive=True)
+        return job_dropdown_udt
 
 def on_session_id(session_id):
     base_model_choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
@@ -380,7 +481,8 @@ def session_page():
         ).then(fn=session_exists,inputs=[ui.session_id],outputs=[ui.error_url],queue=False,
         ).then(fn=passthrough_url,inputs=[ui.error_url],outputs=[ui.error_url],js=js.direct2url_refresh,queue=False,
         ).then(fn=on_session_id,inputs=ui.session_id,outputs=[ui.session_id, ui.session_status, ui.job_dropdown, ui.model_dropdown, ui.submit_btn],queue=False,
-        ).then(fn=ui.apply_request_payload,inputs=[ui.example_name, ui.example_action, ui.param_state], outputs=[ui.mode, ui.inf_section, ui.tf_section, ui.inf_sav_txt, ui.tf_sav_txt, ui.str_check, ui.structure_section, ui.str_btn, ui.str_file, ui.job_name_txt, ui.param_state], queue=False,
+        ).then(fn=ui.apply_request_payload,inputs=[ui.example_name, ui.example_action, ui.param_state], outputs=[ui.mode, ui.inf_section, ui.tf_section, ui.inf_sav_txt, ui.tf_sav_txt, ui.str_check, ui.structure_section, ui.upload_html, ui.str_btn, ui.str_file, ui.job_name_txt, ui.param_state], queue=False,
+        ).then(fn=ui.on_str_upload, inputs=[ui.str_file], outputs=[ui.upload_html, ui.str_btn, ui.str_file], queue=False,
         )
 
     return page

@@ -318,8 +318,85 @@ h3 {
 #input_example,
 #input_load,
 #output_view,
-#tf_clear_btn {
+#tf_clear_btn,
+#str-upload-file,
+#str-clear-btn {
   display: none !important;
+}
+
+#str-upload-btn {
+  position: absolute !important;
+  inset: 0 !important;
+  opacity: 0 !important;
+  z-index: 2 !important;
+  min-height: 42px !important;
+}
+
+#str-upload-btn button,
+#str-upload-btn label,
+#str-upload-btn input {
+  width: 100% !important;
+  min-height: 42px !important;
+  cursor: pointer !important;
+}
+
+.upload-shell {
+  position: relative;
+}
+
+.structure-upload-demo {
+  width: 100%;
+}
+
+.native-file-shell {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid #b8b8b8;
+  border-radius: 4px;
+}
+
+.native-file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  font-size: 14px;
+  white-space: nowrap;
+  border-right: 1px solid #b8b8b8;
+}
+
+button.native-file-button.clear-input-btn {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-right: 1px solid #b8b8b8 !important;
+  border-radius: 0 !important;
+  padding: 0 10px !important;
+  font-size: 14px !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  min-height: 42px;
+  align-self: stretch;
+}
+
+button.native-file-button.clear-input-btn:hover {
+  text-decoration: none !important;
+}
+
+.native-file-name {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- base style ---------- */
@@ -380,6 +457,15 @@ h3 {
     background: #2f3542;
     color: #e5e7eb;
     border-color: #5b6473;
+  }
+  .native-file-shell {
+    border-color: #8f96a3;
+  }
+  .native-file-button {
+    border-right-color: #8f96a3;
+  }
+  button.native-file-button.clear-input-btn {
+    border-right-color: #8f96a3 !important;
   }
 }
 

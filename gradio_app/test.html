@@ -1,0 +1,77 @@
+<style>
+    .structure-upload {
+        width: 100%;
+        font-family: sans-serif;
+    }
+
+    .structure-upload__trigger {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc;
+        color: #0f172a;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .structure-upload__trigger:hover {
+        background: #eef2ff;
+        border-color: #94a3b8;
+    }
+
+    .structure-upload__file {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 42px;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+    }
+
+    .structure-upload__file.is-visible {
+        display: flex;
+    }
+
+    .structure-upload__name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+        color: #0f172a;
+    }
+
+    .structure-upload__clear {
+        border: 0;
+        background: transparent;
+        color: #dc2626;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+    }
+
+    .structure-upload__clear:hover {
+        color: #991b1b;
+    }
+</style>
+
+<div class="structure-upload">
+    <button class="structure-upload__trigger" type="button">
+        Upload file
+    </button>
+
+    <div class="structure-upload__file">
+        <span class="structure-upload__name">example_structure.pdb</span>
+        <button class="structure-upload__clear" type="button">Clear</button>
+    </div>
+</div>
