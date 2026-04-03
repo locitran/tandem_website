@@ -12,21 +12,22 @@ sys.path.insert(0, str(GRADIO_ROOT))
 
 from src.logger import LOGGER
 
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://mongodb:27017/")
-DB_NAME = os.environ.get("MONGO_DB", "app_db")
-COLLECTION_NAME = os.environ.get("MONGO_COLLECTION", "input_queue")
 JOBS_DIR = Path(os.environ.get("JOBS_DIR", str(PROJECT_ROOT / "tandem" / "jobs")))
+
+client = MongoClient("mongodb://mongodb:27017/")
+db = client["app_db"]
+collections = db["input_queue"]
 
 def import_session_jobs(session_id: str) -> None:
     session_dir = JOBS_DIR / session_id
     if not session_dir.is_dir():
         raise FileNotFoundError(f"Session folder not found: {session_dir}")
 
-    client = MongoClient(MONGO_URI)
-    db = client[DB_NAME]
-    collections = db[COLLECTION_NAME]
+    client = MongoClient("mongodb://mongodb:27017/")
+    db = client["app_db"]
+    collections = db["input_queue"]
 
-    LOGGER.info(f"Importing jobs from {session_dir} into {DB_NAME}.{COLLECTION_NAME}")
+    LOGGER.info(f"Importing jobs from {session_dir} into mongodb")
 
     imported = 0
     skipped = 0

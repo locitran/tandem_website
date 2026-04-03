@@ -245,6 +245,7 @@ class SessionPage:
     def on_load_examples(self, example_name, param):
         example_name = (example_name or "").strip()
         if not example_name:
+            gr.Warning("Please select an example first.")
             return self.empty_example_updates(param)
 
         ex = EXAMPLES.get(example_name, "")
@@ -293,9 +294,14 @@ class SessionPage:
         return param_udt
 
     def on_view_example(self, example_name):
+        example_name = (example_name or "").strip()
+        if not example_name:
+            gr.Warning("Please select an example first.")
+            return ""
+
         ex = EXAMPLES.get(example_name, "")
         if ex == "":
-            gr.Warning("Please select an example first.")
+            gr.Warning(f"No example configuration is available for '{example_name}'.")
             return ""
 
         session_id = ex.get("session_id", "")
@@ -483,10 +489,10 @@ def session_page():
         ).then(fn=on_session_id,inputs=ui.session_id,outputs=[ui.session_id, ui.session_status, ui.job_dropdown, ui.model_dropdown, ui.submit_btn],queue=False,
         ).then(fn=ui.apply_request_payload,inputs=[ui.example_name, ui.example_action, ui.param_state], outputs=[ui.mode, ui.inf_section, ui.tf_section, ui.inf_sav_txt, ui.tf_sav_txt, ui.str_check, ui.structure_section, ui.upload_html, ui.str_btn, ui.str_file, ui.job_name_txt, ui.param_state], queue=False,
         ).then(fn=ui.on_str_upload, inputs=[ui.str_file], outputs=[ui.upload_html, ui.str_btn, ui.str_file], queue=False,
+        ).then(fn=None, inputs=[ui.example_name], outputs=[], js=js.sync_session_example_select, queue=False,
         )
 
     return page
-
 
 if __name__ == "__main__":
     pass

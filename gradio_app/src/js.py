@@ -50,6 +50,39 @@ return [v];
 }
 """
 
+sync_session_example_select = """
+(exampleName) => {
+    const urlParams = new URLSearchParams(window.location.search || "");
+    const urlExampleName = (urlParams.get("example_name") || "").trim();
+    const value = ((exampleName || "").trim() || urlExampleName);
+    if (!value) return;
+
+    const selectHasOption = (select, optionValue) => {
+        return !!select && Array.from(select.options).some((option) => option.value === optionValue);
+    };
+
+    const syncSelects = (attempts = 40) => {
+        const infSelect = document.getElementById('inf_input_example_select');
+        const tfSelect = document.getElementById('tf_input_example_select');
+        const matchedInf = selectHasOption(infSelect, value);
+        const matchedTf = selectHasOption(tfSelect, value);
+
+        if (matchedInf) infSelect.value = value;
+        if (matchedTf) tfSelect.value = value;
+
+        if ((matchedInf || matchedTf) || attempts <= 0) return;
+        window.setTimeout(() => syncSelects(attempts - 1), 150);
+    };
+
+    syncSelects();
+    window.setTimeout(() => syncSelects(), 0);
+    window.setTimeout(() => syncSelects(), 200);
+    window.setTimeout(() => syncSelects(), 500);
+    window.setTimeout(() => syncSelects(), 1000);
+    window.setTimeout(() => syncSelects(), 2000);
+}
+"""
+
 session_example_sync = """
 <script>
     (() => {
