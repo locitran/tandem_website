@@ -151,6 +151,7 @@ class HomeTab:
         ip, _, geo_info = request2info(request)
         param_udt = param.copy()
         param_udt['status'] = None
+        param_udt['refresh'] = False
         param_udt["session_id"] = None
         param_udt["session_url"] = ""
         param_udt["IP"] = ip
