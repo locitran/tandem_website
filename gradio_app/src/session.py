@@ -64,11 +64,10 @@ def left_column():
 
 
 class SessionPage:
-    def __init__(self, folder):
-        self.folder = folder
+    def __init__(self, param_state):
+        self.param_state = param_state
 
-    def build(self):
-        self.job_folder = gr.State()
+    def build(self, ):
         self.error_url = gr.Textbox(value="", visible=False)
         self.example_name = gr.Textbox(value="", visible=False)
         self.example_action = gr.Textbox(value="", visible=False)
@@ -77,8 +76,6 @@ class SessionPage:
             with gr.Column(scale=1):
                 left_column()
             with gr.Column(scale=1):
-                self.param_state = gr.State({})
-                self.jobs_folder_state = gr.State(self.folder)
                 self.job_url = gr.Textbox(value="", visible=False)
                 with gr.Group():
                     gr.Markdown("### User session", elem_classes="h3")
@@ -313,12 +310,13 @@ class SessionPage:
         return build_job_url(session_id, job_name)
 
     def apply_request_payload(self, example_name, example_action, param):
+        created_param = (param or {}).copy()
         example_name = (example_name or "").strip()
         example_action = (example_action or "").strip()
         if example_action != "load_input" or not example_name:
-            return self.empty_example_updates(param)
+            return self.empty_example_updates(created_param)
 
-        return self.on_load_examples(example_name, param)
+        return self.on_load_examples(example_name, created_param)
     
     def on_clear_param(self, param):
         job_name_udt = datetime.now(TAIPEI_TIME_ZONE).strftime("%Y-%m-%d_%H-%M-%S")
@@ -453,7 +451,7 @@ class SessionPage:
         job_dropdown_udt = gr.update(visible=True, choices=sorted(job_names), value=current_job, interactive=True)
         return job_dropdown_udt
 
-def on_session_id(session_id):
+def on_session_id(session_id, param):
     base_model_choices = ["TANDEM", "TANDEM-DIMPLE for GJB2", "TANDEM-DIMPLE for RYR1"]
     session_id_udt = gr.update(value=session_id, interactive=False)
     is_read_only = session_id == READ_ONLY_SESSION_ID
@@ -466,27 +464,34 @@ def on_session_id(session_id):
         job_dropdown_udt = gr.update(visible=True, value=None, choices=existing_jobs, interactive=True)
         pre_trained_models = collections.distinct("job_name", {"session_id": session_id, "status": "finished", "mode": {"$in": ["Training", "Transfer Learning"]}},)
         model_dropdown_udt = gr.update(choices=base_model_choices + pre_trained_models)
+        created_param = collections.find_one({"session_id": session_id, "status": "created"}) or {}
     else:
         collections.update_one({"session_id": session_id}, {"$set": {"session_id": session_id, "status": "created"}}, upsert=True,)
         job_dropdown_udt = gr.update(visible=False, value=None, choices=[])
         model_dropdown_udt = gr.update(choices=base_model_choices)
+        created_param = collections.find_one({"session_id": session_id, "status": "created"}) or {}
 
+    created_param.pop("_id", None)
+    param_state_udt = (param or {}).copy()
+    param_state_udt.update(created_param)
     submit_btn_udt = gr.update(interactive=not is_read_only)
-    return session_id_udt, session_status_udt, job_dropdown_udt, model_dropdown_udt, submit_btn_udt
+    return session_id_udt, session_status_udt, job_dropdown_udt, model_dropdown_udt, submit_btn_udt, param_state_udt
 
 
 def session_page():
     with gr.Blocks(title=TITLE) as page:
+        param_state = gr.State({})
+
         build_header(TITLE, current_page="home")
         with gr.Column(elem_id="main-content"):
-            ui = SessionPage(JOB_DIR).build()
+            ui = SessionPage(param_state).build()
             build_last_updated()
         build_footer()
 
         page.load(fn=request2session_payload, inputs=None, outputs=[ui.session_id, ui.example_name, ui.example_action], queue=False,
         ).then(fn=session_exists,inputs=[ui.session_id],outputs=[ui.error_url],queue=False,
         ).then(fn=passthrough_url,inputs=[ui.error_url],outputs=[ui.error_url],js=js.direct2url_refresh,queue=False,
-        ).then(fn=on_session_id,inputs=ui.session_id,outputs=[ui.session_id, ui.session_status, ui.job_dropdown, ui.model_dropdown, ui.submit_btn],queue=False,
+        ).then(fn=on_session_id,inputs=[ui.session_id, param_state],outputs=[ui.session_id, ui.session_status, ui.job_dropdown, ui.model_dropdown, ui.submit_btn, ui.param_state],queue=False,
         ).then(fn=ui.apply_request_payload,inputs=[ui.example_name, ui.example_action, ui.param_state], outputs=[ui.mode, ui.inf_section, ui.tf_section, ui.inf_sav_txt, ui.tf_sav_txt, ui.str_check, ui.structure_section, ui.upload_html, ui.str_btn, ui.str_file, ui.job_name_txt, ui.param_state], queue=False,
         ).then(fn=ui.on_str_upload, inputs=[ui.str_file], outputs=[ui.upload_html, ui.str_btn, ui.str_file], queue=False,
         ).then(fn=None, inputs=[ui.example_name], outputs=[], js=js.sync_session_example_select, queue=False,

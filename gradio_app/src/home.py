@@ -91,6 +91,7 @@ class HomeTab:
                 "$setOnInsert": {
                     "session_id": session_id,
                     "status": "created",
+                    "refresh": False,
                     "IP": ip,
                     "geo_info": geo_info,
                     "city": geo_info.get("city", ""),
@@ -154,12 +155,6 @@ class HomeTab:
         param_udt['refresh'] = False
         param_udt["session_id"] = None
         param_udt["session_url"] = ""
-        param_udt["IP"] = ip
-        param_udt["geo_info"] = geo_info
-        param_udt["city"] = geo_info.get("city", "")
-        param_udt["region"] = geo_info.get("region", "")
-        param_udt["country"] = geo_info.get("country", "")
-        param_udt["continent"] = geo_info.get("continent", "")
         session_url_udt = ""
 
         # Case 1: Empty input → Generate a new unique session ID
