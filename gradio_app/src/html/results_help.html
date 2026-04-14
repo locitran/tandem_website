@@ -1,0 +1,20 @@
+<div class="results-heading-row">
+    <h3 class="h3 results-heading-title">
+        Results
+        <a
+            href="#"
+            class="results-inline-trigger"
+            aria-controls="{tooltip_id}"
+            onclick="
+                const box = document.getElementById('{tooltip_id}');
+                if (!box) return false;
+                box.classList.toggle('is-open');
+                this.setAttribute('aria-expanded', box.classList.contains('is-open') ? 'true' : 'false');
+                return false;
+            "
+        >?</a>
+    </h3>
+    <div id="{tooltip_id}" class="results-inline-note-body">
+        {help_text}
+    </div>
+</div>
