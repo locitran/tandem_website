@@ -127,6 +127,30 @@
   white-space: nowrap;
 }
 
+.results-userlog {
+  white-space: pre-line;
+}
+
+.results-userlog-details {
+  width: 100%;
+  padding: 10px 12px;
+}
+
+.results-userlog-summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.results-userlog-body {
+  white-space: pre-line;
+  line-height: 1.55;
+}
+
+.results-userlog-body a {
+  text-decoration: underline;
+}
+
 .session-row,
 .job-row {
   gap: 8px;
