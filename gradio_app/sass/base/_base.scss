@@ -155,11 +155,17 @@
   width: 100%;
 }
 
-.results-heading-title {
+.results-heading-header {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.results-heading-title {
+  margin: 0;
 }
 
 .results-inline-trigger {

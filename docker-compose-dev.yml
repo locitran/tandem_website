@@ -18,7 +18,7 @@ services:
       - worker
       - tandem
     labels:
-      owner: "yang_loci"
+      owner: "loci"
       project: "tandem_website_dev"
 
   tandem:
@@ -30,12 +30,30 @@ services:
       - "5000"   # internal only; not mapped to host
     depends_on:
       - mongodb
+      - polyphen2
     volumes:
       - ./tandem:/tandem
       - ./gradio_app:/gradio_app
       - ../tandem_website/tandem/data/consurf/uniref90.fasta:/tandem/data/consurf/uniref90.fasta:ro
     labels:
-      owner: "yang_loci"
+      owner: "loci"
+      project: "tandem_website_dev"
+
+  polyphen2:
+    restart: always
+    platform: linux/amd64
+    build:
+      context: ./tandem/PolyPhen-2
+      dockerfile: Dockerfile
+    container_name: polyphen2_dev
+    expose:
+      - "5001"
+    volumes:
+      - ./tandem/PolyPhen-2:/pph2
+      - ./tandem:/tandem
+    working_dir: /pph2/polyphen-2.2.3
+    labels:
+      owner: "loci"
       project: "tandem_website_dev"
 
   worker:
@@ -50,7 +68,7 @@ services:
       - ./tandem:/tandem
       - ../tandem_website/tandem/data/consurf/uniref90.fasta:/tandem/data/consurf/uniref90.fasta:ro
     labels:
-      owner: "yang_loci"
+      owner: "loci"
       project: "tandem_website_dev"
 
   mongodb:
@@ -58,6 +76,5 @@ services:
     image: mongo:8
     container_name: mongodb_dev
     labels:
-      owner: "yang_loci"
+      owner: "loci"
       project: "tandem_website"
-

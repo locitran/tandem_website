@@ -125,7 +125,7 @@ class ResultPage:
         self.focus_refresh_btn.click(fn=self.__update__, inputs=[self.param_state, self.job_folder, self.userlog, gr.State(True)], outputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status],
         ).then(fn=self.update_top_bar, inputs=[self.param_state, self.session_id, self.job_name, self.job_status], outputs=[self.top_bar],
         ).then(fn=self.update_process_status, inputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status], outputs=[self.process_status],
-        ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
+        ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state, self.userlog],
             outputs=[self.output_section,self.results_heading,self.result_zip,self.inf_output_secion,self.pred_table,self.image_viewer,self.tf_output_secion,self.folds_state,self.fold_dropdown,self.sav_textbox,self.loss_image,self.test_evaluation,self.model_save,self.job_folder,],
         ).then(fn=self.update_timer, inputs=[self.job_status], outputs=[self.timer],
         )
@@ -133,7 +133,7 @@ class ResultPage:
         self.timer.tick(fn=self.__update__,inputs=[self.param_state, self.job_folder, self.userlog, gr.State(True)],outputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status],
         ).then(fn=self.update_top_bar, inputs=[self.param_state, self.session_id, self.job_name, self.job_status], outputs=[self.top_bar],
         ).then(fn=self.update_process_status, inputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status], outputs=[self.process_status],
-        ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state],
+        ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state, self.userlog],
             outputs=[self.output_section, self.results_heading, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder,],
         ).then(fn=self.update_timer,inputs=[self.job_status],outputs=[self.timer],
         )
@@ -168,11 +168,11 @@ class ResultPage:
             session_id_udt = param_udt.get("session_id", "")
             job_name_udt = param_udt.get("job_name", "")
             job_status_udt = param_udt.get("status", "")
+            # Mark the job as finished in MongoDB.
             last_event = None
             if isinstance(userlog_udt, dict):
                 events = userlog_udt.get("events", [])
-                if events:
-                    last_event = events[-1]
+                last_event = events[-1] if events else last_event
             last_event_level = str((last_event or {}).get("level", "")).lower()
             if last_event_level == "error":
                 job_status_udt = "finished"
@@ -240,7 +240,6 @@ class ResultPage:
             elif level == "warning":
                 prefix = "⚠️"
 
-            parts = [f"{prefix} {message}"]
             # Builds history entries for Uniprot2PDB warnings with SAVs + action
             if stage == "Uniprot2PDB" and level == "warning":
                 savs = context.get("savs")
@@ -250,6 +249,11 @@ class ResultPage:
                 if action:
                     parts.append(str(action))
                 append_sav2pdb_note = True
+
+            elif stage == "calcPDBfeatures" and level == "warning":
+                parts = [f"{prefix} {message}."]
+                if action:
+                    parts.append(str(action))
             else:
                 parts = [f"{prefix} {message}"]
 
@@ -488,7 +492,7 @@ class ResultPage:
             shutil.move(temp_zip_path, final_zip_path)
         return final_zip_path
 
-    def update_finished_job(self, param, folder):
+    def update_finished_job(self, param, folder, userlog):
         """Load and render result artifacts when a job finishes.
 
         Inputs:
@@ -504,8 +508,14 @@ class ResultPage:
         _job_name = param.get("job_name")
         _mode = param.get("mode")
 
+        last_event = None
+        if isinstance(userlog, dict):
+            events = userlog.get("events", [])
+            last_event = events[-1] if events else last_event
+        last_event_level = str((last_event or {}).get("level", "")).lower()
+            
         # ----------- defaults (IMPORTANT) -----------
-        if _job_status != "finished":
+        if _job_status != "finished" or last_event_level == "error":
             return [gr.update(visible=False) for _ in range(14)]
 
         job_folder = os.path.join(folder, _session_id, _job_name)
@@ -570,7 +580,7 @@ class ResultPage:
             first_image = os.path.join(tandem_shap, list_images[0]) if list_images else None
             image_viewer_udt = gr.update(value=first_image, visible=bool(list_images))
         # ----------- Transfer Learning mode -----------
-        elif _mode in {"Training", "Transfer Learning"}:
+        elif _mode == "Training":
             tf_output_secion_udt = gr.update(visible=True)
 
             folds_path = os.path.join(job_folder, "cross_validation_SAVs.json")
@@ -652,7 +662,7 @@ def results_page():
         ).then(fn=ui.__update__, inputs=[ui.param_state, ui.job_folder, ui.userlog, gr.State(False)], outputs=[ui.param_state, ui.userlog, ui.session_id, ui.job_name, ui.job_status], queue=False,
         ).then(fn=ui.update_top_bar, inputs=[ui.param_state, ui.session_id, ui.job_name, ui.job_status], outputs=[ui.top_bar], queue=False,
         ).then(fn=ui.update_process_status, inputs=[ui.param_state, ui.userlog, ui.session_id, ui.job_name, ui.job_status], outputs=[ui.process_status], queue=False,
-        ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state],
+        ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state, ui.userlog],
             outputs=[ui.output_section, ui.results_heading, ui.result_zip, ui.inf_output_secion, ui.pred_table, ui.image_viewer, ui.tf_output_secion, ui.folds_state, ui.fold_dropdown, ui.sav_textbox, ui.loss_image, ui.test_evaluation, ui.model_save, ui.job_folder,],
         ).then(fn=ui.update_timer, inputs=[ui.job_status], outputs=[ui.timer], queue=False,
         )

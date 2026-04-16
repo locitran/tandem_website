@@ -10,7 +10,7 @@
             <li><a href="#step2" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step2').open = true;">Step 2: Configure and submit a job</a></li>
             <li><a href="#step3" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step3').open = true;">Step 3: Monitor job status</a></li>
             <li><a href="#step4" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step4').open = true;">Step 4: Analyze results</a></li>
-            <li><a href="#pkd-demo" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('pkd-demo').open = true;">PKD1/2 demonstration</a></li>
+            <li><a href="#pkd-demo" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('pkd-demo').open = true;">PKD1-PKD2 demonstration</a></li>
             <li><a href="#tutorial-references">References</a></li>
         </ul>
     </nav>
@@ -195,7 +195,7 @@
     </details>
 
     <details class="tutorial-item" id="pkd-demo">
-        <summary>The Performance of TANDEM-DIMPLE Model of PKD1/2 on PKD Pathogenicity Predictions</summary>
+        <summary>The Performance of TANDEM-DIMPLE Model of PKD1-PKD2 on PKD Pathogenicity Predictions</summary>
         <div class="tutorial-panel">
             <p>
                 To demonstrate the training utility of the website, we use clinically validated SAVs from
@@ -218,7 +218,7 @@
                     </a>
                 </li>
                 <li>
-                    <b>PKD1/2 structure:</b>
+                    <b>PKD1-PKD2 structure:</b>
                     <a href="./gradio_api/file=examples/PKD1-PKD2-opm-complex.pdb" download>
                         PKD1-PKD2-opm-complex.pdb
                     </a>
@@ -235,7 +235,7 @@
             <p>
                 Following the same protocol applied to GJB2 and RYR1, variants were partitioned into
                 training sets (30%), validation sets (60%; training stopped when validation loss no longer
-                declined), and a hold-out test set (10%), generating 15 PKD1/2-specific TANDEM-DIMPLE models. 
+                declined), and a hold-out test set (10%), generating 15 PKD1-PKD2-specific TANDEM-DIMPLE models. 
                 As a default, our TANDEM website shows both gene-general and gene-specific results for a 
                 gene-specific test set, where the gene-general model may still be recommended if it outperforms 
                 a gene-specific model. For more information see <a href="../QA/#q7">QA</a>.
