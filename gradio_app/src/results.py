@@ -8,8 +8,10 @@ import gradio as gr
 from pymongo import MongoClient
 
 from . import js
-from .settings import JOB_DIR, TITLE, HTML_DIR, MOUNT_POINT
-from .request import build_session_url, build_job_url, passthrough_url, job_exists, request2result_payload
+from .components.process_status import build_process_status_html
+from .components.topbar import build_topbar_html
+from .settings import JOB_DIR, TITLE, HTML_DIR
+from .request import build_session_url, passthrough_url, job_exists, request2result_payload
 from .base import build_footer, build_header
 from .logger import LOGGER
 from .settings import EXAMPLES_JSON
@@ -31,22 +33,13 @@ class ResultPage:
         decide = False if job_status == 'finished' else True
         return gr.update(active=decide)
 
-    def render_process_status(self, content):
-        """Wrap process status content in a collapsible HTML block."""
-        body = content or ""
-        return (
-            '<details class="results-userlog-details" open>'
-            '<summary class="results-userlog-summary">User Log</summary>'
-            f'<div class="results-userlog-body">{body}</div>'
-            '</details>'
-        )
-
     def build(self):
         """Create UI components and layout."""
         self.timer = gr.Timer(value=10, active=False)
         self.session_id = gr.Textbox(value="", visible=False)
         self.job_name = gr.Textbox(value="", visible=False)
         self.job_status = gr.Textbox(value="", visible=False)
+        self.mode = gr.Textbox(value="", visible=False)
 
         self.launch_session_id = gr.Textbox(value="", visible=False)
         self.example_name = gr.Textbox(value="", visible=False)
@@ -58,11 +51,13 @@ class ResultPage:
         self.param_state = gr.State({})
         self.userlog = gr.State({})
         self.jobs_folder_state = gr.State(self.folder)
-        self.top_bar = gr.HTML(elem_classes="bg-row-column results-top-row")
         self.cancel_job_btn = gr.Button("Cancel current job", elem_id="cancel_job_btn", elem_classes="visually-hidden-action")
         self.cancel_url = gr.Textbox(value="", visible=False)
-        with gr.Row(elem_classes="bg-row-column"):
-            self.process_status = gr.HTML(elem_classes="results-userlog")
+        with gr.Row(elem_classes="results-status-layout"):
+            with gr.Column(scale=3, elem_classes="results-status-left"):
+                self.process_status = gr.HTML(elem_classes="results-userlog")
+            with gr.Column(scale=2, elem_classes="results-status-right"):
+                self.top_bar = gr.HTML(elem_classes="results-top-row")
         
         with gr.Group(visible=False) as self.output_section:
             self.results_heading = gr.HTML()
@@ -122,17 +117,17 @@ class ResultPage:
         ).then(fn=passthrough_url, inputs=[self.cancel_url], outputs=[self.cancel_url], js=js.direct2url_refresh, queue=False,
         )
 
-        self.focus_refresh_btn.click(fn=self.__update__, inputs=[self.param_state, self.job_folder, self.userlog, gr.State(True)], outputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status],
-        ).then(fn=self.update_top_bar, inputs=[self.param_state, self.session_id, self.job_name, self.job_status], outputs=[self.top_bar],
-        ).then(fn=self.update_process_status, inputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status], outputs=[self.process_status],
+        self.focus_refresh_btn.click(fn=self.__update__, inputs=[self.param_state, self.job_folder, self.userlog, gr.State(True)], outputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status, self.mode],
+        ).then(fn=build_topbar_html, inputs=[self.param_state, self.session_id, self.job_name, self.job_status], outputs=[self.top_bar],
+        ).then(fn=self.update_process_status, inputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status, self.mode], outputs=[self.process_status],
         ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state, self.userlog],
             outputs=[self.output_section,self.results_heading,self.result_zip,self.inf_output_secion,self.pred_table,self.image_viewer,self.tf_output_secion,self.folds_state,self.fold_dropdown,self.sav_textbox,self.loss_image,self.test_evaluation,self.model_save,self.job_folder,],
         ).then(fn=self.update_timer, inputs=[self.job_status], outputs=[self.timer],
         )
 
-        self.timer.tick(fn=self.__update__,inputs=[self.param_state, self.job_folder, self.userlog, gr.State(True)],outputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status],
-        ).then(fn=self.update_top_bar, inputs=[self.param_state, self.session_id, self.job_name, self.job_status], outputs=[self.top_bar],
-        ).then(fn=self.update_process_status, inputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status], outputs=[self.process_status],
+        self.timer.tick(fn=self.__update__,inputs=[self.param_state, self.job_folder, self.userlog, gr.State(True)],outputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status, self.mode],
+        ).then(fn=build_topbar_html, inputs=[self.param_state, self.session_id, self.job_name, self.job_status], outputs=[self.top_bar],
+        ).then(fn=self.update_process_status, inputs=[self.param_state, self.userlog, self.session_id, self.job_name, self.job_status, self.mode], outputs=[self.process_status],
         ).then(fn=self.update_finished_job, inputs=[self.param_state, self.jobs_folder_state, self.userlog],
             outputs=[self.output_section, self.results_heading, self.result_zip, self.inf_output_secion, self.pred_table, self.image_viewer, self.tf_output_secion, self.folds_state, self.fold_dropdown, self.sav_textbox, self.loss_image, self.test_evaluation, self.model_save, self.job_folder,],
         ).then(fn=self.update_timer,inputs=[self.job_status],outputs=[self.timer],
@@ -164,10 +159,12 @@ class ResultPage:
         session_id_udt = ""
         job_name_udt = ""
         job_status_udt = ""
+        mode_udt = ""
         if isinstance(param_udt, dict):
             session_id_udt = param_udt.get("session_id", "")
             job_name_udt = param_udt.get("job_name", "")
             job_status_udt = param_udt.get("status", "")
+            mode_udt = param_udt.get("mode", "")
             # Mark the job as finished in MongoDB.
             last_event = None
             if isinstance(userlog_udt, dict):
@@ -182,7 +179,7 @@ class ResultPage:
                         {"session_id": session_id_udt, "job_name": job_name_udt},
                         {"$set": {"status": "finished", "job_end": now}},
                     )
-        return param_udt, userlog_udt, session_id_udt, job_name_udt, job_status_udt
+        return param_udt, userlog_udt, session_id_udt, job_name_udt, job_status_udt, mode_udt
     
     def update_userlog(self, job_folder, userlog):
         """Refresh cached user-log state (mtime-aware).
@@ -198,16 +195,18 @@ class ResultPage:
         """
         if not job_folder:
             return userlog or {}
+
         userlog_path = os.path.join(job_folder, "user_log.jsonl")
         if not os.path.exists(userlog_path):
             return {}
+
         mtime = os.path.getmtime(userlog_path)
         if isinstance(userlog, dict) and userlog.get("mtime") == mtime:
             return userlog
-        
+
         events = []
-        with open(userlog_path, "r", encoding="utf-8") as f:
-            for line in f:
+        with open(userlog_path, "r", encoding="utf-8") as handle:
+            for line in handle:
                 line = line.strip()
                 if not line:
                     continue
@@ -216,174 +215,23 @@ class ResultPage:
                 except json.JSONDecodeError:
                     continue
 
-        # build history
-        rows = []
-        append_sav2pdb_note = False
-        sav2pdb_path = os.path.join(job_folder, "Uniprot2PDB.txt")
-        sav2pdb_href = f"/{MOUNT_POINT}/results/gradio_api/file={sav2pdb_path}"
-        for event in events:
-            if not isinstance(event, dict):
-                continue
+        return {"mtime": mtime, "events": events}
 
-            level = str(event.get("level", "")).lower()
-            message = event.get("message", "")
-            action = event.get("action", "")
-            context = event.get("context", {}) or {}
-            stage = str(event.get("stage", ""))
-
-            if not message:
-                continue
-            
-            prefix = "ℹ️"
-            if level == "error":
-                prefix = "❌"
-            elif level == "warning":
-                prefix = "⚠️"
-
-            # Builds history entries for Uniprot2PDB warnings with SAVs + action
-            if stage == "Uniprot2PDB" and level == "warning":
-                savs = context.get("savs")
-                if isinstance(savs, list) and savs:
-                    sav_text = ", ".join(str(sav) for sav in savs)
-                    parts = [f"{prefix} {message} {sav_text}."]
-                if action:
-                    parts.append(str(action))
-                append_sav2pdb_note = True
-
-            elif stage == "calcPDBfeatures" and level == "warning":
-                parts = [f"{prefix} {message}."]
-                if action:
-                    parts.append(str(action))
-            else:
-                parts = [f"{prefix} {message}"]
-
-            # Wire up UniProt2PDB file
-            if stage == "Uniprot2PDB" and level != "warning" and append_sav2pdb_note:
-                safe_href = html.escape(sav2pdb_href, quote=True)
-                rows.append(f'Please review the <a href="{safe_href}" target="_blank" rel="noopener">SAV2PDB</a> file for details.')
-            rows.append("\n".join(parts))
-        
-        history = "\n".join(rows)
-        return {"mtime": mtime, "events": events, "history": history,}
-
-    def update_process_status(self, param, userlog, session_id, job_name, job_status):
-        """Refresh the status panel using cached user-log data.
-
-        Inputs:
-        - param: current job metadata dict.
-        - userlog: cached user-log dict from update_userlog().
-        - session_id: current session id string.
-        - job_name: current job name string.
-        - job_status: current job status string.
-
-        Output:
-        - A Gradio update for the process-status HTML component.
-        """
+    def update_process_status(self, param, userlog, session_id, job_name, job_status, mode):
+        """Refresh the status panel using cached user-log data."""
         process_status_udt = gr.update()
         param_udt = param.copy() if isinstance(param, dict) else {}
         session_id = session_id or param_udt.get("session_id", "")
         job_name = job_name or param_udt.get("job_name", "")
         job_status = job_status or param_udt.get("status", "")
-        history = userlog.get("history", "") if isinstance(userlog, dict) else ""
+        mode = mode or param_udt.get("mode", "")
 
         if not session_id or not job_name or not param_udt:
             return process_status_udt
 
-        job_start = param_udt.get("job_start")
-        job_end = param_udt.get("job_end")
-
-        if job_status == "pending":
-            msg = history or "⏳ Waiting in queue ..."
-            process_status_udt = gr.update(value=self.render_process_status(msg), visible=True)
-        elif job_status == "processing" and job_start:
-            elapsed = int(time.time() - job_start)
-            elapsed_msg = f"Model is running ... {elapsed} second{'s' if elapsed != 1 else ''} elapsed."
-            msg = f"{history}\n{elapsed_msg}" if history else elapsed_msg
-            process_status_udt = gr.update(value=self.render_process_status(msg), visible=True)
-        elif job_status == "finished":
-            if job_start and job_end:
-                runtime = int(job_end - job_start)
-                finished_msg = f"✅ Finished in {runtime}s"
-                msg = f"{history}\n{finished_msg}" if history else finished_msg
-                process_status_udt = gr.update(value=self.render_process_status(msg), visible=True)
-            elif history:
-                process_status_udt = gr.update(value=self.render_process_status(history), visible=True)
-        elif history:
-            process_status_udt = gr.update(value=self.render_process_status(history), visible=True)
+        process_status_html = build_process_status_html(param_udt, userlog, session_id, job_name, job_status)
+        process_status_udt = gr.update(value=process_status_html, visible=True)
         return process_status_udt
-
-    def update_top_bar(self, param, session_id, job_name, job_status):
-        """Build or refresh the results top bar HTML."""
-        param_udt = param.copy() if isinstance(param, dict) else {}
-        session_id = session_id or param_udt.get("session_id", "")
-        current_job = job_name or param_udt.get("job_name", "")
-        job_status = job_status or param_udt.get("status", "")
-
-        status_map = {
-            "pending": ("Pending", '<span class="status-dots" aria-hidden="true"> ...</span>'),
-            "processing": ("Running", '<span class="status-dots" aria-hidden="true"> ...</span>'),
-            "finished": ("Finished", ""),
-        }
-        job_status_text, job_status_dots = status_map.get(
-            job_status, (html.escape(str(job_status)), '<span class="status-dots" aria-hidden="true"> ...</span>')
-        )
-        
-        filepath = os.path.join(HTML_DIR, "results_topbar.html")
-        if not session_id:
-            return js.build_html_text(
-                filepath,
-                job_status_text=job_status_text,
-                job_status_dots=job_status_dots,
-                session_id="-",
-                options='<option value="">No jobs</option>',
-                new_job_html="",
-            )
-
-        # Build job dropdown options and action links for the top bar.
-        job_list = collections.distinct(
-            "job_name", {"session_id": session_id, "status": {"$in": ["pending", "processing", "finished"]}},)
-        job_list = sorted(job_list)
-
-        option_html = []
-        for j in job_list:
-            selected = " selected" if j == current_job else ""
-            url = build_job_url(session_id, j)
-            option_html.append(f'<option value="{html.escape(url, quote=True)}"{selected}>{html.escape(j)}</option>')
-
-        options = "\n".join(option_html) if option_html else '<option value="">No jobs</option>'
-
-        new_job_html = ""
-        cancel_job_html = ""
-        launch_session_id = param_udt.get("launch_session_id", "")
-        target_session_id = launch_session_id or session_id
-        if target_session_id != "test":
-            session_url = build_session_url(target_session_id)
-            safe_url = html.escape(session_url, quote=True)
-            new_job_html = f"""
-            <div class="action-row">
-                <a class="mini-action-link" href="{safe_url}">New job</a>
-            </div>
-            """
-            if job_status in {"pending", "processing"}:
-                cancel_job_html = """
-                <div class="action-row">
-                    <button
-                        type="button"
-                        class="mini-action-link mini-action-button cancel-job-link"
-                        onclick="document.querySelector('#cancel_job_btn button, #cancel_job_btn')?.click();"
-                    >Cancel job</button>
-                </div>
-                """
-
-        return js.build_html_text(
-            filepath,
-            job_status_text=job_status_text,
-            job_status_dots=job_status_dots,
-            session_id=html.escape(session_id),
-            options=options,
-            new_job_html=new_job_html,
-            cancel_job_html=cancel_job_html,
-        )
 
     def cancel_job(self, param, folder, session_id, job_name, job_status):
         """Cancel the active job and prepare redirect state.
@@ -441,16 +289,7 @@ class ResultPage:
             return param_udt, timer_udt, cancel_url_udt
 
     def on_select_sav(self, evt: gr.SelectData, df, job_folder):
-        """Update the SHAP image for the selected SAV row.
-
-        Inputs:
-        - evt: Gradio table selection event.
-        - df: prediction dataframe displayed on the page.
-        - job_folder: folder containing result files.
-
-        Output:
-        - A Gradio update for the SHAP image viewer.
-        """
+        """Update the SHAP image for the selected SAV row."""
         row_idx, col_idx = evt.index
         sav = df.iloc[row_idx]['SAV']
         shap_img = os.path.join(job_folder, "tandem_shap", f"{sav}.png")
@@ -459,26 +298,11 @@ class ResultPage:
         return gr.update(value=None)
 
     def on_select_sav_set(self, selection, folds):
-        """Update the SAV list for the selected fold.
-
-        Inputs:
-        - selection: selected fold/set label.
-        - folds: dict mapping fold labels to SAV lists.
-
-        Output:
-        - SAV text for the selected fold.
-        """
+        """Update the SAV list for the selected fold."""
         return folds[selection]
 
     def zip_folder(self, folder):
-        """Create a zip archive for download.
-
-        Input:
-        - folder: result folder to compress.
-
-        Output:
-        - Absolute path to the generated zip file.
-        """
+        """Create a zip archive for download."""
         folder = os.path.abspath(folder)
         base_dir = os.path.basename(folder)
         root_dir = os.path.dirname(folder)
@@ -493,16 +317,7 @@ class ResultPage:
         return final_zip_path
 
     def update_finished_job(self, param, folder, userlog):
-        """Load and render result artifacts when a job finishes.
-
-        Inputs:
-        - param: current job metadata dict.
-        - folder: jobs root folder.
-
-        Output:
-        - Gradio updates for the results section, heading, zip file, inference/training panels,
-          and related components.
-        """
+        """Load and render result artifacts when a job finishes."""
         _session_id = param.get("session_id")
         _job_status = param.get("status")
         _job_name = param.get("job_name")
@@ -545,7 +360,7 @@ class ResultPage:
         if _mode == "Inferencing":
             inf_output_secion_udt = gr.update(visible=True)
 
-            pred_file = os.path.join(job_folder, "Main_Predictions.csv")
+            pred_file = os.path.join(job_folder, "Main_Predictions.txt")
             df_pred = pd.read_csv(pred_file)
 
             # Change column name TANDEM-DIMPLE to model
@@ -601,7 +416,7 @@ class ResultPage:
             loss_img = os.path.join(job_folder, "loss.png")
             loss_image_udt = gr.update(value=loss_img, visible=os.path.exists(loss_img))
 
-            test_eval = os.path.join(job_folder, "test_evaluation.csv")
+            test_eval = os.path.join(job_folder, "test_evaluation.txt")
             df_test_eval = pd.read_csv(test_eval)
             test_eval_udt = gr.update(value=df_test_eval, visible=True)
             model_saved_udt = gr.update(value=f"Your models have been saved under name '{_job_name}'!", visible=True)
@@ -659,9 +474,9 @@ def results_page():
         ).then(fn=passthrough_url, inputs=[ui.error_url], outputs=[ui.error_url], js=js.direct2url_refresh, queue=False,
         ).then(fn=ui.search_param, inputs=[ui.session_id, ui.job_name], outputs=[ui.param_state, ui.job_folder], queue=False,
         ).then(fn=lambda param, launch_session_id: ({**param, "launch_session_id": launch_session_id} if param else param), inputs=[ui.param_state, ui.launch_session_id], outputs=[ui.param_state], queue=False,
-        ).then(fn=ui.__update__, inputs=[ui.param_state, ui.job_folder, ui.userlog, gr.State(False)], outputs=[ui.param_state, ui.userlog, ui.session_id, ui.job_name, ui.job_status], queue=False,
-        ).then(fn=ui.update_top_bar, inputs=[ui.param_state, ui.session_id, ui.job_name, ui.job_status], outputs=[ui.top_bar], queue=False,
-        ).then(fn=ui.update_process_status, inputs=[ui.param_state, ui.userlog, ui.session_id, ui.job_name, ui.job_status], outputs=[ui.process_status], queue=False,
+        ).then(fn=ui.__update__, inputs=[ui.param_state, ui.job_folder, ui.userlog, gr.State(False)], outputs=[ui.param_state, ui.userlog, ui.session_id, ui.job_name, ui.job_status, ui.mode], queue=False,
+        ).then(fn=build_topbar_html, inputs=[ui.param_state, ui.session_id, ui.job_name, ui.job_status], outputs=[ui.top_bar], queue=False,
+        ).then(fn=ui.update_process_status, inputs=[ui.param_state, ui.userlog, ui.session_id, ui.job_name, ui.job_status, ui.mode], outputs=[ui.process_status], queue=False,
         ).then(fn=ui.update_finished_job,inputs=[ui.param_state, ui.jobs_folder_state, ui.userlog],
             outputs=[ui.output_section, ui.results_heading, ui.result_zip, ui.inf_output_secion, ui.pred_table, ui.image_viewer, ui.tf_output_secion, ui.folds_state, ui.fold_dropdown, ui.sav_textbox, ui.loss_image, ui.test_evaluation, ui.model_save, ui.job_folder,],
         ).then(fn=ui.update_timer, inputs=[ui.job_status], outputs=[ui.timer], queue=False,

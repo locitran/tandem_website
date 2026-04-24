@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from pymongo import MongoClient
 import requests
 
-from .settings import TAIPEI_TIME_ZONE, MOUNT_POINT, JOB_DIR
+from .settings import TAIPEI_TIME_ZONE, MOUNT_POINT
 from .logger import LOGGER
 
 client = MongoClient("mongodb://mongodb:27017/")

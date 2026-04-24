@@ -370,7 +370,8 @@ class SessionPage:
             return param_udt, ""
 
         job_name_raw = (job_name_txt or "").strip()
-        timestamp = datetime.now(tz_final).strftime("%H%M%S%d%m%Y")
+        submission_dt = datetime.now(tz_final)
+        timestamp = submission_dt.strftime("%H%M%S%d%m%Y")
         job_name_full = timestamp if not job_name_raw else f"{job_name_raw}_{timestamp}"
 
         param_udt = param.copy()
@@ -414,6 +415,8 @@ class SessionPage:
         param_udt["label"] = label
         param_udt["model"] = model_dropdown
         param_udt["job_name"] = job_name_full
+        param_udt["submission_time"] = submission_dt.strftime("%Y-%m-%d %H:%M:%S")
+        param_udt["submission_timestamp"] = submission_dt.timestamp()
         delete_after_ts = time.time() + JOB_RETENTION_SECONDS
         delete_after_str = datetime.fromtimestamp(delete_after_ts, tz=tz_final).strftime("%Y-%m-%d %H:%M")
         param_udt["delete_after_ts"] = delete_after_ts
