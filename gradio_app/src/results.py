@@ -55,7 +55,7 @@ class ResultPage:
         self.cancel_url = gr.Textbox(value="", visible=False)
         with gr.Row(elem_classes="results-status-layout"):
             with gr.Column(scale=3, elem_classes="results-status-left"):
-                self.process_status = gr.HTML(elem_classes="results-userlog")
+                self.process_status = gr.HTML(elem_classes="results-userlog", js_on_load=js.popup_modal)
             with gr.Column(scale=2, elem_classes="results-status-right"):
                 self.top_bar = gr.HTML(elem_classes="results-top-row")
         

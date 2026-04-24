@@ -244,6 +244,37 @@ open_hash_details = """
 }
 """
 
+popup_modal = """
+if (!element.dataset.popupModalBound) {
+  element.dataset.popupModalBound = "1";
+
+  element.addEventListener("click", (event) => {
+    const openNode = event.target.closest("[data-open-modal]");
+    if (openNode && element.contains(openNode)) {
+      const modal = element.querySelector(`#${openNode.dataset.openModal}`);
+      if (modal) {
+        modal.classList.add("is-open");
+      }
+      return;
+    }
+
+    const closeNode = event.target.closest("[data-close-modal]");
+    if (closeNode && element.contains(closeNode)) {
+      const modal = element.querySelector(`#${closeNode.dataset.closeModal}`);
+      if (modal) {
+        modal.classList.remove("is-open");
+      }
+      return;
+    }
+
+    const overlay = event.target.closest(".popup-overlay");
+    if (overlay && event.target === overlay && element.contains(overlay)) {
+      overlay.classList.remove("is-open");
+    }
+  });
+}
+"""
+
 def build_html_text(filepath, **keys) -> str:
     if not os.path.isfile(filepath):
         LOGGER.warn(f"{filepath} is not a file")
