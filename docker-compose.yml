@@ -8,6 +8,7 @@ services:
   gradio_app:
     restart: always
     build: ./gradio_app
+    image: gradio_app
     container_name: gradio_app
     ports:
       - "7861:7861"
@@ -62,6 +63,7 @@ services:
     build:
       context: ./tandem/PolyPhen-2
       dockerfile: Dockerfile
+    image: pph2
     container_name: pph2
     expose:
       - "5001"
@@ -74,6 +76,7 @@ services:
   worker:
     restart: always
     build: ./worker
+    image: worker
     container_name: worker
     depends_on:
       - mongodb
