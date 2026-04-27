@@ -17,26 +17,51 @@ services:
     depends_on:
       - mongodb
       - worker
-      - tandem
+      - tandem1
+      - tandem2
+      - tandem3
+      - tandem4
     labels:
-      owner: "yang_loci"
-      project: "tandem_website"
+      owner: "loci"
 
-  tandem:
+  tandem1: &tandem_service
     restart: always
     platform: linux/amd64
     build: ./tandem
-    container_name: tandem
     expose:
-      - "5000"   # internal only; not mapped to host
+      - "5000" # internal only; not mapped to host
     depends_on:
       - mongodb
+      - polyphen2
     volumes:
       - ./tandem:/tandem
       - ./gradio_app:/gradio_app
     labels:
-      owner: "yang_loci"
-      project: "tandem_website"
+      owner: "loci"
+
+  tandem2:
+    <<: *tandem_service
+
+  tandem3:
+    <<: *tandem_service
+
+  tandem4:
+    <<: *tandem_service
+
+  polyphen2:
+    restart: always
+    platform: linux/amd64
+    build:
+      context: ./tandem/PolyPhen-2
+      dockerfile: Dockerfile
+    container_name: pph2
+    expose:
+      - "5001"
+    volumes:
+      - ../tandem_website_dev/tandem/PolyPhen-2:/pph2
+      - ./tandem:/tandem
+    labels:
+      owner: "loci"
 
   worker:
     restart: always
@@ -44,13 +69,17 @@ services:
     container_name: worker
     depends_on:
       - mongodb
-      - tandem
+      - tandem1
+      - tandem2
+      - tandem3
+      - tandem4
+    environment:
+      TANDEM_URLS: "http://tandem1:5000/run_tandem_job,http://tandem2:5000/run_tandem_job,http://tandem3:5000/run_tandem_job,http://tandem4:5000/run_tandem_job"
     volumes:
       - ./worker:/worker
       - ./tandem:/tandem
     labels:
-      owner: "yang_loci"
-      project: "tandem_website"
+      owner: "loci"
 
   mongodb:
     restart: always
@@ -59,5 +88,4 @@ services:
     ports:
       - "27017:27017"
     labels:
-      owner: "yang_loci"
-      project: "tandem_website"
+      owner: "loci"

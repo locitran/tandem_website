@@ -15,15 +15,17 @@ services:
     depends_on:
       - mongodb
       - worker
-      - tandem
+      - tandem1
+      - tandem2
+      - tandem3
+      - tandem4
     labels:
       owner: "loci"
 
-  tandem:
+  tandem1: &tandem_service
     restart: always
     platform: linux/amd64
     build: ./tandem
-    container_name: tandem_dev
     expose:
       - "5000" # internal only; not mapped to host
     depends_on:
@@ -35,6 +37,15 @@ services:
       - ../tandem_website/tandem/data/consurf/uniref90.fasta:/tandem/data/consurf/uniref90.fasta:ro
     labels:
       owner: "loci"
+
+  tandem2:
+    <<: *tandem_service
+
+  tandem3:
+    <<: *tandem_service
+
+  tandem4:
+    <<: *tandem_service
 
   polyphen2:
     restart: always
@@ -57,7 +68,12 @@ services:
     container_name: worker_dev
     depends_on:
       - mongodb
-      - tandem
+      - tandem1
+      - tandem2
+      - tandem3
+      - tandem4
+    environment:
+      TANDEM_URLS: "http://tandem1:5000/run_tandem_job,http://tandem2:5000/run_tandem_job,http://tandem3:5000/run_tandem_job,http://tandem4:5000/run_tandem_job"
     volumes:
       - ./worker:/worker
       - ./tandem:/tandem

@@ -30,11 +30,15 @@ display: flex;
 .popup-modal {
 width: calc(100vw - 32px);
 max-width: 680px;
+height: calc(100vh - 32px);
+max-height: 520px;
 background: #191919;
 color: #f2f2f2;
 border: 1px solid #3a3a3a;
 border-radius: 8px;
 overflow: hidden;
+display: flex;
+flex-direction: column;
 }
 
 .popup-modal-header,
@@ -48,6 +52,7 @@ display: flex;
 justify-content: space-between;
 align-items: center;
 gap: 16px;
+flex: 0 0 auto;
 }
 
 .popup-modal-title {
@@ -62,6 +67,12 @@ border: 1px solid #404040;
 border-radius: 6px;
 padding: 6px 10px;
 cursor: pointer;
+}
+
+.popup-modal-body {
+flex: 1 1 auto;
+overflow-y: auto;
+min-height: 0;
 }
 
 .popup-modal-body p {

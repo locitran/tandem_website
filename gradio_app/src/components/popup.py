@@ -8,25 +8,19 @@ from ..settings import HTML_DIR
 POPUP_MODAL_TEMPLATE = os.path.join(HTML_DIR, "popup_modal.html")
 
 
-def build_popup_trigger(modal_id, trigger_text):
-    return '<span class="popup-link" data-open-modal="{}">{}</span>'.format(
+def build_popup_pair(modal_id, trigger_text, title, body_html):
+    trigger = '<span class="popup-link" data-open-modal="{}">{}</span>'.format(
         html.escape(modal_id, quote=True),
         html.escape(trigger_text),
     )
-
-
-def build_popup_modal(modal_id, title, body_html):
-    return js.build_html_text(
+    modal = js.build_html_text(
         POPUP_MODAL_TEMPLATE,
         modal_id=html.escape(modal_id, quote=True),
         title=html.escape(title),
         body_html=body_html,
     )
-
-
-def build_popup_pair(modal_id, trigger_text, title, body_html):
-    return build_popup_trigger(modal_id, trigger_text), \
-        build_popup_modal(modal_id, title, body_html)
+    
+    return trigger, modal
 
 def build_event_popup(modal_id, trigger_text, title, event_groups):
     body_parts = []
@@ -36,12 +30,11 @@ def build_event_popup(modal_id, trigger_text, title, event_groups):
         for event in events:
             message = str(event.get("message", "")).strip()
             action = str(event.get("action", "") or "").strip()
-            context = event.get("context", {}) or {}
+            savs = (event.get("savs", []) or [])
 
             if message:
                 body_parts.append("<p>> <strong>{}</strong> {}</p>".format(html.escape(level), html.escape(message),))
 
-            savs = context.get("savs")
             if savs:
                 sav_items = "".join("<li>{}</li>".format(html.escape(str(sav))) for sav in savs)
                 body_parts.append("<ul>{}</ul>".format(sav_items))
