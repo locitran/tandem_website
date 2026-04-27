@@ -178,6 +178,4 @@ cython_debug/
 note.md
 .gitignore
 .gitmodules
-
-./docker-compose-dev.yml
-./PolyPhen-2
+docker-compose-dev.yml
