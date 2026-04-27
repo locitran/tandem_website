@@ -28,6 +28,7 @@ services:
     restart: always
     platform: linux/amd64
     build: ./tandem
+    container_name: tandem_1
     expose:
       - "5000" # internal only; not mapped to host
     depends_on:
@@ -41,12 +42,15 @@ services:
 
   tandem2:
     <<: *tandem_service
+    container_name: tandem_2
 
   tandem3:
     <<: *tandem_service
+    container_name: tandem_3
 
   tandem4:
     <<: *tandem_service
+    container_name: tandem_4
 
   polyphen2:
     restart: always
