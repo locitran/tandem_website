@@ -15,7 +15,7 @@
             <li><a href="#q8" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q8').open = true;">What is SHAP analysis?</a></li>
             <li><a href="#q9" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q9').open = true;">What features are we using in the TANDEM-DIMPLE models?</a></li>
             <li><a href="#q10" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q10').open = true;">How do I reference TANDEM-DIMPLE?</a></li>
-            <li><a href="#references">References</a></li>
+            <li><a href="#references" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('references').open = true;">References</a></li>
         </ol>
     </nav>
 
@@ -23,32 +23,44 @@
         <summary>What is TANDEM-DIMPLE?</summary>
         <div class="qa-panel">
             <p>
-                TANDEM-DIMPLE is a pathogenicity prediction webserver developed by the Yang Lab at National Tsinghua University, Taiwan.
+                TANDEM-DIMPLE stands for Transfer-leArNing-ready and Dynamics-Empowered Model for Disease-specific Missense Pathogenicity Estimation, 
+                which is a deep neural network (DNN) model for classifying pathogenicity of single amino acid variants (SAV). 
+                The model leverages transfer learning method which uses clinically curated gene/disease-specific dataset to 
+                improve model predictions of gene/disease-general model.
             </p>
             <p>
-                Inspired by AlphaMissense, leveraging structural embeddings (<a href="#ref-4">Cheng et al., 2023</a>), and Rhapsody web server, 
-                incorporating protein dynamics (<a href="#ref-18">Ponzoni et al., 2020</a>), we integrated structural and dynamics-based features 
-                alongside sequence conservation signals to train our gene/disease-general DNN classifier for SAV pathogenicity 
-                prediction. This gene-general model (hereafter “TANDEM”) is sufficiently deep to achieve high predictive accuracy, 
-                outperforming AlphaMissense by 6% on a test set of more than 2,000 SAVs from the Rhapsody dataset, yet lightweight 
-                enough (&lt;5,000 parameters) to support gene/disease-specific transfer learning (the resulting model is termed “TANDEM-DIMPLE).
-                Specially, after transfer learning on clinically labeled SAVs for two genes, <i>RYR1</i> and <i>GJB2</i>, 
-                whose variants cause malignant hyperthermia and hearing loss, respectively, our model achieves 98.7% accuracy 
-                for <i>GJB2</i> and 97.0% for <i>RYR1</i>, surpassing AlphaMissense's 80.0% and 66.7%, respectively.
-                With these efforts, our web server now serves SAV pathogenicity inferencing for general disease as well as 
-                for specific genes/diseases using user-uploaded clinically labeled SAVs, where the gene-specific models 
-                are automatically trained in our website for private or public uses.
+                Specifically, inspired by AlphaMissense, leveraging structural embeddings 
+                (<a href="#ref-4" onclick="document.getElementById('references').open = true;">Cheng et al., 2023</a>), 
+                and Rhapsody web server, incorporating protein dynamics 
+                (<a href="#ref-18" onclick="document.getElementById('references').open = true;">Ponzoni et al., 2020</a>), 
+                we integrated structural and dynamics-based features alongside sequence conservation signals to train our 
+                gene/disease-general DNN classifier. This gene-general model (hereafter “TANDEM”) is sufficiently deep 
+                (4 hidden layers with 33 neurons and last hidden layer with 10 neurons; see 
+                <a href="#q7" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q7').open = true;">Q7</a> 
+                for more details) to achieve high predictive accuracy, outperforming AlphaMissense by 6% (see <b>Figure 1A</b> 
+                left, blue and green bars) on a test set of more than 2,000 SAVs from the Rhapsody dataset 
+                (R20000<sub>test</sub>, see <a href="#q7" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q7').open = true;">Q7</a> 
+                for more details), yet lightweight enough (&lt;5,000 parameters) to support gene/disease-specific transfer learning (the resulting model is termed 
+                “TANDEM-DIMPLE). After transfer learning on clinically labeled SAVs for two genes, <i>GJB2</i> and <i>RYR1</i>, 
+                whose variants cause hearing loss and malignant hyperthermia, respectively, our model achieves 98.7% accuracy 
+                for <i>GJB2</i> and 97.0% for <i>RYR1</i>, surpassing AlphaMissense's 80.0% and 66.7%, respectively (see 
+                <b>Figure 1B</b>, red and green bars). With these efforts, our web server now provides SAV pathogenicity 
+                inferencing for general disease as well as for specific genes/diseases using user-uploaded clinically labeled SAVs, 
+                where the gene-specific models are automatically trained in our website for private or public uses.
             </p>
             <figure class="q1-figure">
                 <img src="./gradio_api/file=assets/images/qa_TANDEM-DIMPLE_performance.svg"
                     alt="Overview figure for TANDEM-DIMPLE">
                 <figcaption>
-                    <b>Comparison of model performance.</b> The results of gene-general and gene-specific models are shown
+                    <b>Figure 1. Comparison of model performance.</b> The results of gene-general and gene-specific models are shown
                     in panels (A) and (B), respectively. R20000<sub>test</sub>, GJB2<sub>knw</sub>, RYR<sub>knw</sub>, 
-                    GJB2<sub>test</sub> and RYR<sub>test</sub> sets are also defined in Q7. AlphaMissense predictions 
-                    were retrieved from the public database (<a href="#ref-4">Cheng et al., 2023</a>), while Rhapsody 
-                    predictions were computed using the authors-released code. Asterisks denote Student’s t-test 
-                    p-values &lt; 0.05 for comparisons between two groups.
+                    GJB2<sub>test</sub> and RYR<sub>test</sub> sets are defined in 
+                    <a href="#q7" onclick="document.querySelectorAll('.qa-item').forEach((item) => item.open = false); document.getElementById('q7').open = true;">Q7</a>. 
+                    AlphaMissense predictions were retrieved from the public database 
+                    (<a href="#ref-4" onclick="document.getElementById('references').open = true;">Cheng et al., 2023</a>), 
+                    while Rhapsody predictions were computed using the authors-released 
+                    <a href="https://github.com/prody/rhapsody" target="_blank" rel="noopener noreferrer">code</a>. 
+                    Asterisks denote Student's t-test p-values &lt;0.05 for comparisons between two groups.
                 </figcaption>
             </figure>
         </div>
@@ -57,27 +69,15 @@
     <details class="qa-item" id="q2">
         <summary>What is a single amino acid variant (SAV)?</summary>
         <div class="qa-panel">
-            <div class="q1-item">
-                <div class="q1-text">
-                    <p>
-                        A SAV refers to a change in a protein’s primary sequence caused by a nucleotide substitution that 
-                        alters the encoded amino acid. Although most SAVs are harmless to the host, some are so deleterious 
-                        that they cause embryonic or early lethality, making such variants absent from the human genome, 
-                        while a small subset impairs protein function just enough to cause diseases without preventing 
-                        survival to reproductive age. TANDEM website records each SAV using the UniProt ID followed by 
-                        the amino acid substitution (e.g., P29033 Y217D). To identify the correct UniProt ID for a gene 
-                        or protein, please refer to <a href="https://www.uniprot.org/" target="_blank" rel="noopener noreferrer">UniProt</a>.
-                    </p>
-                </div>
-
-                <figure class="q1-figure">
-                    <img src="./gradio_api/file=assets/images/SAV_definition.png"
-                        alt="SAV definition">
-                    <figcaption>
-                        Figure 1. SAV definition.
-                    </figcaption>
-                </figure>
-            </div>
+            <p>
+                A SAV (also known as the missense variant) refers to a change in a protein's primary sequence caused 
+                by nucleotide substitutions that alters the encoded amino acid. The majority of SAVs are functionally 
+                neutral; some highly deleterious mutations are typically eliminated by natural selection, and a 
+                significant subset of variants remain as pathogenic drivers of various diseases featured with impactful 
+                impairments on protein function. TANDEM website records each SAV using the UniProt ID followed by the 
+                amino acid substitution (e.g., P29033 Y217D). To identify the correct UniProt ID for a gene or protein, 
+                please refer to <a href="https://www.uniprot.org/" target="_blank" rel="noopener noreferrer">UniProt</a>.
+            </p>
         </div>
     </details>
 
@@ -104,7 +104,7 @@
         <summary>What do the results look like?</summary>
         <div class="qa-panel">
             <p>
-                You can view example output pages for both inferencing and training directly from the demo jobs below.
+                Demonstration of both TANDEM-DIMPLE inferencing and training output examples as follows:
             </p>
             <p>
                 <b>Inferencing example output:</b>
@@ -131,7 +131,7 @@
                 (<a href="https://www.docker.com" target="_blank" rel="noopener noreferrer">https://www.docker.com</a>).
                 Compose-managed containers simplify deployment and scaling (e.g., running multiple workers) while keeping
                 the application stack reproducible. The frontend is implemented in Python using the Gradio package
-                (<a href="#ref-22">Abid et al., 2019</a>), which builds the website interface to receive user requests and
+                (<a href="#ref-22" onclick="document.getElementById('references').open = true;">Abid et al., 2019</a>), which builds the website interface to receive user requests and
                 render either inferencing outputs or transfer learning results. Upon submission, the frontend sends a job
                 request to MongoDB using PyMongo driver, which communicates over MongoDB’s native wire protocol
                 (<a href="https://www.mongodb.com" target="_blank" rel="noopener noreferrer">https://www.mongodb.com</a>),
@@ -173,7 +173,7 @@
                         this.setAttribute('aria-expanded', box.classList.contains('is-open') ? 'true' : 'false');
                         return false;
                     "
-                >?</a>). The input features were standardized prior to training.
+                >details</a>). The input features were standardized prior to training.
                 The network comprises 5 hidden layers with GeLU
                 activation: four layers have 33 neurons, and the last layer has 10, which is connected to the two-neuron
                 output layer that uses the softmax function to report the pathogenicity probabilities for a SAV. Training
@@ -186,7 +186,7 @@
                 The gene-specific models used the same architecture and hyperparameters as described above.
             </p>
             <div id="r20000-help" class="qa-inline-note-body">
-                Taken from the Rhapsody (<a href="#ref-18">Ponzoni et al., 2020</a>), the 20,361 clinically annotated
+                Taken from the Rhapsody (<a href="#ref-18" onclick="document.getElementById('references').open = true;">Ponzoni et al., 2020</a>), the 20,361 clinically annotated
                 SAVs of 2,423 genes comprises 13,626 pathogenic and 6,735 benign variants, referred as R20000 set.
                 The dataset integrates information from five publicly available datasets with refined annotations and
                 pathogenic/benign labels using three well-known databases UniProtKB (UniProt, 2023), ClinVar
@@ -216,8 +216,8 @@
                     33 features spanning protein sequence, chemical, structure, and dynamics. Structural features cover local
                     interactions, secondary structure/disorder, and global geometry etc. (Table S1). Dynamics features are
                     derived from a Cα-based coarse-grained elastic network model (ENM) to capture protein global motion
-                    <b>(<a href="#ref-2">Bahar et al., 1997</a>; <a href="#ref-12">Li et al., 2017</a>;
-                    <a href="#ref-13">Li et al., 2020</a>; <a href="#ref-20">Yang et al., 2006</a>)</b>.
+                    <b>(<a href="#ref-2" onclick="document.getElementById('references').open = true;">Bahar et al., 1997</a>; <a href="#ref-12" onclick="document.getElementById('references').open = true;">Li et al., 2017</a>;
+                    <a href="#ref-13" onclick="document.getElementById('references').open = true;">Li et al., 2020</a>; <a href="#ref-20" onclick="document.getElementById('references').open = true;">Yang et al., 2006</a>)</b>.
                     <b>(C)</b> The gene-general TANDEM model employs a deep neural network that takes 33 input features, processes
                     them through four hidden layers with 33 neurons each followed by an additional hidden layer of 10 neurons,
                     and outputs a two-neuron layer representing the predicted probabilities of pathogenicity and benignity.
@@ -239,7 +239,7 @@
                 A SHapley Additive exPlanations (SHAP) value measures a feature's contribution to a model's
                 prediction. It is derived from the Shapley value in cooperative game theory, which defines how
                 to distribute a game's payout among players such that each player's payout is proportional to that
-                player's contribution (<a href="#ref-15">Lundberg &amp; Lee, 2017</a>). In our setting, the game's payout is the model output for a given input
+                player's contribution (<a href="#ref-15" onclick="document.getElementById('references').open = true;">Lundberg &amp; Lee, 2017</a>). In our setting, the game's payout is the model output for a given input
                 SAV; the players are protein features associated with that SAV; and each player's payout
                 corresponds to the contribution of that feature to the predicted output.
             </p>
@@ -325,11 +325,11 @@
                 For each SAV, we derived 33 protein features, grouped into three categories: 
                 9 sequence chemical features, 15 structure features, and 9 dynamics features. 
                 Among these, 7 features were identical to the ones used in the Rhapsody study 
-                (<a href="#ref-18">Ponzoni et al., 2020</a>). Dynamics features were computed using Gaussian Network 
-                Models (GNM) (<a href="#ref-2">Bahar et al., 1997</a>; <a href="#ref-20">Yang et al., 2006</a>) to capture the residue 
+                (<a href="#ref-18" onclick="document.getElementById('references').open = true;">Ponzoni et al., 2020</a>). Dynamics features were computed using Gaussian Network 
+                Models (GNM) (<a href="#ref-2" onclick="document.getElementById('references').open = true;">Bahar et al., 1997</a>; <a href="#ref-20" onclick="document.getElementById('references').open = true;">Yang et al., 2006</a>) to capture the residue 
                 fluctuations and global motion of protein structures. For proteins that have 
                 interaction partners such as membrane proteins or protein-nucleic acid complexes, 
-                we used envGNM (<a href="#ref-12">Li et al., 2017</a>; <a href="#ref-13">Li et al., 2020</a>), which models proteins' 
+                we used envGNM (<a href="#ref-12" onclick="document.getElementById('references').open = true;">Li et al., 2017</a>; <a href="#ref-13" onclick="document.getElementById('references').open = true;">Li et al., 2020</a>), which models proteins' 
                 surrounding contacts as the “environment” that includes lipid membrane, other 
                 oligomers or nucleic acids/ large ligands. Structure features describe the global 
                 and local topology of the protein in 3D space such as radius of gyration or distance 
@@ -338,9 +338,9 @@
                 contacts, hydrogen bonds, and disulfide bonds were also computed. Sequence and 
                 chemical features included residue-level physicochemical properties such as polarity, 
                 charge, residue conservation that was assessed using ConSurf 
-                (<a href="#ref-3">Ben Chorin et al., 2020</a>; <a href="#ref-7">Goldenberg et al., 2009</a>), 
-                BLOSUM62 (<a href="#ref-9">Henikoff &amp; Henikoff, 1992</a>), 
-                and PSIC (<a href="#ref-19">Sunyaev et al., 1999</a>). 
+                (<a href="#ref-3" onclick="document.getElementById('references').open = true;">Ben Chorin et al., 2020</a>; <a href="#ref-7" onclick="document.getElementById('references').open = true;">Goldenberg et al., 2009</a>), 
+                BLOSUM62 (<a href="#ref-9" onclick="document.getElementById('references').open = true;">Henikoff &amp; Henikoff, 1992</a>), 
+                and PSIC (<a href="#ref-19" onclick="document.getElementById('references').open = true;">Sunyaev et al., 1999</a>). 
                 Both the ConSurf score of the SAV site of interest and that of its spatial neighbors in 3D were calculated.
             </p>
 
@@ -357,27 +357,27 @@
                         <td class="q5-group" rowspan="5">Dynamics</td>
                         <td class="q5-feature"><i>&lambda;</i><sub>1</sub>, <i>&lambda;</i><sub>2</sub></td>
                         <td>The 1<sup>st</sup> and 2<sup>nd</sup> GNM eigenvalues</td>
-                        <td><a href="#ref-2">[2]</a>, <a href="#ref-20">[20]</a></td>
+                        <td><a href="#ref-2" onclick="document.getElementById('references').open = true;">[2]</a>, <a href="#ref-20" onclick="document.getElementById('references').open = true;">[20]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">||<i>V</i><sub>1,i</sub>||, ||<i>V</i><sub>2,i</sub>||, rank(||<i>V</i><sub>1,i</sub>||), rank(||<i>V</i><sub>2,i</sub>||)</td>
                         <td>Magnitude and rank of residue <i>i</i> in the 1<sup>st</sup> and 2<sup>nd</sup> GNM slowest modes</td>
-                        <td><a href="#ref-2">[2]</a>, <a href="#ref-20">[20]</a></td>
+                        <td><a href="#ref-2" onclick="document.getElementById('references').open = true;">[2]</a>, <a href="#ref-20" onclick="document.getElementById('references').open = true;">[20]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">rank(||<i>c</i><sub>i,i</sub>||)</td>
                         <td>Rank of GNM fluctuation variance of residue <i>i</i></td>
-                        <td><a href="#ref-2">[2]</a>, <a href="#ref-20">[20]</a></td>
+                        <td><a href="#ref-2" onclick="document.getElementById('references').open = true;">[2]</a>, <a href="#ref-20" onclick="document.getElementById('references').open = true;">[20]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">Effectiveness*</td>
                         <td>Ability of a residue to transmit mechanical signals</td>
-                        <td><a href="#ref-1">[1]</a></td>
+                        <td><a href="#ref-1" onclick="document.getElementById('references').open = true;">[1]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">Stiffness*</td>
                         <td>Residue’s resistance to uniaxial tension.</td>
-                        <td><a href="#ref-6">[6]</a></td>
+                        <td><a href="#ref-6" onclick="document.getElementById('references').open = true;">[6]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-group" rowspan="9">Structure</td>
@@ -388,17 +388,17 @@
                     <tr>
                         <td class="q5-feature">%Loop, %Helix, %Sheet</td>
                         <td>Percentage of secondary structure</td>
-                        <td><a href="#ref-11">[11]</a></td>
+                        <td><a href="#ref-11" onclick="document.getElementById('references').open = true;">[11]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">Disorderliness</td>
                         <td>Predicted intrinsic disorder</td>
-                        <td><a href="#ref-21">[21]</a></td>
+                        <td><a href="#ref-21" onclick="document.getElementById('references').open = true;">[21]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">SA</td>
                         <td>Relative solvent accessibility</td>
-                        <td><a href="#ref-10">[10]</a></td>
+                        <td><a href="#ref-10" onclick="document.getElementById('references').open = true;">[10]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">R<sub>G</sub></td>
@@ -423,13 +423,13 @@
                     <tr>
                         <td class="q5-feature">N<sub>H-bond</sub>, &Delta;N<sub>H-bond</sub></td>
                         <td>Number of hydrogen bonds and mutation-induced change</td>
-                        <td><a href="#ref-17">[17]</a></td>
+                        <td><a href="#ref-17" onclick="document.getElementById('references').open = true;">[17]</a></td>
                     </tr>
                     <tr>
-                        <td class="q5-group" rowspan="4">Sequence &amp; Chemical</td>
+                        <td class="q5-group" rowspan="6">Sequence &amp; Chemical</td>
                         <td class="q5-feature">&Delta;Polarity</td>
                         <td>Mutation-induced change in polarity</td>
-                        <td><a href="#ref-8">[8]</a></td>
+                        <td><a href="#ref-8" onclick="document.getElementById('references').open = true;">[8]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">&Delta;Charge</td>
@@ -439,13 +439,29 @@
                     <tr>
                         <td class="q5-feature">ConSurf and ACNR</td>
                         <td>Relative conservation score and average ConSurf scores of neighboring residues</td>
-                        <td><a href="#ref-3">[3]</a>, <a href="#ref-7">[7]</a></td>
+                        <td><a href="#ref-3" onclick="document.getElementById('references').open = true;">[3]</a>, <a href="#ref-7" onclick="document.getElementById('references').open = true;">[7]</a></td>
                     </tr>
                     <tr>
                         <td class="q5-feature">wtPSIC*, &Delta;PSIC*</td>
                         <td>Position-specific evolutionary conservation and mutation-induced change</td>
-                        <td><a href="#ref-19">[19]</a></td>
+                        <td><a href="#ref-19" onclick="document.getElementById('references').open = true;">[19]</a></td>
                     </tr>
+
+                    <tr>
+                        <td class="q5-feature">BLOSUM62*</td>
+                        <td>Amino acid substitution score</td>
+                        <td><a href="#ref-9" onclick="document.getElementById('references').open = true;">[9]</a></td>
+                    </tr>
+
+                    <tr>
+                        <td class="q5-feature">Entropy*, ranked MI*</td>
+                        <td>Average Shannon entropy and normalized ranking of average mutual information
+                            derived from multiple sequence alignments in the Pfam Database
+                        </td>
+                        <td><a href="#ref-5" onclick="document.getElementById('references').open = true;">[5]</a></td>
+                    </tr>
+
+
                 </tbody>
             </table>
         </div>
@@ -469,9 +485,10 @@
         </div>
     </details>
 
-    <section class="qa-references" id="references">
-        <h3>References</h3>
-        <ol>
+    <details class="qa-reference-details qa-references" id="references">
+        <summary>References</summary>
+        <div class="qa-panel">
+            <ol>
             <li id="ref-1">
                 Atilgan, C., &amp; Atilgan, A. R. (2009). Perturbation-response scanning reveals ligand entry-exit mechanisms of ferric binding protein.
                 <i>PLoS computational biology</i>, <i>5</i>(10), e1000544.
@@ -577,7 +594,8 @@
                 Gradio: Hassle-free sharing and testing of ML models in the wild.
                 <i>arXiv</i>.
             </li>
-        </ol>
-    </section>
+            </ol>
+        </div>
+    </details>
 
 </div>

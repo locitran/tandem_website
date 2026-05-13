@@ -11,7 +11,7 @@
             <li><a href="#step3" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step3').open = true;">Step 3: Monitor job status</a></li>
             <li><a href="#step4" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('step4').open = true;">Step 4: Analyze results</a></li>
             <li><a href="#pkd-demo" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('pkd-demo').open = true;">PKD1-PKD2 demonstration</a></li>
-            <li><a href="#tutorial-references">References</a></li>
+            <li><a href="#tutorial-references" onclick="document.querySelectorAll('.tutorial-item').forEach((item) => item.open = false); document.getElementById('tutorial-references').open = true;">References</a></li>
         </ul>
     </nav>
 
@@ -204,7 +204,7 @@
                 In the human body, these two proteins form a heteromeric receptor-channel complex essential
                 for mechanosensitive calcium signaling in renal primary cilia. The dataset comprises 153
                 pathogenic and 101 benign SAVs collected from a previous study
-                (<a href="#tutorial-ref-1">Yu et al., 2022</a>)
+                (<a href="#tutorial-ref-1" onclick="document.getElementById('tutorial-references').open = true;">Yu et al., 2022</a>)
                 and from two public databases (ClinVar and LOVD). Here, we use these SAVs to fine-tune the gene-general TANDEM
                 model and examine the improvement before and after training with the TANDEM-DIMPLE web server.
             </p>
@@ -254,15 +254,17 @@
         </div>
     </details>
 
-    <section class="tutorial-reference-section" id="tutorial-references">
-        <h3>References</h3>
-        <ol class="tutorial-references">
+    <details class="tutorial-item tutorial-reference-section" id="tutorial-references">
+        <summary>References</summary>
+        <div class="tutorial-panel">
+            <ol class="tutorial-references">
             <li id="tutorial-ref-1">
                 C. C. Yu, A. F. Lee, S. Kohl, et al., “PKD2 founder mutation is the most common mutation of polycystic kidney disease in Taiwan,”
                 <i>NPJ Genom Med</i> 7, no. 1 (2022): 40.
                 <a href="https://doi.org/10.1038/s41525-022-00309-w" target="_blank" rel="noopener noreferrer">https://doi.org/10.1038/s41525-022-00309-w</a>
             </li>
-        </ol>
-    </section>
+            </ol>
+        </div>
+    </details>
 
 </div>
